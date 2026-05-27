@@ -1,0 +1,122 @@
+import { useState } from "react";
+import { useAuthStore } from "../store/auth";
+import { api } from "../lib/api";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { useNavigate } from "react-router-dom";
+import { Activity } from "lucide-react";
+
+export function Login() {
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState<"email" | "otp">("email");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const navigate = useNavigate();
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      await api.post("/api/auth/otp/send", { email });
+      setStep("otp");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const res = await api.post("/api/auth/otp/verify", { email, otp });
+      const accessToken = res.data.access_token || res.data.accessToken || res.data.token;
+      const refreshToken = res.data.refresh_token || res.data.refreshToken;
+      if (accessToken) {
+        setAuth(accessToken, refreshToken || "", { email });
+        navigate("/");
+      } else {
+        setError("Invalid response from server");
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to verify OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-background p-4 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-accent/20 blur-[120px] rounded-full pointer-events-none" />
+
+      <Card className="w-full max-w-md relative z-10 border-border/50 bg-card/60 backdrop-blur-xl">
+        <CardHeader className="space-y-3 items-center text-center">
+          <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-2 shadow-lg shadow-primary/20">
+            <Activity className="w-6 h-6" />
+          </div>
+          <CardTitle className="text-2xl font-bold tracking-tight">Huebox Engine</CardTitle>
+          <CardDescription>
+            {step === "email" ? "Enter your email to receive an OTP" : "Enter the 6-digit OTP sent to your email"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <div className="mb-4 p-3 bg-destructive/10 text-destructive text-sm rounded-md border border-destructive/20">
+              {error}
+            </div>
+          )}
+          {step === "email" ? (
+            <form onSubmit={handleSendOtp} className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="bg-background/50 text-foreground"
+                />
+              </div>
+              <Button type="submit" className="w-full font-semibold" disabled={loading}>
+                {loading ? "Sending..." : "Send OTP"}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  type="text"
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  required
+                  className="bg-background/50 text-center tracking-widest text-lg font-mono text-foreground"
+                  maxLength={6}
+                />
+              </div>
+              <Button type="submit" className="w-full font-semibold" disabled={loading}>
+                {loading ? "Verifying..." : "Login"}
+              </Button>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                className="w-full"
+                onClick={() => setStep("email")}
+              >
+                Back
+              </Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
