@@ -12,6 +12,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { ConfirmModal } from "../components/ConfirmModal";
+import { parseApiError } from "../utils/parseApiError";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -27,7 +28,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Info
+  Info,
+  AlertCircle
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "../lib/utils";
@@ -42,22 +44,20 @@ export function Payments() {
   // Form States for Add Funds
   const [addFundsAmount, setAddFundsAmount] = useState("");
   const [addFundsFiat, setAddFundsFiat] = useState("USD");
-  const [addFundsCrypto, setAddFundsCrypto] = useState("USDT");
   const [addFundsSuccess, setAddFundsSuccess] = useState(false);
+  const [addFundsErrorMsg, setAddFundsErrorMsg] = useState("");
 
   // Form States for Withdraw
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawAddress, setWithdrawAddress] = useState("");
   const [withdrawNetwork, setWithdrawNetwork] = useState("TRC20");
   const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
-  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+  const [withdrawSuccessId, setWithdrawSuccessId] = useState("");
   const [withdrawErrorMsg, setWithdrawErrorMsg] = useState("");
 
   // Form States for Send
   const [sendUid, setSendUid] = useState("");
   const [sendAmount, setSendAmount] = useState("");
-  const sendCoin = "USDT";
-  const [sendConfirmOpen, setSendConfirmOpen] = useState(false);
   const [sendSuccess, setSendSuccess] = useState(false);
   const [sendErrorMsg, setSendErrorMsg] = useState("");
 
@@ -177,16 +177,24 @@ export function Payments() {
   const handleAddFundsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setAddFundsSuccess(false);
+    setAddFundsErrorMsg("");
     const amountNum = parseFloat(addFundsAmount);
-    if (isNaN(amountNum) || amountNum < 10) return;
+    
+    if (isNaN(amountNum) || amountNum < 10) {
+      setAddFundsErrorMsg("Minimum deposit amount is $10.00 USD.");
+      return;
+    }
 
     createOrderMutation.mutate(
-      { amountUsd: amountNum, fiat: addFundsFiat, coin: addFundsCrypto },
+      { amountUsd: amountNum, fiat: addFundsFiat, coin: "USDT" },
       {
         onSuccess: () => {
           setAddFundsSuccess(true);
           setAddFundsAmount("");
         },
+        onError: (err: any) => {
+          setAddFundsErrorMsg(parseApiError(err));
+        }
       }
     );
   };
@@ -194,9 +202,20 @@ export function Payments() {
   const handleWithdrawSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setWithdrawErrorMsg("");
-    setWithdrawSuccess(false);
+    setWithdrawSuccessId("");
     const amountNum = parseFloat(withdrawAmount);
-    if (isNaN(amountNum) || amountNum <= 0 || amountNum > balance || !withdrawAddress) return;
+    if (isNaN(amountNum) || amountNum < 0.01) {
+      setWithdrawErrorMsg("Minimum withdrawal amount is 0.01 USDT.");
+      return;
+    }
+    if (amountNum > balance) {
+      setWithdrawErrorMsg("Insufficient balance.");
+      return;
+    }
+    if (!withdrawAddress) {
+      setWithdrawErrorMsg("Destination address is required.");
+      return;
+    }
     setWithdrawConfirmOpen(true);
   };
 
@@ -210,13 +229,13 @@ export function Payments() {
         coin,
       },
       {
-        onSuccess: () => {
-          setWithdrawSuccess(true);
+        onSuccess: (data) => {
+          setWithdrawSuccessId(data.withdrawalId || data.transferId || "Successfully Initiated");
           setWithdrawAmount("");
           setWithdrawAddress("");
         },
-        onError: (err) => {
-          setWithdrawErrorMsg(err.message || "Withdrawal request failed. Please check parameters.");
+        onError: (err: any) => {
+          setWithdrawErrorMsg(parseApiError(err));
         },
       }
     );
@@ -227,17 +246,24 @@ export function Payments() {
     setSendErrorMsg("");
     setSendSuccess(false);
     const amountNum = parseFloat(sendAmount);
-    if (isNaN(amountNum) || amountNum <= 0 || amountNum > balance || !sendUid) return;
-    setSendConfirmOpen(true);
-  };
-
-  const executeSend = () => {
-    setSendConfirmOpen(false);
+    if (isNaN(amountNum) || amountNum < 0.01) {
+      setSendErrorMsg("Minimum send amount is 0.01 USDT.");
+      return;
+    }
+    if (amountNum > balance) {
+      setSendErrorMsg("Insufficient balance.");
+      return;
+    }
+    if (!sendUid) {
+      setSendErrorMsg("Recipient Bybit UID is required.");
+      return;
+    }
+    
     sendMutation.mutate(
       {
         toBybitUid: sendUid,
-        amount: parseFloat(sendAmount),
-        coin: sendCoin,
+        amount: amountNum,
+        coin: "USDT",
       },
       {
         onSuccess: () => {
@@ -245,8 +271,8 @@ export function Payments() {
           setSendAmount("");
           setSendUid("");
         },
-        onError: (err) => {
-          setSendErrorMsg(err.message || "Internal transfer failed. Verify Bybit UID.");
+        onError: (err: any) => {
+          setSendErrorMsg(parseApiError(err));
         },
       }
     );
@@ -316,7 +342,7 @@ export function Payments() {
                 </div>
               )}
               <p className="text-[10px] text-muted-foreground mt-2 font-mono">
-                Live balanced checked every 15 seconds. Active funds ready for bot deployment.
+                Live balance checked every 15 seconds. Active funds ready for bot deployment.
               </p>
             </CardContent>
           </Card>
@@ -370,34 +396,36 @@ export function Payments() {
                 <table className="w-full text-xs text-left border-collapse font-mono">
                   <thead>
                     <tr className="border-b border-border/40 text-muted-foreground bg-muted/10">
+                      <th className="py-2.5 px-4 font-medium">DATE</th>
                       <th className="py-2.5 px-4 font-medium">TYPE</th>
-                      <th className="py-2.5 px-4 font-medium text-right">AMOUNT</th>
+                      <th className="py-2.5 px-4 font-medium text-right">AMOUNT (USDT)</th>
                       <th className="py-2.5 px-4 font-medium text-center">STATUS</th>
-                      <th className="py-2.5 px-4 font-medium text-right">DATE</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/20">
                     {historyLoading ? (
                       <tr>
-                        <td colSpan={4} className="py-8 text-center text-slate-500 italic">
-                          Loading transactions history...
+                        <td colSpan={4} className="py-8 text-center">
+                          <div className="flex items-center justify-center gap-2 text-slate-500 italic">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" /> Loading transaction history...
+                          </div>
                         </td>
                       </tr>
                     ) : historyItems.length > 0 ? (
                       historyItems.slice(0, 5).map((tx) => (
                         <tr key={tx._id} className="hover:bg-muted/10 transition-colors">
+                          <td className="py-3 px-4 text-slate-500">
+                            {formatTxDate(tx.createdAt, "MMM dd, HH:mm")}
+                          </td>
                           <td className="py-3 px-4 font-bold text-foreground flex items-center gap-2">
                             {getTxIcon(tx.type)}
                             <span className="capitalize">{tx.type}</span>
                           </td>
-                          <td className="py-3 px-4 text-right">
-                            {formatTxAmount(tx.type, tx.amount, tx.coin)}
+                          <td className="py-3 px-4 text-right font-bold">
+                            {formatTxAmount(tx.type, tx.amountUsdt, tx.coin)}
                           </td>
                           <td className="py-3 px-4 text-center">
                             {getTxStatusBadge(tx.status)}
-                          </td>
-                          <td className="py-3 px-4 text-right text-slate-500">
-                            {formatTxDate(tx.createdAt, "MMM dd, HH:mm")}
                           </td>
                         </tr>
                       ))
@@ -422,10 +450,10 @@ export function Payments() {
           <Card className="bg-card/30 border-border/40 backdrop-blur-sm relative overflow-hidden">
             <CardHeader>
               <CardTitle className="text-base font-mono tracking-wider text-slate-200">
-                ADD FUNDS (FIAT CHECKOUT)
+                DEPOSIT WITH MOONPAY
               </CardTitle>
               <CardDescription className="text-xs font-mono text-slate-500">
-                Generate a fast checkout link powered by Alchemy Pay to deposit crypto directly.
+                Quick fiat on-ramp to buy crypto and fund your trading bot sub-account immediately.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -433,14 +461,21 @@ export function Payments() {
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 rounded-md flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>
-                    Checkout link opened in a new tab. Complete your payment on Alchemy Pay.
+                    MoonPay checkout opened in a new tab. Your balance will update automatically once payment is confirmed.
                   </span>
+                </div>
+              )}
+
+              {addFundsErrorMsg && (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 text-xs text-destructive rounded-md flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{addFundsErrorMsg}</span>
                 </div>
               )}
 
               <form onSubmit={handleAddFundsSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-mono text-slate-400">Amount (USD equivalent)</label>
+                  <label className="text-xs font-mono text-slate-400">Amount in USD</label>
                   <Input
                     type="number"
                     min="10"
@@ -456,32 +491,17 @@ export function Payments() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-mono text-slate-400">Fiat Currency</label>
-                    <select
-                      value={addFundsFiat}
-                      onChange={(e) => setAddFundsFiat(e.target.value)}
-                      className="w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm font-mono shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
-                    >
-                      <option value="USD">USD - US Dollar</option>
-                      <option value="EUR">EUR - Euro</option>
-                      <option value="GBP">GBP - British Pound</option>
-                      <option value="LKR">LKR - Sri Lankan Rupee</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-mono text-slate-400">Receive Crypto</label>
-                    <select
-                      value={addFundsCrypto}
-                      onChange={(e) => setAddFundsCrypto(e.target.value)}
-                      className="w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm font-mono shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
-                    >
-                      <option value="USDT">USDT (Bybit Sub-Account)</option>
-                      <option value="USDC">USDC (Bybit Sub-Account)</option>
-                    </select>
-                  </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-mono text-slate-400">Fiat Currency</label>
+                  <select
+                    value={addFundsFiat}
+                    onChange={(e) => setAddFundsFiat(e.target.value)}
+                    className="w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm font-mono shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                  >
+                    <option value="USD">USD - US Dollar</option>
+                    <option value="EUR">EUR - Euro</option>
+                    <option value="GBP">GBP - British Pound</option>
+                  </select>
                 </div>
 
                 <Button
@@ -491,10 +511,10 @@ export function Payments() {
                 >
                   {createOrderMutation.isPending ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> Creating checkout session...
+                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> Launching MoonPay...
                     </>
                   ) : (
-                    "Generate Checkout Link"
+                    "Deposit with MoonPay"
                   )}
                 </Button>
               </form>
@@ -503,7 +523,7 @@ export function Payments() {
               <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded flex items-start gap-3 mt-4">
                 <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <div className="text-[11px] text-amber-400/90 leading-relaxed font-mono">
-                  Funds will be credited to the HueBox master account and automatically swept directly to the user's Bybit sub-account balance within ~2 minutes of payment confirmation on-chain.
+                  Deposited funds will be credited to the master wallet and instantly swept into your sub-account balance. The sweeping process typically completes within 2 minutes of the on-chain blockchain confirmation.
                 </div>
               </div>
             </CardContent>
@@ -530,16 +550,22 @@ export function Payments() {
                 <span className="text-lg font-bold text-primary">${Number(balance ?? 0).toFixed(2)} USDT</span>
               </div>
 
-              {withdrawSuccess && (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 rounded-md flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Withdrawal request initiated successfully. Check history for updates.</span>
+              {withdrawSuccessId && (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 rounded-md flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span className="font-bold">Withdrawal request initiated successfully.</span>
+                  </div>
+                  <span className="font-mono text-[10px] text-slate-400 pl-6 break-all">
+                    Reference ID: {withdrawSuccessId}
+                  </span>
                 </div>
               )}
 
               {withdrawErrorMsg && (
-                <div className="p-3 bg-destructive/10 border border-destructive/20 text-xs text-destructive rounded-md">
-                  {withdrawErrorMsg}
+                <div className="p-3 bg-destructive/10 border border-destructive/20 text-xs text-destructive rounded-md flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{withdrawErrorMsg}</span>
                 </div>
               )}
 
@@ -558,7 +584,7 @@ export function Payments() {
                   <div className="relative">
                     <Input
                       type="number"
-                      max={balance}
+                      min="0.01"
                       step="0.0001"
                       placeholder="0.00"
                       value={withdrawAmount}
@@ -614,75 +640,84 @@ export function Payments() {
       {!showFullHistory && activeTab === "send-receive" && (
         <div className="grid gap-6 md:grid-cols-2 animate-in fade-in duration-300">
           {/* Send subaccount to UID */}
-          <Card className="bg-card/30 border-border/40 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-base font-mono tracking-wider text-slate-200">
-                INTERNAL TRANSFER (SEND)
-              </CardTitle>
-              <CardDescription className="text-xs font-mono text-slate-500">
-                Instantly transfer funds to another Bybit UID on the HueBox system.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {sendSuccess && (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 rounded-md flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Transfer executed successfully. Balance updated.</span>
-                </div>
-              )}
-
-              {sendErrorMsg && (
-                <div className="p-3 bg-destructive/10 border border-destructive/20 text-xs text-destructive rounded-md">
-                  {sendErrorMsg}
-                </div>
-              )}
-
-              <form onSubmit={handleSendSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-mono text-slate-400">Recipient Bybit UID</label>
-                  <Input
-                    type="text"
-                    placeholder="Enter recipient Bybit UID"
-                    value={sendUid}
-                    onChange={(e) => setSendUid(e.target.value)}
-                    required
-                    className="font-mono text-sm bg-background/40"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-mono text-slate-400">Transfer Amount</label>
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      Max: ${Number(balance ?? 0).toFixed(2)} USDT
-                    </span>
+          <Card className="bg-card/30 border-border/40 backdrop-blur-sm flex flex-col justify-between">
+            <div>
+              <CardHeader>
+                <CardTitle className="text-base font-mono tracking-wider text-slate-200">
+                  INTERNAL TRANSFER (SEND)
+                </CardTitle>
+                <CardDescription className="text-xs font-mono text-slate-500">
+                  Instantly transfer funds to another Bybit UID on the HueBox system.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {sendSuccess && (
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 rounded-md flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Transfer executed successfully. Balance updated.</span>
                   </div>
-                  <div className="relative">
+                )}
+
+                {sendErrorMsg && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 text-xs text-destructive rounded-md flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{sendErrorMsg}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSendSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-mono text-slate-400">Recipient Bybit UID</label>
                     <Input
-                      type="number"
-                      max={balance}
-                      step="0.01"
-                      placeholder="0.00"
-                      value={sendAmount}
-                      onChange={(e) => setSendAmount(e.target.value)}
+                      type="text"
+                      placeholder="Enter recipient Bybit UID"
+                      value={sendUid}
+                      onChange={(e) => setSendUid(e.target.value)}
                       required
-                      className="font-mono text-sm bg-background/40 pr-12"
+                      className="font-mono text-sm bg-background/40"
                     />
-                    <div className="absolute right-3 top-2.5 text-xs text-slate-500 font-mono pointer-events-none">
-                      USDT
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-mono text-slate-400">Transfer Amount</label>
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        Max: ${Number(balance ?? 0).toFixed(2)} USDT
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={sendAmount}
+                        onChange={(e) => setSendAmount(e.target.value)}
+                        required
+                        className="font-mono text-sm bg-background/40 pr-12"
+                      />
+                      <div className="absolute right-3 top-2.5 text-xs text-slate-500 font-mono pointer-events-none">
+                        USDT
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <Button
-                  type="submit"
-                  disabled={sendMutation.isPending || !sendAmount || !sendUid}
-                  className="w-full font-mono text-xs font-semibold py-2.5 mt-2"
-                >
-                  Send USDT
-                </Button>
-              </form>
-            </CardContent>
+                  <Button
+                    type="submit"
+                    disabled={sendMutation.isPending || !sendAmount || !sendUid}
+                    className="w-full font-mono text-xs font-semibold py-2.5 mt-2"
+                  >
+                    {sendMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> Transferring...
+                      </>
+                    ) : (
+                      "Send USDT"
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </div>
           </Card>
 
           {/* Receive subaccount details */}
@@ -764,11 +799,11 @@ export function Payments() {
               <table className="w-full text-xs text-left border-collapse font-mono">
                 <thead>
                   <tr className="border-b border-border/40 text-muted-foreground bg-muted/10">
+                    <th className="py-2.5 px-4 font-medium">DATE</th>
                     <th className="py-2.5 px-4 font-medium">TYPE</th>
-                    <th className="py-2.5 px-4 font-medium text-right">AMOUNT</th>
+                    <th className="py-2.5 px-4 font-medium text-right">AMOUNT (USDT)</th>
                     <th className="py-2.5 px-4 font-medium text-center">STATUS</th>
                     <th className="py-2.5 px-4 font-medium text-center">TX ID</th>
-                    <th className="py-2.5 px-4 font-medium text-right">DATE</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/20">
@@ -781,21 +816,21 @@ export function Payments() {
                   ) : historyItems.length > 0 ? (
                     historyItems.map((tx) => (
                       <tr key={tx._id} className="hover:bg-muted/10 transition-colors">
+                        <td className="py-3 px-4 text-slate-500">
+                          {formatTxDate(tx.createdAt, "MMM dd, yyyy HH:mm")}
+                        </td>
                         <td className="py-3 px-4 font-bold text-foreground flex items-center gap-2">
                           {getTxIcon(tx.type)}
                           <span className="capitalize">{tx.type}</span>
                         </td>
-                        <td className="py-3 px-4 text-right">
-                          {formatTxAmount(tx.type, tx.amount, tx.coin)}
+                        <td className="py-3 px-4 text-right font-bold">
+                          {formatTxAmount(tx.type, tx.amountUsdt, tx.coin)}
                         </td>
                         <td className="py-3 px-4 text-center">
                           {getTxStatusBadge(tx.status)}
                         </td>
                         <td className="py-3 px-4 text-center text-slate-500 text-[10px]">
                           {truncateTxId(tx.txId || tx.bybitTransferId)}
-                        </td>
-                        <td className="py-3 px-4 text-right text-slate-500">
-                          {formatTxDate(tx.createdAt, "MMM dd, yyyy HH:mm")}
                         </td>
                       </tr>
                     ))
@@ -851,16 +886,6 @@ export function Payments() {
         onConfirm={executeWithdraw}
         onCancel={() => setWithdrawConfirmOpen(false)}
         isLoading={withdrawMutation.isPending}
-      />
-
-      <ConfirmModal
-        isOpen={sendConfirmOpen}
-        title="Confirm Internal Transfer"
-        description={`Send ${sendAmount} USDT to recipient Bybit UID ${sendUid}?`}
-        warningText="WARNING: This action is irreversible. Funds will be transferred instantly to the specified Bybit sub-account UID."
-        onConfirm={executeSend}
-        onCancel={() => setSendConfirmOpen(false)}
-        isLoading={sendMutation.isPending}
       />
     </div>
   );

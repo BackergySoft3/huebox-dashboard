@@ -1,19 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../lib/api";
+import { paymentApi, walletApi } from "../services/paymentApi";
 import type {
-  WalletBalance,
-  TransactionHistory,
-  CreateOrderPayload,
+  CreateOrderRequest,
   CreateOrderResponse,
-  WithdrawPayload,
-  SendPayload,
-  Transaction,
-} from "../types/wallet";
+  WithdrawRequest,
+  WithdrawResponse,
+  SendRequest,
+  SendResponse,
+  BalanceResponse,
+  TransactionHistoryResponse,
+} from "../services/paymentApi";
 
 export function useWalletBalance() {
-  const query = useQuery<WalletBalance>({
+  const query = useQuery<BalanceResponse>({
     queryKey: ["wallet", "balance"],
-    queryFn: () => api.get("/api/wallet/balance").then((r) => r.data),
+    queryFn: () => walletApi.getBalance(),
     refetchInterval: 15000,
     retry: 3,
     retryDelay: 1000,
@@ -29,12 +30,9 @@ export function useWalletBalance() {
 }
 
 export function useTransactionHistory(page: number, limit = 20) {
-  const query = useQuery<TransactionHistory>({
-    queryKey: ["wallet", "history", page],
-    queryFn: () =>
-      api
-        .get(`/api/wallet/history?page=${page}&limit=${limit}`)
-        .then((r) => r.data),
+  const query = useQuery<TransactionHistoryResponse>({
+    queryKey: ["wallet", "history", page, limit],
+    queryFn: () => walletApi.getHistory(page, limit).then((r) => r.data),
     retry: 2,
   });
 
@@ -49,11 +47,13 @@ export function useTransactionHistory(page: number, limit = 20) {
 }
 
 export function useCreateOrder() {
-  return useMutation<CreateOrderResponse, Error, CreateOrderPayload>({
-    mutationFn: (payload) =>
-      api.post("/api/payment/create-order", payload).then((r) => r.data),
+  return useMutation<CreateOrderResponse, Error, CreateOrderRequest>({
+    mutationFn: (payload) => paymentApi.createOrder(payload),
     onSuccess: (data) => {
       window.open(data.checkoutUrl, "_blank");
+      if (data.orderNo) {
+        localStorage.setItem("pending_order_no", data.orderNo);
+      }
     },
   });
 }
@@ -61,12 +61,11 @@ export function useCreateOrder() {
 export function useWithdraw() {
   const queryClient = useQueryClient();
 
-  return useMutation<Transaction, Error, WithdrawPayload>({
-    mutationFn: (payload) =>
-      api.post("/api/wallet/withdraw", payload).then((r) => r.data),
+  return useMutation<WithdrawResponse, Error, WithdrawRequest>({
+    mutationFn: (payload) => walletApi.withdraw(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] });
-      queryClient.invalidateQueries({ queryKey: ["wallet", "history", 1] });
+      queryClient.invalidateQueries({ queryKey: ["wallet", "history"] });
     },
   });
 }
@@ -74,12 +73,11 @@ export function useWithdraw() {
 export function useSend() {
   const queryClient = useQueryClient();
 
-  return useMutation<Transaction, Error, SendPayload>({
-    mutationFn: (payload) =>
-      api.post("/api/wallet/send", payload).then((r) => r.data),
+  return useMutation<SendResponse, Error, SendRequest>({
+    mutationFn: (payload) => walletApi.send(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] });
-      queryClient.invalidateQueries({ queryKey: ["wallet", "history", 1] });
+      queryClient.invalidateQueries({ queryKey: ["wallet", "history"] });
     },
   });
 }
