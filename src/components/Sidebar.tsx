@@ -10,7 +10,8 @@ import {
   LogOut,
   Activity,
   ListTree,
-  Wallet
+  Wallet,
+  CandlestickChart
 } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -23,6 +24,7 @@ export function Sidebar() {
     { name: "Bot Control", href: "/control", icon: PlayCircle },
     { name: "Progress", href: "/progress", icon: ListTree },
     { name: "Performance", href: "/performance", icon: TrendingUp },
+    { name: "Live Trading", href: "/trading", icon: CandlestickChart },
     { name: "Payments", href: "/payments", icon: Wallet },
     { name: "Live Logs", href: "/logs", icon: Terminal },
     { name: "Users", href: "/users", icon: Users },

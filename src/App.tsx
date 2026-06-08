@@ -12,6 +12,7 @@ import { Progress } from "./pages/Progress";
 import { Performance } from "./pages/Performance";
 import { Payments } from "./pages/Payments";
 import { PaymentReturn } from "./pages/PaymentReturn";
+import { Trading } from "./pages/Trading";
 import { LiveLogs } from "./pages/LiveLogs";
 import { AdminUsers } from "./pages/AdminUsers";
 import { System } from "./pages/System";
@@ -67,6 +68,7 @@ function App() {
             <Route path="performance" element={<Performance />} />
             <Route path="payments" element={<Payments />} />
             <Route path="payment/return" element={<PaymentReturn />} />
+            <Route path="trading" element={<Trading />} />
             <Route path="logs" element={<LiveLogs />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="system" element={<System />} />
