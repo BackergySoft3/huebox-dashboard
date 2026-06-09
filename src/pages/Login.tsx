@@ -13,6 +13,7 @@ export function Login() {
   const [step, setStep] = useState<"email" | "otp">("email");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [devOtp, setDevOtp] = useState<string | null>(null);
   const setAuth = useAuthStore((state) => state.setAuth);
   const navigate = useNavigate();
 
@@ -20,9 +21,22 @@ export function Login() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setDevOtp(null);
     try {
       await api.post("/api/auth/otp/send", { email });
       setStep("otp");
+
+      // Dev-only: auto-fetch OTP for display
+      if (import.meta.env.DEV) {
+        try {
+          const res = await api.get("/api/auth/otp/dev-peek", {
+            params: { email, purpose: "login" },
+          });
+          if (res.data?.otp) setDevOtp(res.data.otp);
+        } catch {
+          // Silently ignore — email still works
+        }
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to send OTP");
     } finally {
@@ -102,6 +116,27 @@ export function Login() {
             </form>
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-4">
+              {/* DEV MODE: Auto-fetched OTP banner */}
+              {import.meta.env.DEV && devOtp && (
+                <div
+                  className="flex items-center justify-between gap-3 bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3 cursor-pointer hover:bg-amber-500/15 transition-colors"
+                  onClick={() => setOtp(devOtp)}
+                  title="Click to auto-fill OTP"
+                >
+                  <div>
+                    <p className="text-[10px] font-mono text-amber-400/70 uppercase tracking-widest mb-0.5">
+                      🛠 Dev Mode — OTP
+                    </p>
+                    <p className="text-2xl font-mono font-bold tracking-[0.3em] text-amber-300">
+                      {devOtp}
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-amber-400/60 font-mono border border-amber-500/20 px-2 py-1 rounded">
+                    click to fill
+                  </span>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Input
                   type="text"
@@ -116,16 +151,17 @@ export function Login() {
               <Button type="submit" className="w-full font-semibold" disabled={loading}>
                 {loading ? "Verifying..." : "Login"}
               </Button>
-              <Button 
-                type="button" 
-                variant="ghost" 
+              <Button
+                type="button"
+                variant="ghost"
                 className="w-full"
-                onClick={() => setStep("email")}
+                onClick={() => { setStep("email"); setDevOtp(null); }}
               >
                 Back
               </Button>
             </form>
           )}
+
         </CardContent>
       </Card>
     </div>
