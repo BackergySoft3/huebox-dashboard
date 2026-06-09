@@ -38,8 +38,18 @@ export function Login() {
       const res = await api.post("/api/auth/otp/verify", { email, otp });
       const accessToken = res.data.access_token || res.data.accessToken || res.data.token;
       const refreshToken = res.data.refresh_token || res.data.refreshToken;
+      const userData = res.data.user;
       if (accessToken) {
-        setAuth(accessToken, refreshToken || "", { email });
+        setAuth(accessToken, refreshToken || "", {
+          id: userData?.id,
+          email: userData?.email || email,
+          role: userData?.role || "USER",
+          status: userData?.status,
+          kycStatus: userData?.kycStatus,
+          firstName: userData?.firstName,
+          lastName: userData?.lastName,
+          avatarUrl: userData?.avatarUrl,
+        });
         navigate("/");
       } else {
         setError("Invalid response from server");
@@ -50,6 +60,7 @@ export function Login() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4 relative overflow-hidden">

@@ -15,34 +15,41 @@ import { PaymentReturn } from "./pages/PaymentReturn";
 import { Trading } from "./pages/Trading";
 import { LiveLogs } from "./pages/LiveLogs";
 import { AdminUsers } from "./pages/AdminUsers";
+import { AdminBots } from "./pages/AdminBots";
+import { AdminKyc } from "./pages/AdminKyc";
+import { AdminFinance } from "./pages/AdminFinance";
 import { System } from "./pages/System";
 import "./index.css";
 
-
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const accessToken = useAuthStore((state) => state.accessToken);
-  
-  if (!accessToken) {
-    return <Navigate to="/login" replace />;
-  }
-  
+  if (!accessToken) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const isAdmin = useAuthStore((state) => state.isAdmin)();
+  const accessToken = useAuthStore((state) => state.accessToken);
+  if (!accessToken) return <Navigate to="/login" replace />;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
+function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const isSuperAdmin = useAuthStore((state) => state.isSuperAdmin)();
+  const accessToken = useAuthStore((state) => state.accessToken);
+  if (!accessToken) return <Navigate to="/login" replace />;
+  if (!isSuperAdmin) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
 function SocketConnector() {
   const accessToken = useAuthStore((state) => state.accessToken);
-
   useEffect(() => {
-    if (accessToken) {
-      initSocket(accessToken);
-    } else {
-      disconnectSocket();
-    }
-    return () => {
-      disconnectSocket();
-    };
+    if (accessToken) initSocket(accessToken);
+    else disconnectSocket();
+    return () => { disconnectSocket(); };
   }, [accessToken]);
-
   return null;
 }
 
@@ -53,15 +60,16 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          
-          <Route 
-            path="/" 
+
+          <Route
+            path="/"
             element={
               <ProtectedRoute>
                 <Layout />
               </ProtectedRoute>
             }
           >
+            {/* User routes */}
             <Route index element={<Overview />} />
             <Route path="control" element={<BotControl />} />
             <Route path="progress" element={<Progress />} />
@@ -70,8 +78,28 @@ function App() {
             <Route path="payment/return" element={<PaymentReturn />} />
             <Route path="trading" element={<Trading />} />
             <Route path="logs" element={<LiveLogs />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="system" element={<System />} />
+
+            {/* Admin routes */}
+            <Route
+              path="users"
+              element={<AdminRoute><AdminUsers /></AdminRoute>}
+            />
+            <Route
+              path="admin/bots"
+              element={<AdminRoute><AdminBots /></AdminRoute>}
+            />
+            <Route
+              path="admin/kyc"
+              element={<AdminRoute><AdminKyc /></AdminRoute>}
+            />
+            <Route
+              path="admin/finance"
+              element={<AdminRoute><AdminFinance /></AdminRoute>}
+            />
+            <Route
+              path="system"
+              element={<AdminRoute><System /></AdminRoute>}
+            />
           </Route>
         </Routes>
       </BrowserRouter>
