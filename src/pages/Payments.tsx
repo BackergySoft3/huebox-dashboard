@@ -219,26 +219,17 @@ export function Payments() {
     setWithdrawConfirmOpen(true);
   };
 
-  const executeWithdraw = () => {
+  const executeWithdraw = async () => {
+    const data = await withdrawMutation.mutateAsync({
+      amount: parseFloat(withdrawAmount),
+      address: withdrawAddress,
+      network: withdrawNetwork,
+      coin,
+    });
+    setWithdrawSuccessId(data.withdrawalId || data.transferId || "Successfully Initiated");
+    setWithdrawAmount("");
+    setWithdrawAddress("");
     setWithdrawConfirmOpen(false);
-    withdrawMutation.mutate(
-      {
-        amount: parseFloat(withdrawAmount),
-        address: withdrawAddress,
-        network: withdrawNetwork,
-        coin,
-      },
-      {
-        onSuccess: (data) => {
-          setWithdrawSuccessId(data.withdrawalId || data.transferId || "Successfully Initiated");
-          setWithdrawAmount("");
-          setWithdrawAddress("");
-        },
-        onError: (err: any) => {
-          setWithdrawErrorMsg(parseApiError(err));
-        },
-      }
-    );
   };
 
   const handleSendSubmit = (e: React.FormEvent) => {
@@ -878,15 +869,14 @@ export function Payments() {
       )}
 
       {/* Confirmation Modals */}
-      <ConfirmModal
-        isOpen={withdrawConfirmOpen}
-        title="Confirm Withdrawal"
-        description={`Withdraw ${withdrawAmount} USDT to ${withdrawAddress} via ${withdrawNetwork}?`}
-        warningText="WARNING: This action is completely irreversible. Funds will leave the sub-account immediately. Please verify address and blockchain network before proceeding."
-        onConfirm={executeWithdraw}
-        onCancel={() => setWithdrawConfirmOpen(false)}
-        isLoading={withdrawMutation.isPending}
-      />
+      {withdrawConfirmOpen && (
+        <ConfirmModal
+          title="Confirm Withdrawal"
+          description={`Withdraw ${withdrawAmount} USDT to ${withdrawAddress} via ${withdrawNetwork}?\n\nWARNING: This action is irreversible. Funds will leave the sub-account immediately. Please verify address and network before proceeding.`}
+          onConfirm={executeWithdraw}
+          onCancel={() => setWithdrawConfirmOpen(false)}
+        />
+      )}
     </div>
   );
 }

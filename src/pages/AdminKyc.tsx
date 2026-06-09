@@ -6,7 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { CheckCircle2, XCircle, BadgeCheck, RefreshCw, ChevronRight } from "lucide-react";
-import { useAuthStore } from "../store/auth";
+
 
 const KYC_STATUS_TABS = ["pending", "approved", "rejected", "all"] as const;
 type KycTab = typeof KYC_STATUS_TABS[number];

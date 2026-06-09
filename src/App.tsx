@@ -18,6 +18,7 @@ import { AdminUsers } from "./pages/AdminUsers";
 import { AdminBots } from "./pages/AdminBots";
 import { AdminKyc } from "./pages/AdminKyc";
 import { AdminFinance } from "./pages/AdminFinance";
+import { AdminConfig } from "./pages/AdminConfig";
 import { System } from "./pages/System";
 import "./index.css";
 
@@ -93,6 +94,10 @@ function App() {
             <Route
               path="system"
               element={<AdminRoute><System /></AdminRoute>}
+            />
+            <Route
+              path="admin/config"
+              element={<AdminRoute><AdminConfig /></AdminRoute>}
             />
           </Route>
         </Routes>

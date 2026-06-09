@@ -48,11 +48,11 @@ export function System() {
     },
   });
 
-  const handleRestart = () => {
-    restartMutation.mutate();
+  const handleRestart = async () => {
+    await restartMutation.mutateAsync();
   };
 
-  const loading = restartMutation.isPending;
+
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -166,15 +166,14 @@ export function System() {
         </div>
       </div>
 
-      <ConfirmModal
-        isOpen={showRestartModal}
-        title="Restart System Service"
-        description="This will execute an AWS SSM remote command to restart the systemd service for the trading bot on the EC2 instance."
-        warningText="WARNING: This action immediately disrupts active bot trading loops."
-        onConfirm={handleRestart}
-        onCancel={() => setShowRestartModal(false)}
-        isLoading={loading}
-      />
+      {showRestartModal && (
+        <ConfirmModal
+          title="Restart System Service"
+          description="This will execute an AWS SSM remote command to restart the systemd service for the trading bot on the EC2 instance. WARNING: This action immediately disrupts active bot trading loops."
+          onConfirm={handleRestart}
+          onCancel={() => setShowRestartModal(false)}
+        />
+      )}
     </div>
   );
 }

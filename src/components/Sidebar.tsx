@@ -92,15 +92,16 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {/* Regular user nav */}
-        {userNavigation.map(renderLink)}
+        {/* Regular USER role: show user tabs only */}
+        {!isAdmin && userNavigation.map(renderLink)}
 
-        {/* Admin section */}
+        {/* ADMIN / SUPERADMIN: show ONLY their admin tabs */}
         {isAdmin && (
           <>
-            <div className="pt-4 pb-1 px-3">
+            <div className="pb-1 px-3">
               <p className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-widest flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" /> Admin
+                <ShieldCheck className="w-3 h-3" />
+                {isSuperAdmin ? "Super Admin" : "Admin"}
               </p>
             </div>
             {visibleAdminNav.map(renderLink)}

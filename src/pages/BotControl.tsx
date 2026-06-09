@@ -146,13 +146,13 @@ export function BotControl() {
     });
   };
 
-  const handleConfirmAction = () => {
+  const handleConfirmAction = async () => {
     if (confirmState.type === "pause") {
-      actionMutation.mutate("pause");
+      await actionMutation.mutateAsync("pause");
     } else if (confirmState.type === "resume") {
-      actionMutation.mutate("resume");
+      await actionMutation.mutateAsync("resume");
     } else if (confirmState.type === "deposit") {
-      simulateMutation.mutate();
+      await simulateMutation.mutateAsync();
     }
   };
 
@@ -573,15 +573,14 @@ export function BotControl() {
         </Card>
       </div>
 
-      <ConfirmModal
-        isOpen={confirmState.isOpen}
-        title={confirmState.title}
-        description={confirmState.description}
-        warningText={confirmState.warningText}
-        onConfirm={handleConfirmAction}
-        onCancel={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
-        isLoading={loading}
-      />
+      {confirmState.isOpen && (
+        <ConfirmModal
+          title={confirmState.title}
+          description={confirmState.warningText ? `${confirmState.description} ${confirmState.warningText}` : confirmState.description}
+          onConfirm={handleConfirmAction}
+          onCancel={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
+        />
+      )}
     </div>
   );
 }
