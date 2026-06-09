@@ -35,13 +35,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function SuperAdminRoute({ children }: { children: React.ReactNode }) {
-  const isSuperAdmin = useAuthStore((state) => state.isSuperAdmin)();
-  const accessToken = useAuthStore((state) => state.accessToken);
-  if (!accessToken) return <Navigate to="/login" replace />;
-  if (!isSuperAdmin) return <Navigate to="/" replace />;
-  return <>{children}</>;
-}
+
 
 function SocketConnector() {
   const accessToken = useAuthStore((state) => state.accessToken);

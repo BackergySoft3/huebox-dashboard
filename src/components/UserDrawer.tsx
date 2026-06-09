@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import { X, User, Shield, Activity, Clock, Laptop, MoreHorizontal, ExternalLink } from "lucide-react";
+import { X, Laptop, ExternalLink } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { ConfirmModal } from "./ConfirmModal";
@@ -230,13 +230,13 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
           confirmLabel={modal.label}
           danger={modal.danger}
           onCancel={() => setModal(null)}
-          onConfirm={async (reason) =>
-            mutate.mutateAsync({
+          onConfirm={async (reason) => {
+            await mutate.mutateAsync({
               action: modal.action,
               reason,
               confirmEmail: modal.confirmText ? user?.email : undefined,
-            })
-          }
+            });
+          }}
         />
       )}
     </>

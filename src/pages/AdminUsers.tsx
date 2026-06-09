@@ -7,7 +7,7 @@ import { Button } from "../components/ui/button";
 import { UserDrawer } from "../components/UserDrawer";
 import {
   Users as UsersIcon, Search, Filter, ChevronLeft, ChevronRight,
-  ShieldCheck, ShieldAlert, ShieldX, Shield, Trash2, RefreshCw,
+  ShieldCheck, ShieldAlert, Shield, RefreshCw,
 } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {

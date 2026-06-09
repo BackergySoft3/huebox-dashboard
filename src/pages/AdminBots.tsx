@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
-import { Bot, Cpu, TrendingUp, AlertTriangle, RefreshCw, Activity } from "lucide-react";
+import { Bot, Cpu, AlertTriangle, RefreshCw, Activity } from "lucide-react";
 import { Button } from "../components/ui/button";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -22,7 +22,6 @@ export function AdminBots() {
   });
 
   const bots: any[] = data?.bots ?? data ?? [];
-  const stats = data?.stats ?? {};
   const running = bots.filter((b: any) => b.status === "running").length;
   const stalled = bots.filter((b: any) => b.status === "stalled").length;
 

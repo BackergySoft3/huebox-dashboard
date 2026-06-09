@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { ConfirmModal } from "../components/ConfirmModal";
-import { CheckCircle2, XCircle, Clock, BadgeCheck, RefreshCw, ChevronRight } from "lucide-react";
+import { CheckCircle2, XCircle, BadgeCheck, RefreshCw, ChevronRight } from "lucide-react";
 import { useAuthStore } from "../store/auth";
 
 const KYC_STATUS_TABS = ["pending", "approved", "rejected", "all"] as const;
@@ -19,7 +19,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function AdminKyc() {
   const qc = useQueryClient();
-  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin)();
   const [tab, setTab] = useState<KycTab>("pending");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [modal, setModal] = useState<"approve" | "reject" | null>(null);
