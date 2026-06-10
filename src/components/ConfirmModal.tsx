@@ -11,11 +11,12 @@ interface ConfirmModalProps {
   danger?: boolean;
   onConfirm: (reason?: string) => Promise<void>;
   onCancel: () => void;
+  children?: React.ReactNode;
 }
 
 export function ConfirmModal({
   title, description, requireReason, requireConfirmText,
-  confirmLabel = "Confirm", danger = false, onConfirm, onCancel,
+  confirmLabel = "Confirm", danger = false, onConfirm, onCancel, children
 }: ConfirmModalProps) {
   const [reason, setReason] = useState("");
   const [confirmInput, setConfirmInput] = useState("");
@@ -55,6 +56,8 @@ export function ConfirmModal({
         </div>
 
         <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+
+        {children}
 
         {requireReason && (
           <div className="space-y-1">
