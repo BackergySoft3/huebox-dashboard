@@ -37,6 +37,11 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 
+function AdminIndexRoute() {
+  const isAdmin = useAuthStore((state) => state.isAdmin)();
+  if (isAdmin) return <Navigate to="/users" replace />;
+  return <Overview />;
+}
 
 function SocketConnector() {
   const accessToken = useAuthStore((state) => state.accessToken);
@@ -65,7 +70,7 @@ function App() {
             }
           >
             {/* User routes */}
-            <Route index element={<Overview />} />
+            <Route index element={<AdminIndexRoute />} />
             <Route path="control" element={<BotControl />} />
             <Route path="progress" element={<Progress />} />
             <Route path="performance" element={<Performance />} />
