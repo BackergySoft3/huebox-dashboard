@@ -29,8 +29,6 @@ function buildEstimate(amount: number, stopCondition: StopCondition): string {
   return `At balanced pace with $${amount.toLocaleString()} allocated, you could earn approximately 1–2% daily. This is an estimate, not a guarantee.`;
 }
 
-const isDev = import.meta.env.DEV;
-
 export function BotConfirmation({ allocatedAmount, stopCondition, onStarted }: BotConfirmationProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

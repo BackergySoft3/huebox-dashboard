@@ -11,7 +11,7 @@ interface BotAllocationProps {
 
 export function BotAllocation({ availableBalance, onConfirm }: BotAllocationProps) {
   const [rawInput, setRawInput] = useState("");
-  const [amount, setAmount] = useState<number | null>(null);
+  const [_amount, setAmount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sliderValue, setSliderValue] = useState(0);
 
