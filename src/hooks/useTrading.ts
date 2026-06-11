@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { tradingApi } from "../services/tradingApi";
+﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { tradingApi } from "../Services/tradingApi";
 import type {
   PlaceOrderRequest,
   PlaceOrderResponse,
@@ -8,7 +8,7 @@ import type {
   TradingDashboardResponse,
   Candle,
   Btc24hResponse,
-} from "../interfaces/trading";
+} from "../Interfaces/trading";
 
 export function useTradingDashboard() {
   return useQuery<TradingDashboardResponse>({

@@ -1,5 +1,5 @@
-import { TradeSide } from "../enums/TradeSide.enum";
-import { OrderType } from "../enums/OrderType.enum";
+﻿import { TradeSide } from "../Enums/TradeSide.enum";
+import { OrderType } from "../Enums/OrderType.enum";
 
 export { TradeSide, OrderType };
 

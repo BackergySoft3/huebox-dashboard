@@ -1,4 +1,4 @@
-import { UserRole } from "../enums/UserRole.enum";
+﻿import { UserRole } from "../Enums/UserRole.enum";
 
 export { UserRole };
 

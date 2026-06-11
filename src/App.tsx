@@ -1,25 +1,25 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
-import { useAuthStore } from "./store/auth";
-import { initSocket, disconnectSocket } from "./lib/socket";
-import { Layout } from "./components/Layout";
-import { Login } from "./pages/Login";
-import { Overview } from "./pages/Overview";
-import { BotControl } from "./pages/BotControl";
-import { Progress } from "./pages/Progress";
-import { Performance } from "./pages/Performance";
-import { Payments } from "./pages/Payments";
-import { PaymentReturn } from "./pages/PaymentReturn";
-import { Trading } from "./pages/Trading";
-import { LiveLogs } from "./pages/LiveLogs";
-import { AdminUsers } from "./pages/AdminUsers";
-import { AdminBots } from "./pages/AdminBots";
-import { AdminKyc } from "./pages/AdminKyc";
-import { AdminFinance } from "./pages/AdminFinance";
-import { AdminConfig } from "./pages/AdminConfig";
-import { System } from "./pages/System";
+import { queryClient } from "./Services/queryClient";
+import { useAuthStore } from "./State/auth";
+import { initSocket, disconnectSocket } from "./Services/SignalRService/connection";
+import { Layout } from "./Layouts/MainLayout/Layout";
+import { Login } from "./Containers/Login";
+import { Overview } from "./Containers/Overview";
+import { BotControl } from "./Containers/BotControl";
+import { Progress } from "./Containers/Progress";
+import { Performance } from "./Containers/Performance";
+import { Payments } from "./Containers/Payments";
+import { PaymentReturn } from "./Containers/PaymentReturn";
+import { Trading } from "./Containers/Trading";
+import { LiveLogs } from "./Containers/LiveLogs";
+import { AdminUsers } from "./Containers/AdminUsers";
+import { AdminBots } from "./Containers/AdminBots";
+import { AdminKyc } from "./Containers/AdminKyc";
+import { AdminFinance } from "./Containers/AdminFinance";
+import { AdminConfig } from "./Containers/AdminConfig";
+import { System } from "./Containers/System";
 import "./index.css";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -35,7 +35,6 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   if (!isAdmin) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
-
 
 function AdminIndexRoute() {
   const isAdmin = useAuthStore((state) => state.isAdmin)();

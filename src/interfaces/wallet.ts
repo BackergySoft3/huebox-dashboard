@@ -1,5 +1,5 @@
-import { TransactionType } from "../enums/TransactionType.enum";
-import { TransactionStatus } from "../enums/TransactionStatus.enum";
+import { TransactionType } from "../Enums/TransactionType.enum";
+import { TransactionStatus } from "../Enums/TransactionStatus.enum";
 
 export { TransactionType, TransactionStatus };
 

@@ -1,9 +1,9 @@
-import { BotStatus } from "../enums/BotStatus.enum";
-import { BotRegime } from "../enums/BotRegime.enum";
-import { DrawdownTier } from "../enums/DrawdownTier.enum";
-import { PositionSide } from "../enums/PositionSide.enum";
-import { PositionStrategy } from "../enums/PositionStrategy.enum";
-import { Personality } from "../enums/Personality.enum";
+﻿import { BotStatus } from "../Enums/BotStatus.enum";
+import { BotRegime } from "../Enums/BotRegime.enum";
+import { DrawdownTier } from "../Enums/DrawdownTier.enum";
+import { PositionSide } from "../Enums/PositionSide.enum";
+import { PositionStrategy } from "../Enums/PositionStrategy.enum";
+import { Personality } from "../Enums/Personality.enum";
 
 export { BotStatus, BotRegime, DrawdownTier, PositionSide, PositionStrategy, Personality };
 

@@ -1,4 +1,5 @@
-import axios from "axios";
+﻿import axios from "axios";
+import { getAuthCookie, AUTH_COOKIE_KEYS } from "../Helpers/cookieAuth";
 import type {
   PlaceOrderRequest,
   PlaceOrderResponse,
@@ -7,7 +8,7 @@ import type {
   TradingDashboardResponse,
   Candle,
   Btc24hResponse,
-} from "../interfaces/trading";
+} from "../Interfaces/trading";
 
 export type {
   PlaceOrderRequest,
@@ -33,7 +34,7 @@ const tradingAxiosInstance = axios.create({
 // Interceptor to attach Authorization header
 tradingAxiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("access_token") || localStorage.getItem("huebox_access_token");
+    const token = getAuthCookie(AUTH_COOKIE_KEYS.ACCESS_TOKEN);
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }

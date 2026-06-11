@@ -1,4 +1,5 @@
-import axios from "axios";
+﻿import axios from "axios";
+import { getAuthCookie, AUTH_COOKIE_KEYS } from "../Helpers/cookieAuth";
 import type {
   CreateOrderRequest,
   CreateOrderResponse,
@@ -8,7 +9,7 @@ import type {
   SendResponse,
   WalletBalance,
   TransactionHistory,
-} from "../interfaces/wallet";
+} from "../Interfaces/wallet";
 
 export type {
   CreateOrderRequest,
@@ -35,7 +36,7 @@ const paymentAxiosInstance = axios.create({
 // Interceptor to attach Authorization header
 paymentAxiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("access_token") || localStorage.getItem("huebox_access_token");
+    const token = getAuthCookie(AUTH_COOKIE_KEYS.ACCESS_TOKEN);
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }

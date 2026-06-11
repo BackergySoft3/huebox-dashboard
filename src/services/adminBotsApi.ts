@@ -1,9 +1,10 @@
-// ─── Admin Bots API Service ──────────────────────────────────────────────────
+﻿// ─── Admin Bots API Service ──────────────────────────────────────────────────
 // Endpoints: GET /admin/bots, /admin/bots/aggregate, /admin/bots/:userId,
 //            POST force-stop | force-pause | force-resume | broadcast-pause
 //            PATCH personality
 
-import { Personality } from "../enums/Personality.enum";
+import { Personality } from "../Enums/Personality.enum";
+import { getAuthCookie, AUTH_COOKIE_KEYS } from "../Helpers/cookieAuth";
 import type {
   BotSummary,
   BotAggregate,
@@ -11,7 +12,7 @@ import type {
   BotDeepState,
   ForceActionResult,
   BroadcastResult,
-} from "../interfaces/bot";
+} from "../Interfaces/bot";
 
 export { Personality };
 export type {
@@ -27,7 +28,7 @@ const BASE = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE || "
 
 function authHeaders(): Record<string, string> {
   return {
-    Authorization: `Bearer ${localStorage.getItem("huebox_access_token") ?? ""}`,
+    Authorization: `Bearer ${getAuthCookie(AUTH_COOKIE_KEYS.ACCESS_TOKEN) ?? ""}`,
     "Content-Type": "application/json",
   };
 }

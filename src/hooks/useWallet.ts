@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { paymentApi, walletApi } from "../services/paymentApi";
+﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { paymentApi, walletApi } from "../Services/paymentApi";
 import type {
   CreateOrderRequest,
   CreateOrderResponse,
@@ -9,7 +9,7 @@ import type {
   SendResponse,
   WalletBalance,
   TransactionHistory,
-} from "../interfaces/wallet";
+} from "../Interfaces/wallet";
 
 export function useWalletBalance() {
   const query = useQuery<WalletBalance>({

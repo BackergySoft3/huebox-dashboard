@@ -1,5 +1,5 @@
-import { api } from "../lib/api";
-import type { NestjsLogsResponse } from "../interfaces/logs";
+﻿import { api } from "./http.service";
+import type { NestjsLogsResponse } from "../Interfaces/logs";
 
 export type { NestjsLogsResponse };
 

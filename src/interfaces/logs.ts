@@ -1,4 +1,4 @@
-import { LogLevel } from "../enums/LogLevel.enum";
+﻿import { LogLevel } from "../Enums/LogLevel.enum";
 
 export { LogLevel };
 

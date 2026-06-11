@@ -1,6 +1,6 @@
-import type { ElementType, ReactNode } from "react";
+﻿import type { ElementType, ReactNode } from "react";
 import type { LogLine } from "./logs";
-import { BotStatus } from "../enums/BotStatus.enum";
+import { BotStatus } from "../Enums/BotStatus.enum";
 
 export { BotStatus };
 
