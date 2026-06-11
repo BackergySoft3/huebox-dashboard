@@ -6,27 +6,24 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { CheckCircle2, XCircle, BadgeCheck, RefreshCw, ChevronRight } from "lucide-react";
+import { KycStatus } from "../enums/KycStatus.enum";
 
-
-const KYC_STATUS_TABS = ["pending", "approved", "rejected", "all"] as const;
-type KycTab = typeof KYC_STATUS_TABS[number];
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: "text-amber-400 border-amber-500/20 bg-amber-500/5",
-  approved: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
-  rejected: "text-red-400 border-red-500/20 bg-red-500/5",
+const STATUS_COLORS: Partial<Record<KycStatus, string>> = {
+  [KycStatus.Pending]:  "text-amber-400 border-amber-500/20 bg-amber-500/5",
+  [KycStatus.Approved]: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
+  [KycStatus.Rejected]: "text-red-400 border-red-500/20 bg-red-500/5",
 };
 
 export function AdminKyc() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<KycTab>("pending");
+  const [tab, setTab] = useState<KycStatus>(KycStatus.Pending);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [modal, setModal] = useState<"approve" | "reject" | null>(null);
 
   const { data: listData, isLoading, refetch } = useQuery({
     queryKey: ["admin-kyc", tab],
     queryFn: () =>
-      api.get("/api/admin/kyc/queue", { params: { status: tab === "all" ? undefined : tab } })
+      api.get("/api/admin/kyc/queue", { params: { status: tab === KycStatus.All ? undefined : tab } })
         .then((r) => r.data)
         .catch(() => ({ data: [] })),
   });
@@ -73,7 +70,7 @@ export function AdminKyc() {
         <div className="w-[35%] flex flex-col gap-3">
           {/* Status Tabs */}
           <div className="flex border-b border-border/40">
-            {KYC_STATUS_TABS.map((t) => (
+            {Object.values(KycStatus).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -113,7 +110,7 @@ export function AdminKyc() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[item.kycStatus] ?? ""}`}>
+                      <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[item.kycStatus as KycStatus] ?? ""}`}>
                         {item.kycStatus}
                       </Badge>
                       <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
@@ -142,7 +139,7 @@ export function AdminKyc() {
                     {detail?.email ?? "Loading…"}
                   </CardTitle>
                   {detail?.kycStatus && (
-                    <Badge variant="outline" className={`${STATUS_COLORS[detail.kycStatus] ?? ""}`}>
+                    <Badge variant="outline" className={`${STATUS_COLORS[detail.kycStatus as KycStatus] ?? ""}`}>
                       {detail.kycStatus}
                     </Badge>
                   )}
@@ -164,7 +161,7 @@ export function AdminKyc() {
                   </div>
                 )}
               </CardContent>
-              {detail?.kycStatus === "pending" && (
+              {detail?.kycStatus === KycStatus.Pending && (
                 <div className="p-4 border-t border-border/40 flex gap-3">
                   <Button
                     className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"

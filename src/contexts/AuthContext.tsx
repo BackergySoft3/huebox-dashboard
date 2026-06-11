@@ -1,15 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { api } from "../lib/api";
-
-interface AuthContextType {
-  accessToken: string | null;
-  refreshToken: string | null;
-  isAuthenticated: boolean;
-  login: (access: string, refresh: string) => void;
-  logout: () => void;
-  setAccessToken: (token: string) => void;
-}
+import type { AuthContextType } from "../interfaces/auth";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

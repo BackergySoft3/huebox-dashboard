@@ -6,6 +6,9 @@ import {
   useWithdraw,
   useSend,
 } from "../hooks/useWallet";
+import { PaymentsTab } from "../enums/PaymentsTab.enum";
+import { TransactionType } from "../enums/TransactionType.enum";
+import { TransactionStatus } from "../enums/TransactionStatus.enum";
 import { useBotStatus } from "../hooks/useBotStatus";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -35,7 +38,7 @@ import { format } from "date-fns";
 import { cn } from "../lib/utils";
 
 export function Payments() {
-  const [activeTab, setActiveTab] = useState<"overview" | "add-funds" | "withdraw" | "send-receive">("overview");
+  const [activeTab, setActiveTab] = useState<PaymentsTab>(PaymentsTab.Overview);
   
   // States for pagination
   const [historyPage, setHistoryPage] = useState(1);
@@ -81,17 +84,17 @@ export function Payments() {
   // Transaction Helpers
   const getTxIcon = (type: string) => {
     switch (type) {
-      case "deposit":
-      case "receive":
-      case "transfer":
+      case TransactionType.Deposit:
+      case TransactionType.Receive:
+      case TransactionType.Transfer:
         return <ArrowDownLeft className="w-4 h-4 text-emerald-400" />;
-      case "withdrawal":
-      case "withdraw":
-      case "send":
+      case TransactionType.Withdrawal:
+      case TransactionType.Withdraw:
+      case TransactionType.Send:
         return <ArrowUpRight className="w-4 h-4 text-amber-400" />;
-      case "fee":
+      case TransactionType.Fee:
         return <Percent className="w-4 h-4 text-slate-400" />;
-      case "pnl":
+      case TransactionType.Pnl:
         return <TrendingUp className="w-4 h-4 text-emerald-400" />;
       default:
         return <Coins className="w-4 h-4 text-primary" />;
@@ -107,20 +110,20 @@ export function Payments() {
       );
     }
     switch (status) {
-      case "completed":
-      case "confirmed":
+      case TransactionStatus.Completed:
+      case TransactionStatus.Confirmed:
         return (
           <Badge variant="outline" className="text-emerald-400 border-emerald-500/20 bg-emerald-500/5 px-2 py-0.5 text-[10px] font-mono">
             COMPLETED
           </Badge>
         );
-      case "pending":
+      case TransactionStatus.Pending:
         return (
           <Badge variant="outline" className="text-amber-400 border-amber-500/20 bg-amber-500/5 px-2 py-0.5 text-[10px] font-mono">
             PENDING
           </Badge>
         );
-      case "failed":
+      case TransactionStatus.Failed:
         return (
           <Badge variant="outline" className="text-red-400 border-red-500/20 bg-red-500/5 px-2 py-0.5 text-[10px] font-mono">
             FAILED
@@ -136,7 +139,7 @@ export function Payments() {
   };
 
   const formatTxAmount = (type: string, amount?: number | string, coinSymbol?: string) => {
-    const isIncoming = ["deposit", "receive", "pnl", "transfer"].includes(type);
+    const isIncoming = ([ TransactionType.Deposit, TransactionType.Receive, TransactionType.Pnl, TransactionType.Transfer] as string[]).includes(type);
     const sign = isIncoming ? "+" : "-";
     const color = isIncoming ? "text-emerald-400" : "text-amber-400";
     const amountVal = amount !== undefined && amount !== null ? Number(amount) : 0;
@@ -285,7 +288,7 @@ export function Payments() {
 
       {/* Tabs */}
       <div className="flex border-b border-border/40 pb-px gap-1 overflow-x-auto">
-        {(["overview", "add-funds", "withdraw", "send-receive"] as const).map((tab) => (
+        {Object.values(PaymentsTab).map((tab) => (
           <button
             key={tab}
             onClick={() => {
@@ -299,7 +302,7 @@ export function Payments() {
                 : "border-transparent text-muted-foreground hover:text-foreground hover:bg-white/5"
             )}
           >
-            {tab === "send-receive" ? "Send / Receive" : tab.replace("-", " ")}
+            {tab === PaymentsTab.SendReceive ? "Send / Receive" : tab.replace("-", " ")}
           </button>
         ))}
         {showFullHistory && (
@@ -313,7 +316,7 @@ export function Payments() {
       </div>
 
       {/* Tab Contents */}
-      {!showFullHistory && activeTab === "overview" && (
+      {!showFullHistory && activeTab === PaymentsTab.Overview && (
         <div className="space-y-6 animate-in fade-in duration-300">
           {/* Balance Card */}
           <Card className="bg-card/30 border-border/40 backdrop-blur-sm relative overflow-hidden shadow-2xl">
@@ -342,21 +345,21 @@ export function Payments() {
           <div className="grid grid-cols-3 gap-4">
             <Button
               variant="outline"
-              onClick={() => setActiveTab("add-funds")}
+              onClick={() => setActiveTab(PaymentsTab.AddFunds)}
               className="bg-card/20 border-border/40 hover:border-primary/40 text-xs font-mono flex flex-col items-center justify-center h-20 py-2"
             >
               <ArrowDownLeft className="w-5 h-5 text-emerald-400 mb-1" /> Add Funds
             </Button>
             <Button
               variant="outline"
-              onClick={() => setActiveTab("withdraw")}
+              onClick={() => setActiveTab(PaymentsTab.Withdraw)}
               className="bg-card/20 border-border/40 hover:border-amber-400/40 text-xs font-mono flex flex-col items-center justify-center h-20 py-2"
             >
               <ArrowUpRight className="w-5 h-5 text-amber-400 mb-1" /> Withdraw
             </Button>
             <Button
               variant="outline"
-              onClick={() => setActiveTab("send-receive")}
+              onClick={() => setActiveTab(PaymentsTab.SendReceive)}
               className="bg-card/20 border-border/40 hover:border-primary/40 text-xs font-mono flex flex-col items-center justify-center h-20 py-2"
             >
               <Send className="w-5 h-5 text-primary mb-1" /> Send USDT
@@ -436,7 +439,7 @@ export function Payments() {
       )}
 
       {/* Tab 2: Add Funds */}
-      {!showFullHistory && activeTab === "add-funds" && (
+      {!showFullHistory && activeTab === PaymentsTab.AddFunds && (
         <div className="max-w-2xl mx-auto animate-in fade-in duration-300">
           <Card className="bg-card/30 border-border/40 backdrop-blur-sm relative overflow-hidden">
             <CardHeader>
@@ -523,7 +526,7 @@ export function Payments() {
       )}
 
       {/* Tab 3: Withdraw */}
-      {!showFullHistory && activeTab === "withdraw" && (
+      {!showFullHistory && activeTab === PaymentsTab.Withdraw && (
         <div className="max-w-2xl mx-auto animate-in fade-in duration-300">
           <Card className="bg-card/30 border-border/40 backdrop-blur-sm">
             <CardHeader>
@@ -628,7 +631,7 @@ export function Payments() {
       )}
 
       {/* Tab 4: Send / Receive */}
-      {!showFullHistory && activeTab === "send-receive" && (
+      {!showFullHistory && activeTab === PaymentsTab.SendReceive && (
         <div className="grid gap-6 md:grid-cols-2 animate-in fade-in duration-300">
           {/* Send subaccount to UID */}
           <Card className="bg-card/30 border-border/40 backdrop-blur-sm flex flex-col justify-between">

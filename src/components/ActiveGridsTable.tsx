@@ -1,17 +1,5 @@
 import { Badge } from "./ui/badge";
-
-interface Grid {
-  symbol: string;
-  direction: "LONG" | "SHORT" | string;
-  entryPrice: number;
-  leverage: number;
-  margin: number;
-  deployedAt?: string;
-}
-
-interface ActiveGridsTableProps {
-  grids?: Grid[];
-}
+import type { ActiveGridsTableProps } from "../interfaces/components";
 
 export function ActiveGridsTable({ grids = [] }: ActiveGridsTableProps) {
   return (

@@ -1,11 +1,7 @@
 import { api } from "../lib/api";
+import type { NestjsLogsResponse } from "../interfaces/logs";
 
-export interface NestjsLogsResponse {
-  success: boolean;
-  logPath: string;
-  lines: number;
-  output: string;
-}
+export type { NestjsLogsResponse };
 
 export const nestLogApi = {
   getNestjsLogs: async (lines = 250): Promise<NestjsLogsResponse> => {

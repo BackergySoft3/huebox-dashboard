@@ -1,18 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { X, AlertTriangle } from "lucide-react";
 import { Button } from "./ui/button";
-
-interface ConfirmModalProps {
-  title: string;
-  description: string;
-  requireReason?: boolean;
-  requireConfirmText?: string;
-  confirmLabel?: string;
-  danger?: boolean;
-  onConfirm: (reason?: string) => Promise<void>;
-  onCancel: () => void;
-  children?: React.ReactNode;
-}
+import type { ConfirmModalProps } from "../interfaces/components";
 
 export function ConfirmModal({
   title, description, requireReason, requireConfirmText,

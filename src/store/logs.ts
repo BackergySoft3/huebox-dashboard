@@ -1,23 +1,7 @@
 import { create } from "zustand";
+import type { LogLine, LogBuffer, LogsState } from "../interfaces/logs";
 
-export interface LogLine {
-  id: string;
-  timestamp: string;
-  message: string;
-  level: "info" | "warn" | "error" | "debug" | "action";
-}
-
-interface LogsState {
-  logBuffer: {
-    nestjs: LogLine[];
-    python: LogLine[];
-  };
-  addNestLog: (log: Omit<LogLine, "id">) => void;
-  addPythonLog: (log: Omit<LogLine, "id">) => void;
-  addNestLogsBatch: (logs: Omit<LogLine, "id">[]) => void;
-  addPythonLogsBatch: (logs: Omit<LogLine, "id">[]) => void;
-  clearLogs: () => void;
-}
+export type { LogLine, LogBuffer, LogsState };
 
 const MAX_LOGS = 5000;
 

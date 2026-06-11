@@ -1,18 +1,11 @@
 import { useRef, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import type { LogLine } from "../store/logs";
-
-interface LogPanelProps {
-  logs: LogLine[];
-  searchQuery?: string;
-  autoScroll: boolean;
-  setAutoScroll: (val: boolean) => void;
-}
+import { LogLevel } from "../enums/LogLevel.enum";
+import type { LogPanelProps } from "../interfaces/components";
 
 export function LogPanel({ logs, searchQuery, autoScroll, setAutoScroll }: LogPanelProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
-  // Filter logs based on search query
   const filteredLogs = logs.filter((log) => {
     if (!searchQuery) return true;
     return log.message.toLowerCase().includes(searchQuery.toLowerCase());
@@ -25,7 +18,6 @@ export function LogPanel({ logs, searchQuery, autoScroll, setAutoScroll }: LogPa
     overscan: 20,
   });
 
-  // Track scroll position to toggle auto-scroll
   const handleScroll = () => {
     const element = parentRef.current;
     if (!element) return;
@@ -33,15 +25,13 @@ export function LogPanel({ logs, searchQuery, autoScroll, setAutoScroll }: LogPa
     setAutoScroll(isAtBottom);
   };
 
-  // Scroll to bottom when logs are added
   useEffect(() => {
     if (autoScroll && parentRef.current) {
       parentRef.current.scrollTop = parentRef.current.scrollHeight;
     }
   }, [filteredLogs.length, autoScroll]);
 
-  const getLogStyle = (msg: string, level: string) => {
-    // Check bot action keywords for full row styling
+  const getLogStyle = (msg: string, level: LogLevel) => {
     if (msg.includes("BRAIN TAKE PROFIT")) {
       return "bg-green-950/80 border-l-2 border-green-400 text-green-300 font-bold px-2 py-0.5";
     }
@@ -55,12 +45,10 @@ export function LogPanel({ logs, searchQuery, autoScroll, setAutoScroll }: LogPa
       return "bg-amber-950/80 border-l-2 border-amber-400 text-amber-300 font-bold px-2 py-0.5";
     }
 
-    // Default level coloring
-    const normLevel = level.toUpperCase();
-    if (normLevel === "ERROR") return "text-red-400 px-2 py-0.5";
-    if (normLevel === "WARN") return "text-amber-400 px-2 py-0.5";
-    if (normLevel === "DEBUG") return "text-slate-500 px-2 py-0.5";
-    return "text-slate-200 px-2 py-0.5"; // INFO
+    if (level === LogLevel.Error) return "text-red-400 px-2 py-0.5";
+    if (level === LogLevel.Warn)  return "text-amber-400 px-2 py-0.5";
+    if (level === LogLevel.Debug) return "text-slate-500 px-2 py-0.5";
+    return "text-slate-200 px-2 py-0.5";
   };
 
   return (

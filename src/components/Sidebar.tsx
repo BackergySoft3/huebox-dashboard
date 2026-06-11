@@ -20,14 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-
-interface NavItem {
-  name: string;
-  href: string;
-  icon: React.ElementType;
-  adminOnly?: boolean;
-  superAdminOnly?: boolean;
-}
+import type { NavItem } from "../interfaces/components";
 
 export function Sidebar() {
   const logout = useAuthStore((state) => state.logout);

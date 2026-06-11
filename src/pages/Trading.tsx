@@ -33,34 +33,40 @@ import {
   useClosePosition
 } from "../hooks/useTrading";
 import { cn } from "../lib/utils";
+import { OrderType } from "../enums/OrderType.enum";
+import { TradeSide } from "../enums/TradeSide.enum";
+import { ChartInterval } from "../enums/ChartInterval.enum";
+
+const CHART_INTERVAL_LABELS: Record<ChartInterval, string> = {
+  [ChartInterval.Minutes15]:  "15M",
+  [ChartInterval.Minutes60]:  "1H",
+  [ChartInterval.Minutes240]: "4H",
+  [ChartInterval.Daily]:      "1D",
+};
 
 export function Trading() {
   const [activeTab, setActiveTab] = useState<"positions" | "orders" | "closedPnl">("positions");
-  const [chartInterval, setChartInterval] = useState<string>("15"); // 15m, 60m (1h), 240m (4h), D (1d)
-  const [orderType, setOrderType] = useState<"Market" | "Limit">("Limit");
+  const [chartInterval, setChartInterval] = useState<ChartInterval>(ChartInterval.Minutes15);
+  const [orderType, setOrderType] = useState<OrderType>(OrderType.Limit);
   const [limitPrice, setLimitPrice] = useState<string>("");
   const [qty, setQty] = useState<string>("");
   const [actionError, setActionError] = useState<string>("");
   const [actionSuccess, setActionSuccess] = useState<string>("");
 
-  // Queries
   const { data: dashboard, isLoading: isDashboardLoading } = useTradingDashboard();
   const { data: candles, isLoading: isCandlesLoading } = useBtcCandles(chartInterval);
   const { data: ticker } = useBtc24h();
 
-  // Mutations
   const placeOrderMutation = usePlaceOrder();
   const cancelOrderMutation = useCancelOrder();
   const closePositionMutation = useClosePosition();
 
-  // Pre-fill Limit Price with ticker price initially
   useEffect(() => {
     if (ticker?.lastPrice && !limitPrice) {
       setLimitPrice(Number(ticker.lastPrice).toString());
     }
   }, [ticker, limitPrice]);
 
-  // Alert handler helpers
   const triggerSuccess = (msg: string) => {
     setActionSuccess(msg);
     setActionError("");
@@ -73,27 +79,24 @@ export function Trading() {
     setTimeout(() => setActionError(""), 4000);
   };
 
-  // Check if no Bybit account exists
   const hasNoBybitAccount =
     (!dashboard && !isDashboardLoading) ||
     (placeOrderMutation.error?.message?.includes("No Bybit account") || false);
 
-  // Computed Values
   const lastPrice = ticker ? parseFloat(ticker.lastPrice) : 0;
   const priceChange = ticker ? parseFloat(ticker.price24hPcnt) * 100 : 0;
   const isUp = priceChange >= 0;
 
   const handlePercentClick = (percent: number) => {
     const available = dashboard?.balance?.totalAvailableBalance || 0;
-    const price = orderType === "Limit" ? parseFloat(limitPrice) || lastPrice : lastPrice;
+    const price = orderType === OrderType.Limit ? parseFloat(limitPrice) || lastPrice : lastPrice;
     if (price > 0 && available > 0) {
       const computedQty = (available * (percent / 100)) / price;
-      // Cap at 3 decimals (standard BTC step)
       setQty(computedQty.toFixed(3));
     }
   };
 
-  const handlePlaceOrder = async (side: "Buy" | "Sell") => {
+  const handlePlaceOrder = async (side: TradeSide) => {
     setActionError("");
     setActionSuccess("");
     const parsedQty = parseFloat(qty);
@@ -104,7 +107,7 @@ export function Trading() {
       return;
     }
 
-    if (orderType === "Limit" && (isNaN(parsedPrice) || parsedPrice <= 0)) {
+    if (orderType === OrderType.Limit && (isNaN(parsedPrice) || parsedPrice <= 0)) {
       triggerError("Please enter a valid limit price.");
       return;
     }
@@ -115,7 +118,7 @@ export function Trading() {
         side,
         orderType,
         qty: parsedQty,
-        price: orderType === "Limit" ? parsedPrice : undefined,
+        price: orderType === OrderType.Limit ? parsedPrice : undefined,
       });
       triggerSuccess(`Successfully placed ${orderType} ${side.toUpperCase()} order!`);
       setQty("");
@@ -133,7 +136,7 @@ export function Trading() {
     }
   };
 
-  const handleClosePosition = async (symbol: string, side: "Buy" | "Sell", qty: number) => {
+  const handleClosePosition = async (symbol: string, side: TradeSide, qty: number) => {
     try {
       await closePositionMutation.mutateAsync({ symbol, side, qty });
       triggerSuccess("Position close order submitted successfully.");
@@ -142,17 +145,14 @@ export function Trading() {
     }
   };
 
-  // Format chart time labels
   const candlesData = (candles || []).map((c) => {
-    let fmt = "HH:mm";
-    if (chartInterval === "D") fmt = "MMM dd";
+    const fmt = chartInterval === ChartInterval.Daily ? "MMM dd" : "HH:mm";
     return {
       ...c,
       timeFormatted: format(new Date(c.timestamp), fmt),
     };
   });
 
-  // Render Loading State
   if (isDashboardLoading && !dashboard) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center font-mono text-xs text-muted-foreground gap-4">
@@ -162,7 +162,6 @@ export function Trading() {
     );
   }
 
-  // Render Linked API Key Missing Error State
   if (hasNoBybitAccount) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center p-6 text-center max-w-lg mx-auto">
@@ -198,7 +197,6 @@ export function Trading() {
   const orders = dashboard?.orders || [];
   const closedPnl = dashboard?.closedPnl || [];
 
-  // Margin Ratio calculation
   const marginRatio = balance.totalEquity > 0
     ? (balance.totalMaintenanceMargin / balance.totalEquity) * 100
     : 0;
@@ -286,7 +284,7 @@ export function Trading() {
                 <CardTitle className="text-sm font-mono tracking-wider">PRICE PROGRESSION (USDT)</CardTitle>
               </div>
               <div className="flex gap-1.5 font-mono text-[10px]">
-                {["15", "60", "240", "D"].map((interval) => (
+                {Object.values(ChartInterval).map((interval) => (
                   <button
                     key={interval}
                     onClick={() => setChartInterval(interval)}
@@ -297,7 +295,7 @@ export function Trading() {
                         : "bg-card/40 border-border/10 text-muted-foreground hover:text-slate-200"
                     )}
                   >
-                    {interval === "15" ? "15M" : interval === "60" ? "1H" : interval === "240" ? "4H" : "1D"}
+                    {CHART_INTERVAL_LABELS[interval]}
                   </button>
                 ))}
               </div>
@@ -409,7 +407,7 @@ export function Trading() {
                       </thead>
                       <tbody>
                         {positions.map((pos) => {
-                          const isLong = pos.side === "Buy";
+                          const isLong = pos.side === TradeSide.Buy;
                           const pnl = pos.unrealisedPnl;
                           return (
                             <tr key={pos.symbol} className="border-b border-border/10 hover:bg-muted/10">
@@ -481,7 +479,7 @@ export function Trading() {
                       </thead>
                       <tbody>
                         {orders.map((order) => {
-                          const isBuy = order.side === "Buy";
+                          const isBuy = order.side === TradeSide.Buy;
                           const fillPercent = order.qty > 0 ? (order.cumExecQty / order.qty) * 100 : 0;
                           return (
                             <tr key={order.orderId} className="border-b border-border/10 hover:bg-muted/10">
@@ -556,7 +554,7 @@ export function Trading() {
                       </thead>
                       <tbody>
                         {closedPnl.map((c, i) => {
-                          const isBuy = c.side === "Buy";
+                          const isBuy = c.side === TradeSide.Buy;
                           const pnl = c.closedPnl;
                           return (
                             <tr key={c.id || i} className="border-b border-border/10 hover:bg-muted/10">
@@ -603,7 +601,7 @@ export function Trading() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-mono tracking-wider">PLACE ORDER</CardTitle>
                 <div className="flex border border-border/30 rounded overflow-hidden">
-                  {(["Limit", "Market"] as const).map((type) => (
+                  {Object.values(OrderType).map((type) => (
                     <button
                       key={type}
                       onClick={() => setOrderType(type)}
@@ -622,7 +620,7 @@ export function Trading() {
             </CardHeader>
             <CardContent className="pt-5 space-y-4">
               {/* Limit Price Input */}
-              {orderType === "Limit" && (
+              {orderType === OrderType.Limit && (
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center text-[10px] text-muted-foreground">
                     <span>PRICE</span>
@@ -683,10 +681,10 @@ export function Trading() {
                   <div className="flex justify-between">
                     <span>ORDER VALUE:</span>
                     <span className="font-semibold text-slate-300">
-                      ${(parseFloat(qty) * (orderType === "Limit" ? parseFloat(limitPrice) || lastPrice : lastPrice)).toFixed(2)} USDT
+                      ${(parseFloat(qty) * (orderType === OrderType.Limit ? parseFloat(limitPrice) || lastPrice : lastPrice)).toFixed(2)} USDT
                     </span>
                   </div>
-                  {orderType === "Limit" && (
+                  {orderType === OrderType.Limit && (
                     <div className="flex justify-between">
                       <span>TIME IN FORCE:</span>
                       <span className="font-semibold text-slate-400">GTC</span>
@@ -699,7 +697,7 @@ export function Trading() {
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <Button
                   className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-10 flex flex-col justify-center items-center rounded border border-emerald-500/20"
-                  onClick={() => handlePlaceOrder("Buy")}
+                  onClick={() => handlePlaceOrder(TradeSide.Buy)}
                   disabled={placeOrderMutation.isPending}
                 >
                   <span className="text-xs font-bold leading-tight">BUY / LONG</span>
@@ -707,7 +705,7 @@ export function Trading() {
                 </Button>
                 <Button
                   className="bg-rose-600 hover:bg-rose-500 text-white font-bold h-10 flex flex-col justify-center items-center rounded border border-rose-500/20"
-                  onClick={() => handlePlaceOrder("Sell")}
+                  onClick={() => handlePlaceOrder(TradeSide.Sell)}
                   disabled={placeOrderMutation.isPending}
                 >
                   <span className="text-xs font-bold leading-tight">SELL / SHORT</span>

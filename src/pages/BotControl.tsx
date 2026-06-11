@@ -7,47 +7,35 @@ import { Button } from "../components/ui/button";
 import { Play, Pause, Settings2, HeartPulse, AlertTriangle, FastForward, X, Sparkles, SlidersHorizontal, Loader2 } from "lucide-react";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { Badge } from "../components/ui/badge";
+import type { FilterResult } from "../interfaces/components";
+import { Personality } from "../enums/Personality.enum";
 
-type FilterResult = {
-  key: string;
-  label: string;
-  matchScore: number;
-  stats: {
-    leverage: string;
-    takeProfit: string;
-    stopLoss: string;
-    holdLimit: string;
-    riskTier: string;
-  };
-  tag: "Best match" | "Good match" | null;
-};
+const PERSONALITY_OPTIONS: { value: Personality; label: string }[] = [
+  { value: Personality.Moderate,   label: "Conservative" },
+  { value: Personality.Balanced,   label: "Balanced"     },
+  { value: Personality.Aggressive, label: "Aggressive"   },
+];
 
-const PERSONALITY_OPTIONS = [
-  { value: "moderate",    label: "Conservative" },
-  { value: "balanced",    label: "Balanced"     },
-  { value: "aggressive",  label: "Aggressive"   },
-] as const;
-
-const FILTER_TO_SELECT_MAP: Record<string, string> = {
-  safe:       "moderate",
-  aggressive: "aggressive",
-  insane:     "aggressive",
-  hunter:     "aggressive",
-  sentient:   "balanced",
+const FILTER_TO_SELECT_MAP: Partial<Record<Personality, Personality>> = {
+  [Personality.Safe]:       Personality.Moderate,
+  [Personality.Aggressive]: Personality.Aggressive,
+  [Personality.Insane]:     Personality.Aggressive,
+  [Personality.Hunter]:     Personality.Aggressive,
+  [Personality.Sentient]:   Personality.Balanced,
 };
 
 const getMappedProfileLabel = (key: string) => {
-  const selectValue = FILTER_TO_SELECT_MAP[key] ?? "balanced";
-  if (selectValue === "moderate") return "Conservative";
-  if (selectValue === "balanced") return "Balanced";
-  if (selectValue === "aggressive") return "Aggressive";
+  const selectValue = FILTER_TO_SELECT_MAP[key as Personality] ?? Personality.Balanced;
+  if (selectValue === Personality.Moderate) return "Conservative";
+  if (selectValue === Personality.Balanced) return "Balanced";
+  if (selectValue === Personality.Aggressive) return "Aggressive";
   return "Balanced";
 };
 
 export function BotControl() {
   const queryClient = useQueryClient();
   const { data: status } = useBotStatus();
-  const [personality, setPersonality] = useState("balanced");
+  const [personality, setPersonality] = useState<string>(Personality.Balanced);
   const [filters, setFilters] = useState<{
     duration: "short_term" | "medium_term" | "long_term" | null;
     returnMin: 5 | 10 | 20 | 30 | null;
@@ -120,7 +108,7 @@ export function BotControl() {
   };
 
   const handleFilterResultSelect = (filterKey: string) => {
-    const mappedValue = FILTER_TO_SELECT_MAP[filterKey] ?? "balanced";
+    const mappedValue = FILTER_TO_SELECT_MAP[filterKey as Personality] ?? Personality.Balanced;
     handleSelectPersonality(mappedValue);
   };
 
@@ -406,7 +394,7 @@ export function BotControl() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filterResults.map((result) => {
-                const mappedSelectValue = FILTER_TO_SELECT_MAP[result.key] ?? "balanced";
+                const mappedSelectValue = FILTER_TO_SELECT_MAP[result.key as Personality] ?? Personality.Balanced;
                 const isSelected = personality === mappedSelectValue;
                 
                 return (

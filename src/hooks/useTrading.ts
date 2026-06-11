@@ -8,13 +8,13 @@ import type {
   TradingDashboardResponse,
   Candle,
   Btc24hResponse,
-} from "../services/tradingApi";
+} from "../interfaces/trading";
 
 export function useTradingDashboard() {
   return useQuery<TradingDashboardResponse>({
     queryKey: ["trading", "dashboard"],
     queryFn: () => tradingApi.getTradingDashboard(),
-    refetchInterval: 5000, // Poll every 5 seconds
+    refetchInterval: 5000,
     retry: 2,
     refetchOnWindowFocus: true,
   });
@@ -24,7 +24,7 @@ export function useBtcCandles(interval: string, limit = 96) {
   return useQuery<Candle[]>({
     queryKey: ["market", "btc", "candles", interval, limit],
     queryFn: () => tradingApi.getBtcCandles(interval, limit),
-    refetchInterval: 15000, // Candles can poll every 15s
+    refetchInterval: 15000,
     retry: 2,
   });
 }
@@ -33,7 +33,7 @@ export function useBtc24h() {
   return useQuery<Btc24hResponse>({
     queryKey: ["market", "btc", "24h"],
     queryFn: () => tradingApi.getBtc24h(),
-    refetchInterval: 5000, // Poll ticker stats every 5s
+    refetchInterval: 5000,
     retry: 2,
   });
 }
@@ -44,7 +44,6 @@ export function usePlaceOrder() {
   return useMutation<PlaceOrderResponse, Error, PlaceOrderRequest>({
     mutationFn: (payload) => tradingApi.placeOrder(payload),
     onSuccess: () => {
-      // Refresh dashboard data instantly
       queryClient.invalidateQueries({ queryKey: ["trading", "dashboard"] });
     },
   });

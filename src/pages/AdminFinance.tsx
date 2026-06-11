@@ -5,15 +5,17 @@ import { Badge } from "../components/ui/badge";
 import { DollarSign, TrendingUp, CreditCard, BarChart3, RefreshCw } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { useState } from "react";
+import { FinanceTab } from "../enums/FinanceTab.enum";
+import { TransactionStatus } from "../enums/TransactionStatus.enum";
 
-const TX_STATUS_COLORS: Record<string, string> = {
-  completed: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
-  pending: "text-amber-400 border-amber-500/20 bg-amber-500/5",
-  failed: "text-red-400 border-red-500/20 bg-red-500/5",
+const TX_STATUS_COLORS: Partial<Record<TransactionStatus, string>> = {
+  [TransactionStatus.Completed]: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
+  [TransactionStatus.Pending]:   "text-amber-400 border-amber-500/20 bg-amber-500/5",
+  [TransactionStatus.Failed]:    "text-red-400 border-red-500/20 bg-red-500/5",
 };
 
 export function AdminFinance() {
-  const [tab, setTab] = useState<"transactions" | "deposits" | "fees">("transactions");
+  const [tab, setTab] = useState<FinanceTab>(FinanceTab.Transactions);
   const [page, setPage] = useState(1);
 
   const { data: stats } = useQuery({
@@ -77,7 +79,7 @@ export function AdminFinance() {
               <DollarSign className="w-4 h-4 text-primary" /> LEDGER
             </CardTitle>
             <div className="flex">
-              {(["transactions", "deposits", "fees"] as const).map((t) => (
+              {Object.values(FinanceTab).map((t) => (
                 <button
                   key={t}
                   onClick={() => { setTab(t); setPage(1); }}
@@ -96,21 +98,21 @@ export function AdminFinance() {
             <table className="w-full text-xs text-left border-collapse font-mono">
               <thead>
                 <tr className="border-b border-border/40 text-muted-foreground bg-muted/10">
-                  {tab === "transactions" && <>
+                  {tab === FinanceTab.Transactions && <>
                     <th className="py-2.5 px-4">TYPE</th>
                     <th className="py-2.5 px-4">AMOUNT</th>
                     <th className="py-2.5 px-4">USER</th>
                     <th className="py-2.5 px-4">STATUS</th>
                     <th className="py-2.5 px-4">DATE</th>
                   </>}
-                  {tab === "deposits" && <>
+                  {tab === FinanceTab.Deposits && <>
                     <th className="py-2.5 px-4">USER</th>
                     <th className="py-2.5 px-4">AMOUNT</th>
                     <th className="py-2.5 px-4">PROVIDER</th>
                     <th className="py-2.5 px-4">STATUS</th>
                     <th className="py-2.5 px-4">DATE</th>
                   </>}
-                  {tab === "fees" && <>
+                  {tab === FinanceTab.Fees && <>
                     <th className="py-2.5 px-4">USER</th>
                     <th className="py-2.5 px-4">TOTAL FEES</th>
                     <th className="py-2.5 px-4">LAST FEE DATE</th>
@@ -125,29 +127,29 @@ export function AdminFinance() {
                 ) : (
                   items.map((item: any, i: number) => (
                     <tr key={item.id ?? i} className="hover:bg-muted/10 transition-colors">
-                      {tab === "transactions" && <>
+                      {tab === FinanceTab.Transactions && <>
                         <td className="py-2.5 px-4 text-slate-300">{item.type ?? "—"}</td>
                         <td className="py-2.5 px-4 text-foreground font-bold">{item.amount ?? "—"} USDT</td>
                         <td className="py-2.5 px-4 text-slate-400">{item.userEmail ?? item.userId ?? "—"}</td>
                         <td className="py-2.5 px-4">
-                          <Badge variant="outline" className={`text-[10px] ${TX_STATUS_COLORS[item.status] ?? ""}`}>
+                          <Badge variant="outline" className={`text-[10px] ${TX_STATUS_COLORS[item.status as TransactionStatus] ?? ""}`}>
                             {item.status ?? "—"}
                           </Badge>
                         </td>
                         <td className="py-2.5 px-4 text-slate-500">{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}</td>
                       </>}
-                      {tab === "deposits" && <>
+                      {tab === FinanceTab.Deposits && <>
                         <td className="py-2.5 px-4 text-slate-400">{item.userEmail ?? "—"}</td>
                         <td className="py-2.5 px-4 text-foreground font-bold">${item.amount ?? "—"}</td>
                         <td className="py-2.5 px-4 text-slate-300">{item.provider ?? "MoonPay"}</td>
                         <td className="py-2.5 px-4">
-                          <Badge variant="outline" className={`text-[10px] ${TX_STATUS_COLORS[item.status] ?? ""}`}>
+                          <Badge variant="outline" className={`text-[10px] ${TX_STATUS_COLORS[item.status as TransactionStatus] ?? ""}`}>
                             {item.status ?? "—"}
                           </Badge>
                         </td>
                         <td className="py-2.5 px-4 text-slate-500">{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}</td>
                       </>}
-                      {tab === "fees" && <>
+                      {tab === FinanceTab.Fees && <>
                         <td className="py-2.5 px-4 text-slate-400">{item.userEmail ?? item.userId ?? "—"}</td>
                         <td className="py-2.5 px-4 text-amber-400 font-bold">{item.totalFees ?? "—"} USDT</td>
                         <td className="py-2.5 px-4 text-slate-500">{item.lastFeeAt ? new Date(item.lastFeeAt).toLocaleDateString() : "—"}</td>

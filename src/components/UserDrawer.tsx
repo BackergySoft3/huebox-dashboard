@@ -7,41 +7,39 @@ import { Button } from "./ui/button";
 import { ConfirmModal } from "./ConfirmModal";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth";
+import { UserStatus } from "../enums/UserStatus.enum";
+import type { Action, UserDrawerProps } from "../interfaces/components";
 
-const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
-  SUSPENDED: "text-amber-400 border-amber-500/20 bg-amber-500/5",
-  BLOCKED: "text-red-400 border-red-500/20 bg-red-500/5",
-  RESTRICTED: "text-orange-400 border-orange-500/20 bg-orange-500/5",
-  SOFT_DELETED: "text-slate-400 border-slate-500/20 bg-slate-500/5",
-  DELETED: "text-slate-400 border-slate-500/20 bg-slate-500/5",
+const STATUS_COLORS: Record<UserStatus, string> = {
+  [UserStatus.Active]:      "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
+  [UserStatus.Suspended]:   "text-amber-400 border-amber-500/20 bg-amber-500/5",
+  [UserStatus.Blocked]:     "text-red-400 border-red-500/20 bg-red-500/5",
+  [UserStatus.Restricted]:  "text-orange-400 border-orange-500/20 bg-orange-500/5",
+  [UserStatus.SoftDeleted]: "text-slate-400 border-slate-500/20 bg-slate-500/5",
+  [UserStatus.Deleted]:     "text-slate-400 border-slate-500/20 bg-slate-500/5",
 };
 
-interface Action { label: string; action: string; danger?: boolean; superAdminOnly?: boolean; }
-
-const ACTIONS_BY_STATUS: Record<string, Action[]> = {
-  ACTIVE: [
-    { label: "Suspend", action: "suspend" },
-    { label: "Restrict", action: "restrict" },
-    { label: "Block", action: "block", danger: true },
-    { label: "Soft Delete", action: "soft", danger: true },
+const ACTIONS_BY_STATUS: Partial<Record<UserStatus, Action[]>> = {
+  [UserStatus.Active]: [
+    { label: "Suspend",     action: "suspend"  },
+    { label: "Restrict",    action: "restrict"  },
+    { label: "Block",       action: "block",  danger: true },
+    { label: "Soft Delete", action: "soft",   danger: true },
   ],
-  SUSPENDED: [
+  [UserStatus.Suspended]: [
     { label: "Unsuspend", action: "unsuspend" },
-    { label: "Block", action: "block", danger: true },
+    { label: "Block",     action: "block", danger: true },
   ],
-  RESTRICTED: [
+  [UserStatus.Restricted]: [
     { label: "Unrestrict", action: "unrestrict" },
-    { label: "Block", action: "block", danger: true },
+    { label: "Block",      action: "block", danger: true },
   ],
-  BLOCKED: [{ label: "Unblock", action: "unblock" }],
-  SOFT_DELETED: [
-    { label: "Restore", action: "restore", superAdminOnly: true },
-    { label: "Hard Delete", action: "hard", danger: true, superAdminOnly: true },
+  [UserStatus.Blocked]: [{ label: "Unblock", action: "unblock" }],
+  [UserStatus.SoftDeleted]: [
+    { label: "Restore",     action: "restore", superAdminOnly: true },
+    { label: "Hard Delete", action: "hard",    danger: true, superAdminOnly: true },
   ],
 };
-
-interface UserDrawerProps { userId: string; onClose: () => void; }
 
 export function UserDrawer({ userId, onClose }: UserDrawerProps) {
   const qc = useQueryClient();
@@ -89,7 +87,7 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
     setModal({ action: a.action, label: a.label, danger: a.danger, confirmText });
   };
 
-  const availableActions = (ACTIONS_BY_STATUS[user?.status ?? ""] ?? []).filter(
+  const availableActions = (ACTIONS_BY_STATUS[user?.status as UserStatus] ?? []).filter(
     (a) => !a.superAdminOnly || isSuperAdmin
   );
 
@@ -106,7 +104,7 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
             <div>
               <p className="font-semibold text-sm text-foreground">{user?.email ?? "Loading..."}</p>
               {user && (
-                <Badge variant="outline" className={`text-[10px] mt-0.5 ${STATUS_COLORS[user.status] ?? ""}`}>
+                <Badge variant="outline" className={`text-[10px] mt-0.5 ${STATUS_COLORS[user.status as UserStatus] ?? ""}`}>
                   {user.status}
                 </Badge>
               )}

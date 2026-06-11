@@ -9,24 +9,26 @@ import {
   Users as UsersIcon, Search, Filter, ChevronLeft, ChevronRight,
   ShieldCheck, ShieldAlert, Shield, RefreshCw,
 } from "lucide-react";
+import { UserStatus } from "../enums/UserStatus.enum";
+import { UserRole } from "../enums/UserRole.enum";
 
-const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
-  SUSPENDED: "text-amber-400 border-amber-500/20 bg-amber-500/5",
-  BLOCKED: "text-red-400 border-red-500/20 bg-red-500/5",
-  RESTRICTED: "text-orange-400 border-orange-500/20 bg-orange-500/5",
-  SOFT_DELETED: "text-slate-400 border-slate-500/20 bg-slate-500/5",
-  DELETED: "text-slate-400 border-slate-500/20 bg-slate-500/5",
+const STATUS_COLORS: Record<UserStatus, string> = {
+  [UserStatus.Active]:      "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
+  [UserStatus.Suspended]:   "text-amber-400 border-amber-500/20 bg-amber-500/5",
+  [UserStatus.Blocked]:     "text-red-400 border-red-500/20 bg-red-500/5",
+  [UserStatus.Restricted]:  "text-orange-400 border-orange-500/20 bg-orange-500/5",
+  [UserStatus.SoftDeleted]: "text-slate-400 border-slate-500/20 bg-slate-500/5",
+  [UserStatus.Deleted]:     "text-slate-400 border-slate-500/20 bg-slate-500/5",
 };
 
-const ROLE_ICONS: Record<string, React.ReactNode> = {
-  SUPERADMIN: <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />,
-  ADMIN: <ShieldAlert className="w-3.5 h-3.5 text-sky-400" />,
-  USER: <Shield className="w-3.5 h-3.5 text-slate-500" />,
+const ROLE_ICONS: Record<UserRole, React.ReactNode> = {
+  [UserRole.SuperAdmin]: <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />,
+  [UserRole.Admin]:      <ShieldAlert className="w-3.5 h-3.5 text-sky-400" />,
+  [UserRole.User]:       <Shield className="w-3.5 h-3.5 text-slate-500" />,
 };
 
-const STATUS_OPTIONS = ["", "ACTIVE", "SUSPENDED", "BLOCKED", "RESTRICTED", "SOFT_DELETED"];
-const ROLE_OPTIONS = ["", "USER", "ADMIN", "SUPERADMIN"];
+const STATUS_OPTIONS = ["", ...Object.values(UserStatus)];
+const ROLE_OPTIONS   = ["", ...Object.values(UserRole)];
 
 export function AdminUsers() {
   const [page, setPage] = useState(1);
@@ -185,15 +187,15 @@ export function AdminUsers() {
                       </td>
                       <td className="py-2.5 px-4">
                         <div className="flex items-center gap-1.5">
-                          {ROLE_ICONS[user.role]}
+                          {ROLE_ICONS[user.role as UserRole]}
                           <span className={
-                            user.role === "SUPERADMIN" ? "text-amber-400" :
-                            user.role === "ADMIN" ? "text-sky-400" : "text-slate-400"
+                            user.role === UserRole.SuperAdmin ? "text-amber-400" :
+                            user.role === UserRole.Admin      ? "text-sky-400"   : "text-slate-400"
                           }>{user.role}</span>
                         </div>
                       </td>
                       <td className="py-2.5 px-4">
-                        <Badge variant="outline" className={`${STATUS_COLORS[user.status] ?? ""} px-1.5 py-0.5 text-[10px]`}>
+                        <Badge variant="outline" className={`${STATUS_COLORS[user.status as UserStatus] ?? ""} px-1.5 py-0.5 text-[10px]`}>
                           {user.status}
                         </Badge>
                       </td>

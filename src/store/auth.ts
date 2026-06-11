@@ -1,31 +1,9 @@
 import { create } from "zustand";
+import { UserRole } from "../enums/UserRole.enum";
+import type { AuthUser, AuthState } from "../interfaces/auth";
 
-export type UserRole = "USER" | "ADMIN" | "SUPERADMIN";
-
-interface AuthUser {
-  id?: string;
-  email: string;
-  role?: UserRole;
-  status?: string;
-  kycStatus?: string;
-  firstName?: string;
-  lastName?: string;
-  avatarUrl?: string;
-}
-
-interface AuthState {
-  accessToken: string | null;
-  refreshToken: string | null;
-  user: AuthUser | null;
-  setAuth: (
-    accessToken: string | null,
-    refreshToken: string | null,
-    user?: AuthUser | null
-  ) => void;
-  logout: () => void;
-  isAdmin: () => boolean;
-  isSuperAdmin: () => boolean;
-}
+export { UserRole };
+export type { AuthUser, AuthState };
 
 const parseStoredUser = (): AuthUser | null => {
   try {
@@ -34,7 +12,7 @@ const parseStoredUser = (): AuthUser | null => {
     // Legacy fallback
     const email = localStorage.getItem("huebox_user_email");
     const role = localStorage.getItem("huebox_user_role") as UserRole | null;
-    if (email) return { email, role: role ?? "USER" };
+    if (email) return { email, role: role ?? UserRole.User };
   } catch {}
   return null;
 };
@@ -53,7 +31,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (user) {
       localStorage.setItem("huebox_user", JSON.stringify(user));
-      // Keep legacy keys in sync
       if (user.email) localStorage.setItem("huebox_user_email", user.email);
       if (user.role) localStorage.setItem("huebox_user_role", user.role);
     } else {
@@ -76,8 +53,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   isAdmin: () => {
     const role = get().user?.role;
-    return role === "ADMIN" || role === "SUPERADMIN";
+    return role === UserRole.Admin || role === UserRole.SuperAdmin;
   },
 
-  isSuperAdmin: () => get().user?.role === "SUPERADMIN",
+  isSuperAdmin: () => get().user?.role === UserRole.SuperAdmin,
 }));

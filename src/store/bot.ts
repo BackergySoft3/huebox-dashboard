@@ -1,13 +1,7 @@
 import { create } from "zustand";
+import type { BotState } from "../interfaces/bot";
 
-interface BotState {
-  status: "running" | "stalled" | "paused" | string;
-  personality: string;
-  heartbeat: string;
-  activeGrids: number;
-  cycleCounter: number;
-  setBotStatus: (status: Partial<Omit<BotState, "setBotStatus">>) => void;
-}
+export type { BotState };
 
 export const useBotStore = create<BotState>((set) => ({
   status: "stalled",

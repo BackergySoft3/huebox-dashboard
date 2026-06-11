@@ -1,13 +1,11 @@
 import { Badge } from "./ui/badge";
-
-interface StatusBadgeProps {
-  status?: "running" | "stalled" | "paused" | string;
-}
+import { BotStatus } from "../enums/BotStatus.enum";
+import type { StatusBadgeProps } from "../interfaces/components";
 
 export function StatusBadge({ status }: StatusBadgeProps) {
   const normStatus = status?.toLowerCase();
 
-  if (normStatus === "running") {
+  if (normStatus === BotStatus.Running) {
     return (
       <Badge className="bg-emerald-950/40 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-950/40 font-mono text-[11px] rounded-full px-2 py-0.5 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
         ● RUNNING
@@ -15,7 +13,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     );
   }
 
-  if (normStatus === "paused") {
+  if (normStatus === BotStatus.Paused) {
     return (
       <Badge className="bg-amber-950/40 text-amber-400 border border-amber-500/30 hover:bg-amber-950/40 font-mono text-[11px] rounded-full px-2 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.1)]">
         ● PAUSED

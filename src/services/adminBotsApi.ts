@@ -3,6 +3,26 @@
 //            POST force-stop | force-pause | force-resume | broadcast-pause
 //            PATCH personality
 
+import { Personality } from "../enums/Personality.enum";
+import type {
+  BotSummary,
+  BotAggregate,
+  ClosedPosition,
+  BotDeepState,
+  ForceActionResult,
+  BroadcastResult,
+} from "../interfaces/bot";
+
+export { Personality };
+export type {
+  BotSummary,
+  BotAggregate,
+  ClosedPosition,
+  BotDeepState,
+  ForceActionResult,
+  BroadcastResult,
+};
+
 const BASE = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE || "http://localhost:3000") + "/api";
 
 function authHeaders(): Record<string, string> {
@@ -23,84 +43,8 @@ async function handle<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-export interface BotSummary {
-  userId: string;
-  email: string;
-  status: "running" | "stalled" | "stopped" | "paused";
-  personality: string;
-  activeSlots: number;
-  maxSlots: number;
-  totalPnlUsdt: number;
-  unrealisedPnlUsdt: number;
-  regime: "SCOUTING" | "FARMING" | null;
-  drawdownTier: "HEALTHY" | "CAUTION" | "DANGER" | string;
-  lastHeartbeatAt: string | null;
-  heartbeatAgeSeconds: number;
-  enginePid: number | null;
-}
-
-export interface BotAggregate {
-  totalActiveSlots: number;
-  combinedUnrealisedPnl: number;
-  stalledCount: number;
-  regimeSplit: {
-    scouting: number;
-    farming: number;
-  };
-}
-
-export interface ClosedPosition {
-  _id: string;
-  userId: string;
-  symbol: string;
-  side: "long" | "short";
-  entryPrice: number;
-  exitPrice: number | null;
-  leverage: number;
-  marginUsdt: number;
-  pnlUsdt: number | null;
-  roiPct: number | null;
-  strategy: "grid" | "outlier";
-  regime: string | null;
-  reason: string | null;
-  openedAt: string;
-  closedAt: string;
-}
-
-export interface BotDeepState {
-  botState: Record<string, string>;
-  config: {
-    apiKey: string;
-    apiSecret: string;
-    [key: string]: string;
-  } | null;
-  activeGrids: Record<string, unknown>;
-  logs: string[];
-  tradeHistory: ClosedPosition[];
-}
-
-export interface ForceActionResult {
-  success: boolean;
-  message: string;
-  closePositionsResult?: {
-    success: boolean;
-    results: Array<{ symbol: string; success: boolean; msg?: string; error?: string }>;
-  };
-}
-
-export interface BroadcastResult {
-  success: boolean;
-  message: string;
-  pausedUserIds: string[];
-}
-
-export const VALID_PERSONALITIES = [
-  "safe", "moderate", "balanced", "aggressive", "insane", "hunter", "sentient", "brain",
-] as const;
-
-export type Personality = typeof VALID_PERSONALITIES[number];
+// Derived from Personality enum — single source of truth
+export const VALID_PERSONALITIES = Object.values(Personality);
 
 // ─── API Client ──────────────────────────────────────────────────────────────
 

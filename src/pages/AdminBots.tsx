@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminBotsApi } from "../services/adminBotsApi";
-import type { BotSummary } from "../services/adminBotsApi";
+import type { BotSummary } from "../interfaces/bot";
+import { BotStatus } from "../enums/BotStatus.enum";
+import { Personality } from "../enums/Personality.enum";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Bot, Cpu, AlertTriangle, RefreshCw, Activity, Square, Pause, Play, Edit, Megaphone } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { ConfirmModal } from "../components/ConfirmModal";
 
-const STATUS_COLORS: Record<string, string> = {
-  running: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
-  paused: "text-amber-400 border-amber-500/20 bg-amber-500/5",
-  stalled: "text-red-400 border-red-500/20 bg-red-500/5",
-  stopped: "text-slate-400 border-slate-500/20 bg-slate-500/5",
+const STATUS_COLORS: Record<BotStatus, string> = {
+  [BotStatus.Running]: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
+  [BotStatus.Paused]:  "text-amber-400 border-amber-500/20 bg-amber-500/5",
+  [BotStatus.Stalled]: "text-red-400 border-red-500/20 bg-red-500/5",
+  [BotStatus.Stopped]: "text-slate-400 border-slate-500/20 bg-slate-500/5",
 };
 
 export function AdminBots() {
@@ -133,7 +135,7 @@ export function AdminBots() {
       email, 
       title, 
       description, 
-      selectedPersonality: currentPersonality || 'balanced' 
+      selectedPersonality: currentPersonality || Personality.Balanced
     });
   };
 
@@ -305,7 +307,7 @@ export function AdminBots() {
                 onChange={(e) => setConfirmModal({ ...confirmModal, selectedPersonality: e.target.value })}
                 className="w-full bg-muted/30 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               >
-                {["safe", "moderate", "balanced", "aggressive", "insane", "hunter", "sentient", "brain"].map((p) => (
+                {Object.values(Personality).map((p) => (
                   <option key={p} value={p}>{p}</option>
                 ))}
               </select>

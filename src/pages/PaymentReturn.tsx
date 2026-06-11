@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { walletApi } from "../services/paymentApi";
-import type { Transaction } from "../services/paymentApi";
+import type { Transaction } from "../interfaces/wallet";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Loader2, CheckCircle2, XCircle, Clock, Info } from "lucide-react";
