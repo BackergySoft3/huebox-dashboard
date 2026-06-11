@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../Services/http.service";
 import { Card, CardContent, CardHeader, CardTitle } from "../Components/Atoms/card";
@@ -201,11 +201,11 @@ export function AdminUsers() {
                       </td>
                       <td className="py-2.5 px-4">
                         <Badge variant="outline" className={`px-1.5 py-0.5 text-[10px] ${
-                          user.kycStatus === "APPROVED" ? "text-emerald-400 border-emerald-500/20" :
-                          user.kycStatus === "REJECTED" ? "text-red-400 border-red-500/20" :
+                          user.kycStatus === "verified" || user.kycStatus === "APPROVED" ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/5" :
+                          user.kycStatus === "rejected" || user.kycStatus === "REJECTED" ? "text-red-400 border-red-500/20 bg-red-500/5" :
                           "text-slate-400 border-slate-500/20"
                         }`}>
-                          {user.kycStatus ?? "—"}
+                          {user.kycStatus ? (user.kycStatus.charAt(0).toUpperCase() + user.kycStatus.slice(1)) : "—"}
                         </Badge>
                       </td>
                       <td className="py-2.5 px-4 text-slate-500">

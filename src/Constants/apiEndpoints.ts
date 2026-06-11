@@ -25,11 +25,10 @@ export const BOT_ENDPOINTS = {
 } as const;
 
 export const KYC_ENDPOINTS = {
-  QUEUE:   "/api/admin/kyc/queue",
-  STATS:   "/api/admin/kyc/stats",
-  DETAIL:  (id: string) => `/api/admin/kyc/${id}`,
-  APPROVE: (id: string) => `/api/admin/kyc/${id}/approve`,
-  REJECT:  (id: string) => `/api/admin/kyc/${id}/reject`,
+  SUBMISSIONS: "/api/user/kyc/submissions",
+  STATS:       "/api/user/kyc/stats",
+  DETAIL:      (id: string) => `/api/user/kyc/submissions/${id}`,
+  UPDATE:      (id: string) => `/api/user/kyc/${id}`,
 } as const;
 
 export const WALLET_ENDPOINTS = {

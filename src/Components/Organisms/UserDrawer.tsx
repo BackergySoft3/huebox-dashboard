@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../Services/http.service";
 import { X, Laptop, ExternalLink } from "lucide-react";
@@ -50,7 +50,7 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["admin-user", userId],
-    queryFn: () => api.get(`/api/admin/users/${userId}`).then((r) => r.data),
+    queryFn: () => api.get(`/api/auth/user/${userId}`).then((r) => r.data),
   });
 
   const { data: sessions } = useQuery({
@@ -143,7 +143,7 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  ["Role", user.role], ["KYC", user.kycStatus],
+                  ["Role", user.role], ["KYC", user.kycStatus ? (user.kycStatus.charAt(0).toUpperCase() + user.kycStatus.slice(1)) : "—"],
                   ["First Name", user.firstName || "—"], ["Last Name", user.lastName || "—"],
                   ["Country", user.country || "—"], ["Currency", user.currency || "—"],
                   ["Joined", new Date(user.createdAt).toLocaleDateString()],
@@ -155,6 +155,26 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
                   </div>
                 ))}
               </div>
+              {user.account && (
+                <div className="space-y-2 pt-2">
+                  <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Trading Account Details</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      ["Exchange", user.account.exchange || "—"],
+                      ["Sub UID", user.account.bybitSubUid || "—"],
+                      ["Username", user.account.bybitUsername || "—"],
+                      ["Environment", user.account.testnet ? "Testnet" : "Mainnet"],
+                      ["Auth Type", user.account.apiAuthType || "—"],
+                      ["Status", user.account.status || "—"],
+                    ].map(([label, val]) => (
+                      <div key={label} className="bg-primary/5 border border-primary/10 rounded-lg p-3">
+                        <p className="text-[10px] font-mono text-primary uppercase">{label}</p>
+                        <p className="text-sm font-medium text-foreground mt-0.5">{val}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {user.blockReason && (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
                   <p className="text-[10px] font-mono text-red-400 uppercase mb-1">Block Reason</p>

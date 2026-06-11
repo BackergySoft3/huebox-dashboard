@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../Services/http.service";
 import { Card, CardContent, CardHeader, CardTitle } from "../Components/Atoms/card";
@@ -14,42 +14,67 @@ const STATUS_COLORS: Partial<Record<KycStatus, string>> = {
   [KycStatus.Rejected]: "text-red-400 border-red-500/20 bg-red-500/5",
 };
 
+const formatKycStatus = (status: string) => {
+  if (!status) return "";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+};
+
 export function AdminKyc() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<KycStatus>(KycStatus.Pending);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [modal, setModal] = useState<"approve" | "reject" | null>(null);
+  const [modal, setModal] = useState<"approve" | "reject" | "pending" | null>(null);
 
   const { data: listData, isLoading, refetch } = useQuery({
     queryKey: ["admin-kyc", tab],
     queryFn: () =>
-      api.get("/api/admin/kyc/queue", { params: { status: tab === KycStatus.All ? undefined : tab } })
+      api.get("/api/user/kyc/submissions", { params: { status: tab === KycStatus.All ? undefined : tab } })
         .then((r) => r.data)
-        .catch(() => ({ data: [] })),
+        .catch(() => ({ items: [] })),
   });
 
   const { data: detail } = useQuery({
     queryKey: ["admin-kyc-detail", selectedUserId],
-    queryFn: () => api.get(`/api/admin/kyc/${selectedUserId}`).then((r) => r.data),
+    queryFn: () => api.get(`/api/user/kyc/submissions/${selectedUserId}`).then((r) => r.data),
     enabled: !!selectedUserId,
   });
 
   const { data: stats } = useQuery({
     queryKey: ["admin-kyc-stats"],
-    queryFn: () => api.get("/api/admin/kyc/stats").then((r) => r.data).catch(() => ({})),
+    queryFn: () => api.get("/api/user/kyc/stats").then((r) => r.data).catch(() => ({})),
   });
 
   const approve = useMutation({
-    mutationFn: () => api.patch(`/api/admin/kyc/${selectedUserId}/approve`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-kyc"] }); setModal(null); },
+    mutationFn: () => api.patch(`/api/user/kyc/${selectedUserId}`, { status: "verified" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-kyc"] });
+      qc.invalidateQueries({ queryKey: ["admin-kyc-detail", selectedUserId] });
+      qc.invalidateQueries({ queryKey: ["admin-kyc-stats"] });
+      setModal(null);
+    },
   });
 
   const reject = useMutation({
-    mutationFn: (reason: string) => api.patch(`/api/admin/kyc/${selectedUserId}/reject`, { reason }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-kyc"] }); setModal(null); },
+    mutationFn: (reason: string) => api.patch(`/api/user/kyc/${selectedUserId}`, { status: "rejected", rejectionReason: reason }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-kyc"] });
+      qc.invalidateQueries({ queryKey: ["admin-kyc-detail", selectedUserId] });
+      qc.invalidateQueries({ queryKey: ["admin-kyc-stats"] });
+      setModal(null);
+    },
   });
 
-  const items: any[] = listData?.data ?? [];
+  const markPending = useMutation({
+    mutationFn: () => api.patch(`/api/user/kyc/${selectedUserId}`, { status: "pending" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-kyc"] });
+      qc.invalidateQueries({ queryKey: ["admin-kyc-detail", selectedUserId] });
+      qc.invalidateQueries({ queryKey: ["admin-kyc-stats"] });
+      setModal(null);
+    },
+  });
+
+  const items: any[] = listData?.items ?? [];
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -57,7 +82,7 @@ export function AdminKyc() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">KYC Review</h1>
           <p className="text-muted-foreground mt-1 font-mono text-xs">
-            Pending: {stats?.pending ?? "—"} · Approved this week: {stats?.approvedThisWeek ?? "—"}
+            Pending: {stats?.pendingCount ?? "—"} · Approved this week: {stats?.approvedThisWeekCount ?? "—"}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
@@ -91,10 +116,10 @@ export function AdminKyc() {
             ) : (
               items.map((item: any) => (
                 <button
-                  key={item.userId}
-                  onClick={() => setSelectedUserId(item.userId)}
+                  key={item.id}
+                  onClick={() => setSelectedUserId(item.id)}
                   className={`w-full text-left bg-card/30 border rounded-lg p-3 transition-all hover:border-primary/40 ${
-                    selectedUserId === item.userId ? "border-primary/50 bg-primary/5" : "border-border/40"
+                    selectedUserId === item.id ? "border-primary/50 bg-primary/5" : "border-border/40"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -105,13 +130,13 @@ export function AdminKyc() {
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-foreground truncate">{item.email}</p>
                         <p className="text-[10px] text-muted-foreground">
-                          {item.submittedAt ? new Date(item.submittedAt).toLocaleDateString() : "—"}
+                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[item.kycStatus as KycStatus] ?? ""}`}>
-                        {item.kycStatus}
+                        {formatKycStatus(item.kycStatus)}
                       </Badge>
                       <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                     </div>
@@ -140,7 +165,7 @@ export function AdminKyc() {
                   </CardTitle>
                   {detail?.kycStatus && (
                     <Badge variant="outline" className={`${STATUS_COLORS[detail.kycStatus as KycStatus] ?? ""}`}>
-                      {detail.kycStatus}
+                      {formatKycStatus(detail.kycStatus)}
                     </Badge>
                   )}
                 </div>
@@ -149,8 +174,11 @@ export function AdminKyc() {
                 {detail && (
                   <div className="grid grid-cols-2 gap-3 text-xs font-mono">
                     {[
-                      ["Country", detail.country], ["Currency", detail.currency],
-                      ["KYC Submitted", detail.kycSubmittedAt ? new Date(detail.kycSubmittedAt).toLocaleDateString() : "—"],
+                      ["Name", `${detail.firstName ?? ""} ${detail.lastName ?? ""}`.trim() || "—"],
+                      ["Phone", detail.phoneNumber || "—"],
+                      ["Country", detail.country || "—"],
+                      ["Joined", detail.createdAt ? new Date(detail.createdAt).toLocaleDateString() : "—"],
+                      ["Last Update", detail.updatedAt ? new Date(detail.updatedAt).toLocaleDateString() : "—"],
                       ["Rejection Reason", detail.kycRejectedReason || "—"],
                     ].map(([label, val]) => (
                       <div key={label} className="bg-muted/20 rounded-lg p-3">
@@ -161,20 +189,33 @@ export function AdminKyc() {
                   </div>
                 )}
               </CardContent>
-              {detail?.kycStatus === KycStatus.Pending && (
-                <div className="p-4 border-t border-border/40 flex gap-3">
-                  <Button
-                    className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
-                    onClick={() => setModal("approve")}
-                  >
-                    <CheckCircle2 className="w-4 h-4" /> Approve
-                  </Button>
-                  <Button
-                    className="flex-1 gap-2 bg-red-600 hover:bg-red-700 text-white"
-                    onClick={() => setModal("reject")}
-                  >
-                    <XCircle className="w-4 h-4" /> Reject
-                  </Button>
+              {detail?.kycStatus && (
+                <div className="p-4 border-t border-border/40 flex gap-3 flex-wrap">
+                  {detail.kycStatus !== KycStatus.Approved && (
+                    <Button
+                      className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                      onClick={() => setModal("approve")}
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> Approve
+                    </Button>
+                  )}
+                  {detail.kycStatus !== KycStatus.Rejected && (
+                    <Button
+                      className="flex-1 gap-2 bg-red-600 hover:bg-red-700 text-white"
+                      onClick={() => setModal("reject")}
+                    >
+                      <XCircle className="w-4 h-4" /> Reject
+                    </Button>
+                  )}
+                  {detail.kycStatus !== KycStatus.Pending && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 gap-2 border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                      onClick={() => setModal("pending")}
+                    >
+                      <RefreshCw className="w-4 h-4" /> Reset to Pending
+                    </Button>
+                  )}
                 </div>
               )}
             </Card>
@@ -185,7 +226,7 @@ export function AdminKyc() {
       {modal === "approve" && (
         <ConfirmModal
           title="Approve KYC Submission"
-          description="This will trigger sub-account provisioning on Bybit and mark the user as KYC approved. This cannot be undone."
+          description="This will mark the user as KYC verified and provision their Bybit sub-account (if not already provisioned)."
           confirmLabel="Approve"
           onCancel={() => setModal(null)}
           onConfirm={async () => { await approve.mutateAsync(); }}
@@ -200,6 +241,15 @@ export function AdminKyc() {
           danger
           onCancel={() => setModal(null)}
           onConfirm={async (reason) => { await reject.mutateAsync(reason!); }}
+        />
+      )}
+      {modal === "pending" && (
+        <ConfirmModal
+          title="Reset KYC to Pending"
+          description="This will reset the user's KYC verification status back to pending. Any active sub-account state will remain safe."
+          confirmLabel="Reset"
+          onCancel={() => setModal(null)}
+          onConfirm={async () => { await markPending.mutateAsync(); }}
         />
       )}
     </div>
