@@ -14,6 +14,8 @@ interface LogsState {
   };
   addNestLog: (log: Omit<LogLine, "id">) => void;
   addPythonLog: (log: Omit<LogLine, "id">) => void;
+  addNestLogsBatch: (logs: Omit<LogLine, "id">[]) => void;
+  addPythonLogsBatch: (logs: Omit<LogLine, "id">[]) => void;
   clearLogs: () => void;
 }
 
@@ -47,6 +49,32 @@ export const useLogsStore = create<LogsState>((set) => ({
       logBuffer: {
         ...state.logBuffer,
         python: [...state.logBuffer.python, newLog].slice(-MAX_LOGS)
+      }
+    };
+  }),
+
+  addNestLogsBatch: (logs) => set((state) => {
+    const newLogs: LogLine[] = logs.map((log, index) => ({
+      ...log,
+      id: `${Date.now()}-${index}-${Math.random()}`
+    }));
+    return {
+      logBuffer: {
+        ...state.logBuffer,
+        nestjs: [...state.logBuffer.nestjs, ...newLogs].slice(-MAX_LOGS)
+      }
+    };
+  }),
+
+  addPythonLogsBatch: (logs) => set((state) => {
+    const newLogs: LogLine[] = logs.map((log, index) => ({
+      ...log,
+      id: `${Date.now()}-${index}-${Math.random()}`
+    }));
+    return {
+      logBuffer: {
+        ...state.logBuffer,
+        python: [...state.logBuffer.python, ...newLogs].slice(-MAX_LOGS)
       }
     };
   }),

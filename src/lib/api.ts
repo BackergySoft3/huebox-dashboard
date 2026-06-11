@@ -43,8 +43,8 @@ api.interceptors.response.use(
 
 
     if (
-      error.response?.status === 401 && 
-      !originalRequest._retry && 
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
       originalRequest.url !== "/api/auth/token/refresh" &&
       originalRequest.url !== "/api/auth/otp/verify" &&
       originalRequest.url !== "/api/auth/otp/send"
@@ -76,7 +76,7 @@ api.interceptors.response.use(
         const { data } = await axios.post(`${baseURL}/api/auth/token/refresh`, { refreshToken });
         const newAccessToken = data.access_token || data.accessToken || data.token;
         const newRefreshToken = data.refresh_token || data.refreshToken;
-        
+
         useAuthStore.getState().setAuth(
           newAccessToken,
           newRefreshToken || refreshToken,
@@ -85,7 +85,7 @@ api.interceptors.response.use(
 
         api.defaults.headers.common["Authorization"] = "Bearer " + newAccessToken;
         originalRequest.headers.Authorization = "Bearer " + newAccessToken;
-        
+
         processQueue(null, newAccessToken);
         return api(originalRequest);
       } catch (refreshError) {

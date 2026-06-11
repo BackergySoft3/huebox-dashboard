@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useLogStream } from "../hooks/useLogStream";
 import { useBotStore } from "../store/bot";
-import { useLogsStore } from "../store/logs";
 import { api } from "../lib/api";
+import { useLogsStore } from "../store/logs";
+import { nestLogApi } from "../services/nestLogApi";
 import { LogPanel } from "../components/LogPanel";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -22,21 +23,43 @@ export function LiveLogs() {
         .then((res) => {
           if (res.data?.success && res.data.output) {
             const lines = res.data.output.split("\n");
-            useLogsStore.getState().clearLogs();
-            lines.forEach((line: string) => {
-              if (line.trim()) {
+            const newLogs = lines
+              .filter((line: string) => line.trim())
+              .map((line: string) => {
                 const lower = line.toLowerCase();
                 const level = lower.includes("error") ? "error" : lower.includes("warn") ? "warn" : "info";
-                useLogsStore.getState().addPythonLog({
+                return {
                   timestamp: new Date().toISOString(),
                   message: line,
-                  level,
-                });
-              }
-            });
+                  level: level as "info" | "warn" | "error",
+                };
+              });
+            useLogsStore.getState().addPythonLogsBatch(newLogs);
           }
         })
         .catch((err) => console.warn("Failed to load initial logs:", err));
+    }
+
+    if (useLogsStore.getState().logBuffer.nestjs.length === 0) {
+      nestLogApi.getNestjsLogs(250)
+        .then((res) => {
+          if (res?.success && res.output) {
+            const lines = res.output.split("\n");
+            const newLogs = lines
+              .filter((line: string) => line.trim())
+              .map((line: string) => {
+                const lower = line.toLowerCase();
+                const level = lower.includes("error") ? "error" : lower.includes("warn") ? "warn" : "info";
+                return {
+                  timestamp: new Date().toISOString(),
+                  message: line,
+                  level: level as "info" | "warn" | "error",
+                };
+              });
+            useLogsStore.getState().addNestLogsBatch(newLogs);
+          }
+        })
+        .catch((err) => console.warn("Failed to load initial NestJS logs:", err));
     }
   }, []);
 
