@@ -20,6 +20,7 @@ import { AdminKyc } from "./pages/AdminKyc";
 import { AdminFinance } from "./pages/AdminFinance";
 import { AdminConfig } from "./pages/AdminConfig";
 import { System } from "./pages/System";
+import { Settings } from "./pages/Settings";
 import "./index.css";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -78,6 +79,7 @@ function App() {
             <Route path="payment/return" element={<PaymentReturn />} />
             <Route path="trading" element={<Trading />} />
             <Route path="logs" element={<LiveLogs />} />
+            <Route path="settings" element={<Settings />} />
 
             {/* Admin routes */}
             <Route

@@ -17,6 +17,7 @@ import {
   Bot,
   DollarSign,
   Sliders,
+  User,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -44,6 +45,7 @@ export function Sidebar() {
     { name: "Live Trading", href: "/trading", icon: CandlestickChart },
     { name: "Payments", href: "/payments", icon: Wallet },
     { name: "Live Logs", href: "/logs", icon: Terminal },
+    { name: "Settings", href: "/settings", icon: User },
   ];
 
   const adminNavigation: NavItem[] = [

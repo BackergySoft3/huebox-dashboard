@@ -5,6 +5,7 @@ export interface CreateOrderRequest {
   amountUsd: number;
   fiat?: string;
   coin?: string;
+  provider?: string;
 }
 
 export interface WithdrawRequest {
@@ -12,6 +13,7 @@ export interface WithdrawRequest {
   address: string;
   network: string;
   coin?: string;
+  provider?: string;
 }
 
 export interface SendRequest {
@@ -22,8 +24,9 @@ export interface SendRequest {
 
 export interface CreateOrderResponse {
   checkoutUrl: string;
-  orderId: string;
-  orderNo: string;
+  orderId?: string;
+  orderNo?: string;
+  provider?: string;
 }
 
 export interface BalanceResponse {
@@ -58,6 +61,7 @@ export interface Transaction {
   bybitTransferId: string | null;
   externalAddress: string | null;
   network: string | null;
+  provider?: string;
   metadata: Record<string, any>;
   errorMessage: string | null;
   createdAt: string;

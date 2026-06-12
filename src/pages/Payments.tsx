@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../lib/api";
 import {
   useWalletBalance,
   useTransactionHistory,
@@ -44,6 +46,7 @@ export function Payments() {
   // Form States for Add Funds
   const [addFundsAmount, setAddFundsAmount] = useState("");
   const [addFundsFiat, setAddFundsFiat] = useState("USD");
+  const [addFundsProvider, setAddFundsProvider] = useState("");
   const [addFundsSuccess, setAddFundsSuccess] = useState(false);
   const [addFundsErrorMsg, setAddFundsErrorMsg] = useState("");
 
@@ -51,6 +54,7 @@ export function Payments() {
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawAddress, setWithdrawAddress] = useState("");
   const [withdrawNetwork, setWithdrawNetwork] = useState("TRC20");
+  const [withdrawProvider, setWithdrawProvider] = useState("");
   const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
   const [withdrawSuccessId, setWithdrawSuccessId] = useState("");
   const [withdrawErrorMsg, setWithdrawErrorMsg] = useState("");
@@ -73,6 +77,27 @@ export function Payments() {
   const createOrderMutation = useCreateOrder();
   const withdrawMutation = useWithdraw();
   const sendMutation = useSend();
+
+  const { data: providers } = useQuery({
+    queryKey: ["payment-providers"],
+    queryFn: () => api.get("/api/payment/providers").then((res) => res.data),
+  });
+
+  const { data: userPrefs } = useQuery({
+    queryKey: ["user-preferences"],
+    queryFn: () => api.get("/api/user/preferences").then((res) => res.data),
+  });
+
+  useEffect(() => {
+    if (userPrefs) {
+      if (userPrefs.preferredDepositProvider && !addFundsProvider) {
+        setAddFundsProvider(userPrefs.preferredDepositProvider);
+      }
+      if (userPrefs.preferredWithdrawProvider && !withdrawProvider) {
+        setWithdrawProvider(userPrefs.preferredWithdrawProvider);
+      }
+    }
+  }, [userPrefs]);
 
   const handleRefresh = async () => {
     await Promise.all([refetchBalance(), refetchHistory()]);
@@ -186,7 +211,7 @@ export function Payments() {
     }
 
     createOrderMutation.mutate(
-      { amountUsd: amountNum, fiat: addFundsFiat, coin: "USDT" },
+      { amountUsd: amountNum, fiat: addFundsFiat, coin: "USDT", provider: addFundsProvider || undefined },
       {
         onSuccess: () => {
           setAddFundsSuccess(true);
@@ -225,6 +250,7 @@ export function Payments() {
       address: withdrawAddress,
       network: withdrawNetwork,
       coin,
+      provider: withdrawProvider || undefined,
     });
     setWithdrawSuccessId(data.withdrawalId || data.transferId || "Successfully Initiated");
     setWithdrawAmount("");
@@ -410,7 +436,10 @@ export function Payments() {
                           </td>
                           <td className="py-3 px-4 font-bold text-foreground flex items-center gap-2">
                             {getTxIcon(tx.type)}
-                            <span className="capitalize">{tx.type}</span>
+                            <span className="capitalize">
+                              {tx.type}
+                              {tx.provider && <span className="ml-1 text-[10px] text-muted-foreground font-normal bg-muted/40 px-1.5 py-0.5 rounded">({providers?.find((p: any) => p.key === tx.provider)?.name || tx.provider})</span>}
+                            </span>
                           </td>
                           <td className="py-3 px-4 text-right font-bold">
                             {formatTxAmount(tx.type, tx.amountUsdt, tx.coin)}
@@ -441,7 +470,7 @@ export function Payments() {
           <Card className="bg-card/30 border-border/40 backdrop-blur-sm relative overflow-hidden">
             <CardHeader>
               <CardTitle className="text-base font-mono tracking-wider text-slate-200">
-                DEPOSIT WITH MOONPAY
+                BUY CRYPTO
               </CardTitle>
               <CardDescription className="text-xs font-mono text-slate-500">
                 Quick fiat on-ramp to buy crypto and fund your trading bot sub-account immediately.
@@ -495,6 +524,20 @@ export function Payments() {
                   </select>
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-xs font-mono text-slate-400">Payment Provider (Optional)</label>
+                  <select
+                    value={addFundsProvider}
+                    onChange={(e) => setAddFundsProvider(e.target.value)}
+                    className="w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm font-mono shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                  >
+                    <option value="">-- Default Preference ({userPrefs?.preferredDepositProvider || 'None'}) --</option>
+                    {providers?.map((p: any) => (
+                      <option key={`dep-${p.key}`} value={p.key}>{p.name} ({p.fees})</option>
+                    ))}
+                  </select>
+                </div>
+
                 <Button
                   type="submit"
                   disabled={createOrderMutation.isPending}
@@ -502,10 +545,10 @@ export function Payments() {
                 >
                   {createOrderMutation.isPending ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> Launching MoonPay...
+                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> Launching Checkout...
                     </>
                   ) : (
-                    "Deposit with MoonPay"
+                    `Deposit with ${providers?.find((p: any) => p.key === (addFundsProvider || userPrefs?.preferredDepositProvider))?.name || "Selected Provider"}`
                   )}
                 </Button>
               </form>
@@ -611,6 +654,20 @@ export function Payments() {
                     <option value="TRC20">TRON (TRC20)</option>
                     <option value="ERC20">Ethereum (ERC20)</option>
                     <option value="BEP20">BNB Chain (BEP20)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-mono text-slate-400">Off-ramp Provider (Optional)</label>
+                  <select
+                    value={withdrawProvider}
+                    onChange={(e) => setWithdrawProvider(e.target.value)}
+                    className="w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm font-mono shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                  >
+                    <option value="">-- Default Preference ({userPrefs?.preferredWithdrawProvider || 'None'}) --</option>
+                    {providers?.map((p: any) => (
+                      <option key={`with-${p.key}`} value={p.key}>{p.name} ({p.fees})</option>
+                    ))}
                   </select>
                 </div>
 
@@ -812,7 +869,10 @@ export function Payments() {
                         </td>
                         <td className="py-3 px-4 font-bold text-foreground flex items-center gap-2">
                           {getTxIcon(tx.type)}
-                          <span className="capitalize">{tx.type}</span>
+                          <span className="capitalize">
+                            {tx.type}
+                            {tx.provider && <span className="ml-1 text-[10px] text-muted-foreground font-normal bg-muted/40 px-1.5 py-0.5 rounded">({providers?.find((p: any) => p.key === tx.provider)?.name || tx.provider})</span>}
+                          </span>
                         </td>
                         <td className="py-3 px-4 text-right font-bold">
                           {formatTxAmount(tx.type, tx.amountUsdt, tx.coin)}
