@@ -1,68 +1,26 @@
-import axios from "axios";
+﻿import axios from "axios";
+import { getAuthCookie, AUTH_COOKIE_KEYS } from "../Helpers/cookieAuth";
+import type {
+  CreateOrderRequest,
+  CreateOrderResponse,
+  WithdrawRequest,
+  WithdrawResponse,
+  SendRequest,
+  SendResponse,
+  WalletBalance,
+  TransactionHistory,
+} from "../Interfaces/wallet";
 
-// TypeScript interfaces
-export interface CreateOrderRequest {
-  amountUsd: number;
-  fiat?: string;
-  coin?: string;
-}
-
-export interface WithdrawRequest {
-  amount: number;
-  address: string;
-  network: string;
-  coin?: string;
-}
-
-export interface SendRequest {
-  toBybitUid: string;
-  amount: number;
-  coin?: string;
-}
-
-export interface CreateOrderResponse {
-  checkoutUrl: string;
-  orderId: string;
-  orderNo: string;
-}
-
-export interface BalanceResponse {
-  balance: number;
-  coin: string;
-}
-
-export interface TransactionHistoryResponse {
-  items: Transaction[];
-  total: number;
-  page: number;
-  pages: number;
-}
-
-export interface WithdrawResponse {
-  transferId: string;
-  withdrawalId: string;
-}
-
-export interface SendResponse {
-  transferId: string;
-}
-
-export interface Transaction {
-  _id: string;
-  userId: string;
-  type: "deposit" | "withdrawal" | "transfer" | "send" | "receive" | "withdraw" | "fee" | "pnl";
-  amountUsdt: number;
-  status: "pending" | "confirmed" | "completed" | "failed";
-  coin: string;
-  txId: string | null;
-  bybitTransferId: string | null;
-  externalAddress: string | null;
-  network: string | null;
-  metadata: Record<string, any>;
-  errorMessage: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+export type {
+  CreateOrderRequest,
+  CreateOrderResponse,
+  WithdrawRequest,
+  WithdrawResponse,
+  SendRequest,
+  SendResponse,
+  WalletBalance,
+  TransactionHistory,
+};
 
 // Axios Instance configuration
 const apiBase = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE || "";
@@ -78,7 +36,7 @@ const paymentAxiosInstance = axios.create({
 // Interceptor to attach Authorization header
 paymentAxiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("access_token") || localStorage.getItem("huebox_access_token");
+    const token = getAuthCookie(AUTH_COOKIE_KEYS.ACCESS_TOKEN);
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -97,12 +55,12 @@ export const paymentApi = {
 
 // walletApi export
 export const walletApi = {
-  getBalance: async (): Promise<BalanceResponse> => {
-    const response = await paymentAxiosInstance.get<BalanceResponse>("/wallet/balance");
+  getBalance: async (): Promise<WalletBalance> => {
+    const response = await paymentAxiosInstance.get<WalletBalance>("/wallet/balance");
     return response.data;
   },
-  getHistory: async (page: number, limit: number): Promise<{ data: TransactionHistoryResponse }> => {
-    const response = await paymentAxiosInstance.get<TransactionHistoryResponse>(
+  getHistory: async (page: number, limit: number): Promise<{ data: TransactionHistory }> => {
+    const response = await paymentAxiosInstance.get<TransactionHistory>(
       `/wallet/history?page=${page}&limit=${limit}`
     );
     return { data: response.data };

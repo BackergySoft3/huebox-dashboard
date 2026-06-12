@@ -1,0 +1,60 @@
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuthStore } from "../State/auth";
+import { ROUTES } from "../Constants/routes";
+import { Layout } from "../Layouts/MainLayout/Layout";
+import { ProtectedRoute } from "./ProtectedRoute";
+
+import { Login }         from "../Containers/Login";
+import { Overview }      from "../Containers/Overview";
+import { BotControl }    from "../Containers/BotControl";
+import { Progress }      from "../Containers/Progress";
+import { Performance }   from "../Containers/Performance";
+import { Payments }      from "../Containers/Payments";
+import { PaymentReturn } from "../Containers/PaymentReturn";
+import { Trading }       from "../Containers/Trading";
+import { LiveLogs }      from "../Containers/LiveLogs";
+import { AdminUsers }    from "../Containers/AdminUsers";
+import { AdminBots }     from "../Containers/AdminBots";
+import { AdminKyc }      from "../Containers/AdminKyc";
+import { AdminFinance }  from "../Containers/AdminFinance";
+import { AdminConfig }   from "../Containers/AdminConfig";
+import { System }        from "../Containers/System";
+
+function AdminIndexRoute() {
+  const isAdmin = useAuthStore((state) => state.isAdmin)();
+  if (isAdmin) return <Navigate to={ROUTES.USERS} replace />;
+  return <Overview />;
+}
+
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route path={ROUTES.LOGIN} element={<Login />} />
+
+      <Route
+        path={ROUTES.HOME}
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminIndexRoute />} />
+        <Route path="control"        element={<BotControl />} />
+        <Route path="progress"       element={<Progress />} />
+        <Route path="performance"    element={<Performance />} />
+        <Route path="payments"       element={<Payments />} />
+        <Route path="payment/return" element={<PaymentReturn />} />
+        <Route path="trading"        element={<Trading />} />
+        <Route path="logs"           element={<LiveLogs />} />
+
+        <Route path="users"          element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
+        <Route path="admin/bots"     element={<ProtectedRoute adminOnly><AdminBots /></ProtectedRoute>} />
+        <Route path="admin/kyc"      element={<ProtectedRoute adminOnly><AdminKyc /></ProtectedRoute>} />
+        <Route path="admin/finance"  element={<ProtectedRoute adminOnly><AdminFinance /></ProtectedRoute>} />
+        <Route path="system"         element={<ProtectedRoute adminOnly><System /></ProtectedRoute>} />
+        <Route path="admin/config"   element={<ProtectedRoute adminOnly><AdminConfig /></ProtectedRoute>} />
+      </Route>
+    </Routes>
+  );
+}

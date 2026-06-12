@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { paymentApi, walletApi } from "../services/paymentApi";
+﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { paymentApi, walletApi } from "../Services/paymentApi";
 import type {
   CreateOrderRequest,
   CreateOrderResponse,
@@ -7,12 +7,12 @@ import type {
   WithdrawResponse,
   SendRequest,
   SendResponse,
-  BalanceResponse,
-  TransactionHistoryResponse,
-} from "../services/paymentApi";
+  WalletBalance,
+  TransactionHistory,
+} from "../Interfaces/wallet";
 
 export function useWalletBalance() {
-  const query = useQuery<BalanceResponse>({
+  const query = useQuery<WalletBalance>({
     queryKey: ["wallet", "balance"],
     queryFn: () => walletApi.getBalance(),
     refetchInterval: 15000,
@@ -30,7 +30,7 @@ export function useWalletBalance() {
 }
 
 export function useTransactionHistory(page: number, limit = 20) {
-  const query = useQuery<TransactionHistoryResponse>({
+  const query = useQuery<TransactionHistory>({
     queryKey: ["wallet", "history", page, limit],
     queryFn: () => walletApi.getHistory(page, limit).then((r) => r.data),
     retry: 2,

@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../lib/api";
+﻿import { useQuery } from "@tanstack/react-query";
+import { api } from "../Services/http.service";
 
 export function usePerformance() {
   const historyQuery = useQuery({

@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+﻿import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { api } from "../lib/api";
-import { useBotStore } from "../store/bot";
+import { api } from "../Services/http.service";
+import { useBotStore } from "../State/bot";
 
 export function useBotStatus() {
   const setBotStatusStore = useBotStore((state) => state.setBotStatus);

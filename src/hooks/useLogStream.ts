@@ -1,4 +1,4 @@
-import { useLogsStore } from "../store/logs";
+﻿import { useLogsStore } from "../State/logs";
 
 export function useLogStream() {
   const { logBuffer, clearLogs } = useLogsStore();
