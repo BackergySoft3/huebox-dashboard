@@ -10,20 +10,24 @@ import { KycStatus } from "../Enums/KycStatus.enum";
 
 const STATUS_COLORS: Partial<Record<KycStatus, string>> = {
   [KycStatus.Pending]:  "text-amber-400 border-amber-500/20 bg-amber-500/5",
+  [KycStatus.InReview]: "text-blue-400 border-blue-500/20 bg-blue-500/5",
   [KycStatus.Approved]: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
   [KycStatus.Rejected]: "text-red-400 border-red-500/20 bg-red-500/5",
 };
 
 const formatKycStatus = (status: string) => {
   if (!status) return "";
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  return status
+    .split(/[-_]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 };
 
 export function AdminKyc() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<KycStatus>(KycStatus.Pending);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [modal, setModal] = useState<"approve" | "reject" | "pending" | null>(null);
+  const [modal, setModal] = useState<"approve" | "reject" | "pending" | "in_review" | null>(null);
 
   const { data: listData, isLoading, refetch } = useQuery({
     queryKey: ["admin-kyc", tab],
@@ -74,6 +78,16 @@ export function AdminKyc() {
     },
   });
 
+  const markInReview = useMutation({
+    mutationFn: () => api.patch(`/api/user/kyc/${selectedUserId}`, { status: "in_review" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-kyc"] });
+      qc.invalidateQueries({ queryKey: ["admin-kyc-detail", selectedUserId] });
+      qc.invalidateQueries({ queryKey: ["admin-kyc-stats"] });
+      setModal(null);
+    },
+  });
+
   const items: any[] = listData?.items ?? [];
 
   return (
@@ -103,7 +117,7 @@ export function AdminKyc() {
                   tab === t ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {t}
+                {t.replace(/[-_]/g, " ")}
               </button>
             ))}
           </div>
@@ -207,6 +221,15 @@ export function AdminKyc() {
                       <XCircle className="w-4 h-4" /> Reject
                     </Button>
                   )}
+                  {detail.kycStatus === KycStatus.Pending && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 gap-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                      onClick={() => setModal("in_review")}
+                    >
+                      <RefreshCw className="w-4 h-4" /> Mark as In Review
+                    </Button>
+                  )}
                   {detail.kycStatus !== KycStatus.Pending && (
                     <Button
                       variant="outline"
@@ -250,6 +273,15 @@ export function AdminKyc() {
           confirmLabel="Reset"
           onCancel={() => setModal(null)}
           onConfirm={async () => { await markPending.mutateAsync(); }}
+        />
+      )}
+      {modal === "in_review" && (
+        <ConfirmModal
+          title="Mark KYC as In Review"
+          description="This will change the user's KYC verification status to In Review."
+          confirmLabel="Confirm"
+          onCancel={() => setModal(null)}
+          onConfirm={async () => { await markInReview.mutateAsync(); }}
         />
       )}
     </div>

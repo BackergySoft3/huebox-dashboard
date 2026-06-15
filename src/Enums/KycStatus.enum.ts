@@ -1,5 +1,6 @@
 export const KycStatus = {
   Pending:  "pending",
+  InReview: "in_review",
   Approved: "verified",
   Rejected: "rejected",
   All:      "all",

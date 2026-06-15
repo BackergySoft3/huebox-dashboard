@@ -1,16 +1,27 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useAuthStore } from "../State/auth";
 import { api } from "../Services/http.service";
+import { authApi } from "../Services/authApi";
 import { Button } from "../Components/Atoms/button";
 import { Input } from "../Components/Atoms/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../Components/Atoms/card";
 import { useNavigate } from "react-router-dom";
 import { Activity } from "lucide-react";
+import ReactFlagsSelect from "react-flags-select";
+import { Currency } from "../Enums/Currency.enum";
 
 export function Login() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState<"email" | "otp">("email");
+  const [step, setStep] = useState<"email" | "otp" | "kyc">("email");
+  const [kycForm, setKycForm] = useState({
+    firstName: "",
+    lastName: "",
+    country: "",
+    phone: "",
+    currency: Currency.USD as Currency,
+    referralCode: "",
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [devOtp, setDevOtp] = useState<string | null>(null);
@@ -64,7 +75,12 @@ export function Login() {
           lastName: userData?.lastName,
           avatarUrl: userData?.avatarUrl,
         });
-        navigate("/");
+
+        if (userData?.kycStatus === "pending") {
+          setStep("kyc");
+        } else {
+          navigate("/");
+        }
       } else {
         setError("Invalid response from server");
       }
@@ -75,6 +91,27 @@ export function Login() {
     }
   };
 
+  const handleKycSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      await authApi.prepareAccount(kycForm);
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        useAuthStore.getState().setAuth(
+          useAuthStore.getState().accessToken,
+          useAuthStore.getState().refreshToken,
+          { ...currentUser, firstName: kycForm.firstName, lastName: kycForm.lastName, kycStatus: "in_review" }
+        );
+      }
+      navigate("/");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to submit profile");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4 relative overflow-hidden">
@@ -89,7 +126,11 @@ export function Login() {
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">Huebox Engine</CardTitle>
           <CardDescription>
-            {step === "email" ? "Enter your email to receive an OTP" : "Enter the 6-digit OTP sent to your email"}
+            {step === "email" 
+              ? "Enter your email to receive an OTP" 
+              : step === "otp" 
+                ? "Enter the 6-digit OTP sent to your email" 
+                : "Complete your profile to continue"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -114,7 +155,7 @@ export function Login() {
                 {loading ? "Sending..." : "Send OTP"}
               </Button>
             </form>
-          ) : (
+          ) : step === "otp" ? (
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               {/* DEV MODE: Auto-fetched OTP banner */}
               {import.meta.env.DEV && devOtp && (
@@ -158,6 +199,69 @@ export function Login() {
                 onClick={() => { setStep("email"); setDevOtp(null); }}
               >
                 Back
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleKycSubmit} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  type="text"
+                  placeholder="First Name"
+                  value={kycForm.firstName}
+                  onChange={(e) => setKycForm({ ...kycForm, firstName: e.target.value })}
+                  required
+                  className="bg-background/50 text-foreground"
+                />
+                <Input
+                  type="text"
+                  placeholder="Last Name"
+                  value={kycForm.lastName}
+                  onChange={(e) => setKycForm({ ...kycForm, lastName: e.target.value })}
+                  required
+                  className="bg-background/50 text-foreground"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <ReactFlagsSelect
+                  selected={kycForm.country}
+                  onSelect={(code) => setKycForm({ ...kycForm, country: code })}
+                  searchable
+                  placeholder="Select Country..."
+                  className="react-flags-custom w-full text-foreground"
+                  selectButtonClassName="!w-full !h-10 !bg-background/50 !rounded-md !border !border-input !px-3 !py-2 !text-sm focus:!ring-2 focus:!ring-ring focus:!outline-none"
+                />
+                <Input
+                  type="text"
+                  placeholder="Phone Number"
+                  value={kycForm.phone}
+                  onChange={(e) => setKycForm({ ...kycForm, phone: e.target.value })}
+                  required
+                  className="bg-background/50 text-foreground"
+                />
+              </div>
+              <div className="space-y-2">
+                <select
+                  value={kycForm.currency}
+                  onChange={(e) => setKycForm({ ...kycForm, currency: e.target.value as Currency })}
+                  required
+                  className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-foreground"
+                >
+                  {Object.entries(Currency).map(([key, val]) => (
+                    <option key={val} value={val}>{key}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Input
+                  type="text"
+                  placeholder="Referral Code (Optional)"
+                  value={kycForm.referralCode}
+                  onChange={(e) => setKycForm({ ...kycForm, referralCode: e.target.value })}
+                  className="bg-background/50 text-foreground"
+                />
+              </div>
+              <Button type="submit" className="w-full font-semibold mt-2" disabled={loading}>
+                {loading ? "Submitting..." : "Complete Setup"}
               </Button>
             </form>
           )}

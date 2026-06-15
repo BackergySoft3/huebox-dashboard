@@ -1,5 +1,7 @@
-﻿import { Link, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../State/auth";
+import { api } from "../../Services/http.service";
 import {
   LayoutDashboard,
   PlayCircle,
@@ -20,6 +22,7 @@ import {
 } from "lucide-react";
 import { Button } from "../../Components/Atoms/button";
 import { Badge } from "../../Components/Atoms/badge";
+import { ConfirmModal } from "../../Components/Organisms/ConfirmModal";
 import type { NavItem } from "../../Interfaces/components";
 
 export function Sidebar() {
@@ -28,6 +31,18 @@ export function Sidebar() {
   const user = useAuthStore((state) => state.user);
   const isAdmin = useAuthStore((state) => state.isAdmin)();
   const isSuperAdmin = useAuthStore((state) => state.isSuperAdmin)();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  const handleLogoutConfirm = async () => {
+    try {
+      await api.post("/api/auth/logout");
+    } catch (e) {
+      console.error("Logout API failed", e);
+    } finally {
+      logout();
+      setIsLogoutModalOpen(false);
+    }
+  };
 
   const userNavigation: NavItem[] = [
     { name: "Overview", href: "/", icon: LayoutDashboard },
@@ -131,12 +146,23 @@ export function Sidebar() {
         <Button
           variant="ghost"
           className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-          onClick={logout}
+          onClick={() => setIsLogoutModalOpen(true)}
         >
           <LogOut className="w-4 h-4 mr-2" />
           Logout
         </Button>
       </div>
+
+      {isLogoutModalOpen && (
+        <ConfirmModal
+          title="Confirm Logout"
+          description="Are you sure you want to logout? This will clear your current session and require you to sign in again."
+          confirmLabel="Logout"
+          danger={true}
+          onConfirm={handleLogoutConfirm}
+          onCancel={() => setIsLogoutModalOpen(false)}
+        />
+      )}
     </aside>
   );
 }
