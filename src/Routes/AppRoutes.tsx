@@ -9,6 +9,8 @@ import { Overview }      from "../Containers/Overview";
 import { BotControl }    from "../Containers/BotControl";
 import { Progress }      from "../Containers/Progress";
 import { Performance }   from "../Containers/Performance";
+import { MyBot }         from "../Containers/MyBot";
+import { Settings }      from "../Containers/Settings";
 import { Payments }      from "../Containers/Payments";
 import { PaymentReturn } from "../Containers/PaymentReturn";
 import { Trading }       from "../Containers/Trading";
@@ -43,10 +45,12 @@ export function AppRoutes() {
         <Route path="control"        element={<BotControl />} />
         <Route path="progress"       element={<Progress />} />
         <Route path="performance"    element={<Performance />} />
+        <Route path="my-bot"         element={<MyBot />} />
         <Route path="payments"       element={<Payments />} />
         <Route path="payment/return" element={<PaymentReturn />} />
         <Route path="trading"        element={<Trading />} />
         <Route path="logs"           element={<LiveLogs />} />
+        <Route path="settings"       element={<Settings />} />
 
         <Route path="users"          element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
         <Route path="admin/bots"     element={<ProtectedRoute adminOnly><AdminBots /></ProtectedRoute>} />

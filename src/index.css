@@ -1,6 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 
+/* ─── Dark Mode: class-based via Tailwind v4 ─────────────────────── */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ─── Design Tokens ─────────────────────────────────────────────── */
 @theme {
   --color-border: hsl(var(--border));
@@ -38,7 +41,7 @@
 /* ─── Color Palette: Dark Terminal ──────────────────────────────── */
 @layer base {
   :root {
-    /* Terminal black background */
+    /* Terminal black background — default dark theme */
     --background: 0 0% 4%;
     --foreground: 210 20% 88%;
 
@@ -74,6 +77,37 @@
 
     --radius: 0.5rem;
   }
+
+  /* ─── Light Mode Overrides ────────────────────────────────────── */
+  :root:not(.dark) {
+    --background: 0 0% 98%;
+    --foreground: 222 20% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 20% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 20% 12%;
+
+    --primary: 180 55% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 214 16% 93%;
+    --secondary-foreground: 222 20% 12%;
+
+    --muted: 210 16% 94%;
+    --muted-foreground: 215 12% 44%;
+
+    --accent: 210 18% 96%;
+    --accent-foreground: 222 20% 12%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214 18% 86%;
+    --input: 214 18% 86%;
+    --ring: 180 55% 42%;
+  }
 }
 
 /* ─── Base Reset & Typography ────────────────────────────────────── */
@@ -93,7 +127,7 @@
     @apply bg-background text-foreground;
     font-family: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
-    background-color: #0a0a0b;
+    background-color: hsl(var(--background));
   }
 
   /* Monospace system: used in log panels, stat values, timestamps */
@@ -119,6 +153,12 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(180 60% 30%);
+  }
+  :root:not(.dark) ::-webkit-scrollbar-thumb {
+    background: hsl(214 18% 78%);
+  }
+  :root:not(.dark) ::-webkit-scrollbar-thumb:hover {
+    background: hsl(180 55% 42%);
   }
 
   /* Selection highlight */

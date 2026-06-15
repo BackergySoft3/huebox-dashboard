@@ -4,7 +4,30 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>hue-box-dashboard</title>
+    <title>HueBox Dashboard</title>
+    <!-- Anti-flash theme initializer: runs before React renders -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('hb-theme');
+          var parsed = stored ? JSON.parse(stored) : null;
+          var theme = parsed && parsed.state && parsed.state.theme ? parsed.state.theme : 'system';
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else if (theme === 'light') {
+            document.documentElement.classList.remove('dark');
+          } else {
+            // system
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              document.documentElement.classList.add('dark');
+            }
+          }
+        } catch (e) {
+          // default to dark for trading UIs
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

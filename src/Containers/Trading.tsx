@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
   TrendingUp,
@@ -8,7 +8,8 @@ import {
   AlertTriangle,
   HelpCircle,
   RefreshCw,
-  Coins
+  Coins,
+  Eye
 } from "lucide-react";
 import {
   ComposedChart,
@@ -32,10 +33,14 @@ import {
   useCancelOrder,
   useClosePosition
 } from "../Hooks/useTrading";
+import { useAuthStore } from "../State/auth";
 import { cn } from "../Helpers/utils";
 import { OrderType } from "../Enums/OrderType.enum";
 import { TradeSide } from "../Enums/TradeSide.enum";
 import { ChartInterval } from "../Enums/ChartInterval.enum";
+
+const DEVELOPER_ACCOUNT = "client@huebox.dev.com";
+
 
 const CHART_INTERVAL_LABELS: Record<ChartInterval, string> = {
   [ChartInterval.Minutes15]:  "15M",
@@ -45,6 +50,12 @@ const CHART_INTERVAL_LABELS: Record<ChartInterval, string> = {
 };
 
 export function Trading() {
+  const user = useAuthStore((state) => state.user);
+  const isAdmin = useAuthStore((state) => state.isAdmin)();
+  const isDeveloperAccount = user?.email === DEVELOPER_ACCOUNT;
+  // Clients (non-developer, non-admin users) get read-only Live Markets
+  const isReadOnly = !isAdmin && !isDeveloperAccount;
+
   const [activeTab, setActiveTab] = useState<"positions" | "orders" | "closedPnl">("positions");
   const [chartInterval, setChartInterval] = useState<ChartInterval>(ChartInterval.Minutes15);
   const [orderType, setOrderType] = useState<OrderType>(OrderType.Limit);
@@ -209,6 +220,13 @@ export function Trading() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-12">
+      {/* Read-only badge for client mode */}
+      {isReadOnly && (
+        <div className="flex items-center gap-2 text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-md">
+          <Eye className="w-3.5 h-3.5 shrink-0" />
+          <span>Live Markets — Read-Only View. Trading actions are managed automatically by your bot.</span>
+        </div>
+      )}
       {/* 1. TICKER HEADERS BAR */}
       <div className="bg-[#0e0f12]/80 border border-border/30 rounded-lg p-4 backdrop-blur-md flex flex-wrap items-center justify-between gap-6 font-mono">
         <div className="flex items-center gap-3">
@@ -273,9 +291,9 @@ export function Trading() {
       )}
 
       {/* 2. GRID BODY LAYOUT */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className={cn("grid grid-cols-1 gap-6 items-start", !isReadOnly ? "lg:grid-cols-12" : "")}>
         {/* LEFT COLUMN (CHART + TABS) */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className={!isReadOnly ? "lg:col-span-8 space-y-6" : "space-y-6"}>
           {/* A. CANDLESTICK / PRICE TIMELINE CHART */}
           <Card className="bg-[#0c0d10]/60 border-border/30 backdrop-blur-sm relative overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-border/20">
@@ -400,9 +418,9 @@ export function Trading() {
                           <th className="pb-2 text-right">ENTRY</th>
                           <th className="pb-2 text-right">MARK</th>
                           <th className="pb-2 text-right">LIQUIDATION</th>
-                          <th className="pb-2 text-right">UNREALIZED PNL</th>
+                          <th className="pb-2">UNREALIZED PNL</th>
                           <th className="pb-2 text-right">LEVERAGE</th>
-                          <th className="pb-2 text-right">ACTION</th>
+                          {!isReadOnly && <th className="pb-2 text-right">ACTION</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -430,21 +448,23 @@ export function Trading() {
                               <td className="py-2.5 text-right text-amber-500">
                                 {pos.liqPrice > 0 ? `$${pos.liqPrice.toFixed(2)}` : "None"}
                               </td>
-                              <td className={cn("py-2.5 text-right font-bold", pnl >= 0 ? "text-emerald-400" : "text-rose-500")}>
+                              <td className={cn("py-2.5 font-bold", pnl >= 0 ? "text-emerald-400" : "text-rose-500")}>
                                 {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
                               </td>
                               <td className="py-2.5 text-right text-slate-300">{pos.leverage}x</td>
-                              <td className="py-2.5 text-right">
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  className="h-7 text-[10px] px-2.5 font-mono"
-                                  onClick={() => handleClosePosition(pos.symbol, pos.side, pos.size)}
-                                  disabled={closePositionMutation.isPending}
-                                >
-                                  {closePositionMutation.isPending ? "Closing..." : "Market Close"}
-                                </Button>
-                              </td>
+                              {!isReadOnly && (
+                                <td className="py-2.5 text-right">
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="h-7 text-[10px] px-2.5 font-mono"
+                                    onClick={() => handleClosePosition(pos.symbol, pos.side, pos.size)}
+                                    disabled={closePositionMutation.isPending}
+                                  >
+                                    {closePositionMutation.isPending ? "Closing..." : "Market Close"}
+                                  </Button>
+                                </td>
+                              )}
                             </tr>
                           );
                         })}
@@ -474,7 +494,7 @@ export function Trading() {
                           <th className="pb-2 text-right">FILLED</th>
                           <th className="pb-2 text-right">STATUS</th>
                           <th className="pb-2 text-right">TIME</th>
-                          <th className="pb-2 text-right">ACTION</th>
+                          {!isReadOnly && <th className="pb-2 text-right">ACTION</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -510,17 +530,19 @@ export function Trading() {
                               <td className="py-2.5 text-right text-muted-foreground text-[10px]">
                                 {format(new Date(order.createdTime), "MM-dd HH:mm:ss")}
                               </td>
-                              <td className="py-2.5 text-right">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 text-[10px] text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                                  onClick={() => handleCancelOrder(order.symbol, order.orderId)}
-                                  disabled={cancelOrderMutation.isPending}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                              </td>
+                              {!isReadOnly && (
+                                <td className="py-2.5 text-right">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 text-[10px] text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                                    onClick={() => handleCancelOrder(order.symbol, order.orderId)}
+                                    disabled={cancelOrderMutation.isPending}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </td>
+                              )}
                             </tr>
                           );
                         })}
@@ -593,7 +615,8 @@ export function Trading() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN (ORDER PANEL + ASSETS) */}
+        {/* RIGHT COLUMN (ORDER PANEL + ASSETS) — developer/admin only */}
+        {!isReadOnly && (
         <div className="lg:col-span-4 space-y-6">
           {/* A. ORDER ENTRY FORM */}
           <Card className="bg-[#0c0d10]/60 border-border/30 backdrop-blur-sm font-mono text-xs">
@@ -769,6 +792,7 @@ export function Trading() {
             </CardContent>
           </Card>
         </div>
+        )}
       </div>
     </div>
   );
