@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLogStream } from "../Hooks/useLogStream";
 import { useBotStore } from "../State/bot";
 import { api } from "../Services/http.service";
@@ -101,7 +101,7 @@ export function LiveLogs() {
       {/* Panels Layout */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
         {/* NestJS Panel */}
-        <Card className="flex flex-col min-h-0 bg-[#0a0a0a]/60 border-border/40 shadow-inner backdrop-blur-sm">
+        <Card className="flex flex-col min-h-0 bg-card/30 border-border/40 shadow-inner backdrop-blur-sm">
           <CardHeader className="py-2.5 px-4 border-b border-border/20 bg-muted/10 shrink-0">
             <CardTitle className="text-xs font-mono tracking-wider flex items-center text-primary">
               <Terminal className="w-3.5 h-3.5 mr-2" /> NESTJS BACKEND LOGS
@@ -121,7 +121,7 @@ export function LiveLogs() {
         </Card>
 
         {/* Python Panel */}
-        <Card className="flex flex-col min-h-0 bg-[#0a0a0a]/60 border-border/40 shadow-inner backdrop-blur-sm">
+        <Card className="flex flex-col min-h-0 bg-card/30 border-border/40 shadow-inner backdrop-blur-sm">
           <CardHeader className="py-2.5 px-4 border-b border-border/20 bg-muted/10 shrink-0">
             <CardTitle className="text-xs font-mono tracking-wider flex items-center text-emerald-400">
               <Terminal className="w-3.5 h-3.5 mr-2" /> PYTHON ENGINE LOGS
