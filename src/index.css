@@ -245,3 +245,51 @@
   .animate-slide-in-right { animation: slide-in-right 0.3s ease-out both; }
   .animate-pulse-ring { animation: pulse-ring 2s ease-in-out infinite; }
 }
+
+/* React Flags Select Custom Dark Mode Override */
+.react-flags-custom button {
+  color: hsl(var(--foreground)) !important;
+}
+
+.react-flags-custom button:after {
+  border-top-color: hsl(var(--foreground)) !important;
+}
+
+.react-flags-custom button[aria-expanded="true"]:after {
+  border-bottom-color: hsl(var(--foreground)) !important;
+}
+
+.react-flags-custom ul[class*="selectOptions"] {
+  background-color: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  color: hsl(var(--card-foreground)) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.5) !important;
+}
+
+.react-flags-custom ul[class*="selectOptions"] li[class*="selectOption"] {
+  color: hsl(var(--foreground)) !important;
+  background-color: transparent !important;
+}
+
+.react-flags-custom ul[class*="selectOptions"] li[class*="selectOption"]:hover,
+.react-flags-custom ul[class*="selectOptions"] li[class*="selectOption"]:focus {
+  background-color: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+.react-flags-custom div[class*="filterBox"] {
+  background-color: hsl(var(--card)) !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+}
+
+.react-flags-custom div[class*="filterBox"] input {
+  background-color: hsl(var(--background)) !important;
+  border: 1px solid hsl(var(--input)) !important;
+  color: hsl(var(--foreground)) !important;
+  border-radius: 4px !important;
+}
+
+.react-flags-custom div[class*="filterBox"] input::placeholder {
+  color: hsl(var(--muted-foreground)) !important;
+}
+

@@ -1,6 +1,9 @@
+
+import { useThemeStore } from "../../State/theme";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../State/auth";
-import { useThemeStore } from "../../State/theme";
+import { api } from "../../Services/http.service";
 import {
   LayoutDashboard,
   PlayCircle,
@@ -27,6 +30,7 @@ import {
 import { Button } from "../../Components/Atoms/button";
 import { Badge } from "../../Components/Atoms/badge";
 import { cn } from "../../Helpers/utils";
+import { ConfirmModal } from "../../Components/Organisms/ConfirmModal";
 import type { NavItem } from "../../Interfaces/components";
 
 const DEVELOPER_ACCOUNT = "client@huebox.dev.com";
@@ -41,6 +45,18 @@ export function Sidebar() {
 
   const isDeveloperAccount = user?.email === DEVELOPER_ACCOUNT;
   const isClientMode = !isAdmin && !isDeveloperAccount;
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  const handleLogoutConfirm = async () => {
+    try {
+      await api.post("/api/auth/logout");
+    } catch (e) {
+      console.error("Logout API failed", e);
+    } finally {
+      logout();
+      setIsLogoutModalOpen(false);
+    }
+  };
 
   // Full developer nav (for client@huebox.dev.com)
   const developerNavigation: NavItem[] = [
@@ -194,12 +210,23 @@ export function Sidebar() {
         <Button
           variant="ghost"
           className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-          onClick={logout}
+          onClick={() => setIsLogoutModalOpen(true)}
         >
           <LogOut className="w-4 h-4 mr-2" />
           Logout
         </Button>
       </div>
+
+      {isLogoutModalOpen && (
+        <ConfirmModal
+          title="Confirm Logout"
+          description="Are you sure you want to logout? This will clear your current session and require you to sign in again."
+          confirmLabel="Logout"
+          danger={true}
+          onConfirm={handleLogoutConfirm}
+          onCancel={() => setIsLogoutModalOpen(false)}
+        />
+      )}
     </aside>
   );
 }
