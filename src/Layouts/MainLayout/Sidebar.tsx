@@ -1,3 +1,5 @@
+
+import { useThemeStore } from "../../State/theme";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../State/auth";
@@ -19,11 +21,19 @@ import {
   Bot,
   DollarSign,
   Sliders,
+  SlidersHorizontal,
+  BarChart3,
+  Sun,
+  Monitor,
+  Moon,
 } from "lucide-react";
 import { Button } from "../../Components/Atoms/button";
 import { Badge } from "../../Components/Atoms/badge";
+import { cn } from "../../Helpers/utils";
 import { ConfirmModal } from "../../Components/Organisms/ConfirmModal";
 import type { NavItem } from "../../Interfaces/components";
+
+const DEVELOPER_ACCOUNT = "client@huebox.dev.com";
 
 export function Sidebar() {
   const logout = useAuthStore((state) => state.logout);
@@ -31,6 +41,10 @@ export function Sidebar() {
   const user = useAuthStore((state) => state.user);
   const isAdmin = useAuthStore((state) => state.isAdmin)();
   const isSuperAdmin = useAuthStore((state) => state.isSuperAdmin)();
+  const { theme, setTheme } = useThemeStore();
+
+  const isDeveloperAccount = user?.email === DEVELOPER_ACCOUNT;
+  const isClientMode = !isAdmin && !isDeveloperAccount;
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const handleLogoutConfirm = async () => {
@@ -44,7 +58,8 @@ export function Sidebar() {
     }
   };
 
-  const userNavigation: NavItem[] = [
+  // Full developer nav (for client@huebox.dev.com)
+  const developerNavigation: NavItem[] = [
     { name: "Overview", href: "/", icon: LayoutDashboard },
     { name: "Bot Control", href: "/control", icon: PlayCircle },
     { name: "Progress", href: "/progress", icon: ListTree },
@@ -52,6 +67,16 @@ export function Sidebar() {
     { name: "Live Trading", href: "/trading", icon: CandlestickChart },
     { name: "Payments", href: "/payments", icon: Wallet },
     { name: "Live Logs", href: "/logs", icon: Terminal },
+  ];
+
+  // Simplified client nav (all other USER-role accounts)
+  const clientNavigation: NavItem[] = [
+    { name: "Overview", href: "/", icon: LayoutDashboard },
+    { name: "Bot Control", href: "/control", icon: PlayCircle },
+    { name: "My Bot", href: "/my-bot", icon: BarChart3 },
+    { name: "Live Markets", href: "/trading", icon: CandlestickChart },
+    { name: "Payments", href: "/payments", icon: Wallet },
+    { name: "Preferences", href: "/settings", icon: SlidersHorizontal },
   ];
 
   const adminNavigation: NavItem[] = [
@@ -68,6 +93,8 @@ export function Sidebar() {
     if (item.adminOnly) return isAdmin;
     return true;
   });
+
+  const userNavigation = isClientMode ? clientNavigation : developerNavigation;
 
   const renderLink = (item: NavItem) => {
     const isActive =
@@ -91,8 +118,16 @@ export function Sidebar() {
     );
   };
 
+  const themeButtonClass = (t: string) =>
+    cn(
+      "p-1.5 rounded-md transition-all",
+      theme === t
+        ? "bg-primary/20 text-primary"
+        : "text-muted-foreground hover:text-foreground"
+    );
+
   return (
-    <aside className="w-[220px] fixed inset-y-0 left-0 bg-card border-r border-border flex flex-col z-50">
+    <aside className="w-[220px] fixed inset-y-0 left-0 bg-card border-r border-border flex flex-col z-50 dark:bg-card dark:border-border">
       {/* Brand Header */}
       <div className="h-14 border-b border-border flex items-center px-6 gap-2">
         <Activity className="w-5 h-5 text-primary" />
@@ -117,7 +152,7 @@ export function Sidebar() {
         )}
       </nav>
 
-      {/* User Info + Logout Footer */}
+      {/* User Info + Theme + Logout Footer */}
       <div className="p-4 border-t border-border bg-card/50 space-y-2">
         {user && (
           <div className="flex items-center gap-2 px-1">
@@ -137,12 +172,41 @@ export function Sidebar() {
                       : "text-slate-400 border-slate-500/30"
                   }`}
                 >
-                  {user.role}
+                  {isDeveloperAccount ? "DEVELOPER" : user.role}
                 </Badge>
               )}
             </div>
           </div>
         )}
+
+        {/* Compact theme toggle in sidebar footer */}
+        <div className="flex items-center justify-between px-1 pt-1">
+          <span className="text-[10px] font-mono text-muted-foreground/60">Theme</span>
+          <div className="flex items-center gap-0.5 bg-muted/40 rounded-md p-0.5 border border-border/40">
+            <button
+              onClick={() => setTheme("light")}
+              className={themeButtonClass("light")}
+              title="Light mode"
+            >
+              <Sun className="w-3 h-3" />
+            </button>
+            <button
+              onClick={() => setTheme("system")}
+              className={themeButtonClass("system")}
+              title="System default"
+            >
+              <Monitor className="w-3 h-3" />
+            </button>
+            <button
+              onClick={() => setTheme("dark")}
+              className={themeButtonClass("dark")}
+              title="Dark mode"
+            >
+              <Moon className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+
         <Button
           variant="ghost"
           className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"

@@ -1,4 +1,4 @@
-﻿import { useBotStatus } from "../Hooks/useBotStatus";
+import { useBotStatus } from "../Hooks/useBotStatus";
 import { useLogStream } from "../Hooks/useLogStream";
 import { usePerformance } from "../Hooks/usePerformance";
 import { Card, CardContent, CardHeader, CardTitle } from "../Components/Atoms/card";
@@ -55,7 +55,7 @@ export function Overview() {
             <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono text-slate-200">
+            <div className="text-3xl font-bold font-mono text-foreground">
               ${botStatus?.margin_used?.toFixed(2) || "0.00"}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1 font-mono">Total margin allocated</p>
@@ -80,7 +80,7 @@ export function Overview() {
         {/* Equity curve */}
         <Card className="md:col-span-2 bg-card/30 border-border/40 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-sm font-mono tracking-wider text-slate-200">EQUITY CURVE (24H)</CardTitle>
+            <CardTitle className="text-sm font-mono tracking-wider text-foreground">EQUITY CURVE (24H)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[250px] w-full">
@@ -104,7 +104,7 @@ export function Overview() {
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex items-center justify-center text-xs text-slate-500 font-mono">
+                <div className="h-full flex items-center justify-center text-xs text-muted-foreground font-mono">
                   Awaiting performance history updates...
                 </div>
               )}
@@ -115,7 +115,7 @@ export function Overview() {
         {/* Activity feed */}
         <Card className="bg-card/30 border-border/40 backdrop-blur-sm flex flex-col overflow-hidden">
           <CardHeader className="bg-muted/10 border-b border-border/20 py-3">
-            <CardTitle className="text-xs font-mono tracking-wider flex items-center gap-2 text-slate-200">
+            <CardTitle className="text-xs font-mono tracking-wider flex items-center gap-2 text-foreground">
               <Terminal className="w-3.5 h-3.5" /> RECENT ACTIVITY
             </CardTitle>
           </CardHeader>
@@ -123,15 +123,15 @@ export function Overview() {
             {recentLogs.length > 0 ? (
               <div className="divide-y divide-border/20 font-mono text-[11px] leading-relaxed">
                 {recentLogs.map((log) => {
-                  let colorClass = "text-slate-200";
+                  let colorClass = "text-foreground";
                   if (log.level === "error") colorClass = "text-red-400";
                   if (log.level === "warn") colorClass = "text-amber-400";
-                  if (log.level === "debug") colorClass = "text-slate-500";
+                  if (log.level === "debug") colorClass = "text-muted-foreground";
 
                   return (
-                    <div key={log.id} className="p-3 hover:bg-white/5 transition-colors">
+                    <div key={log.id} className="p-3 hover:bg-muted/30 transition-colors">
                       <div className="flex items-center justify-between mb-1 text-[10px]">
-                        <span className="text-slate-500">
+                        <span className="text-muted-foreground">
                           {new Date(log.timestamp).toLocaleTimeString()}
                         </span>
                         <Badge variant="outline" className="text-[9px] uppercase px-1 h-4">
@@ -144,7 +144,7 @@ export function Overview() {
                 })}
               </div>
             ) : (
-              <div className="p-6 text-center text-xs text-slate-500 font-mono h-full flex items-center justify-center">
+              <div className="p-6 text-center text-xs text-muted-foreground font-mono h-full flex items-center justify-center">
                 Waiting for engine logs...
               </div>
             )}

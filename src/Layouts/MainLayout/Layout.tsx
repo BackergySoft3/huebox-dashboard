@@ -4,7 +4,7 @@ import { TopBar } from "./TopBar";
 
 export function Layout() {
   return (
-    <div className="flex h-screen bg-[#070708] text-foreground font-sans overflow-hidden">
+    <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden">
       {/* Fixed Sidebar */}
       <Sidebar />
 

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
   TrendingUp,
@@ -8,7 +8,8 @@ import {
   AlertTriangle,
   HelpCircle,
   RefreshCw,
-  Coins
+  Coins,
+  Eye
 } from "lucide-react";
 import {
   ComposedChart,
@@ -32,10 +33,14 @@ import {
   useCancelOrder,
   useClosePosition
 } from "../Hooks/useTrading";
+import { useAuthStore } from "../State/auth";
 import { cn } from "../Helpers/utils";
 import { OrderType } from "../Enums/OrderType.enum";
 import { TradeSide } from "../Enums/TradeSide.enum";
 import { ChartInterval } from "../Enums/ChartInterval.enum";
+
+const DEVELOPER_ACCOUNT = "client@huebox.dev.com";
+
 
 const CHART_INTERVAL_LABELS: Record<ChartInterval, string> = {
   [ChartInterval.Minutes15]:  "15M",
@@ -45,6 +50,12 @@ const CHART_INTERVAL_LABELS: Record<ChartInterval, string> = {
 };
 
 export function Trading() {
+  const user = useAuthStore((state) => state.user);
+  const isAdmin = useAuthStore((state) => state.isAdmin)();
+  const isDeveloperAccount = user?.email === DEVELOPER_ACCOUNT;
+  // Clients (non-developer, non-admin users) get read-only Live Markets
+  const isReadOnly = !isAdmin && !isDeveloperAccount;
+
   const [activeTab, setActiveTab] = useState<"positions" | "orders" | "closedPnl">("positions");
   const [chartInterval, setChartInterval] = useState<ChartInterval>(ChartInterval.Minutes15);
   const [orderType, setOrderType] = useState<OrderType>(OrderType.Limit);
@@ -209,13 +220,20 @@ export function Trading() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-12">
+      {/* Read-only badge for client mode */}
+      {isReadOnly && (
+        <div className="flex items-center gap-2 text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-md">
+          <Eye className="w-3.5 h-3.5 shrink-0" />
+          <span>Live Markets — Read-Only View. Trading actions are managed automatically by your bot.</span>
+        </div>
+      )}
       {/* 1. TICKER HEADERS BAR */}
-      <div className="bg-[#0e0f12]/80 border border-border/30 rounded-lg p-4 backdrop-blur-md flex flex-wrap items-center justify-between gap-6 font-mono">
+      <div className="bg-card/40 border border-border/30 rounded-lg p-4 backdrop-blur-md flex flex-wrap items-center justify-between gap-6 font-mono">
         <div className="flex items-center gap-3">
           <Badge className="bg-primary/20 text-primary border-primary/30 px-3 py-1 text-xs font-mono">
             LIVE SESSION
           </Badge>
-          <span className="text-lg font-bold text-slate-100">BTCUSDT</span>
+          <span className="text-lg font-bold text-foreground">BTCUSDT</span>
           <span className="text-[10px] text-muted-foreground">USDT PERPETUAL</span>
         </div>
 
@@ -237,21 +255,21 @@ export function Trading() {
 
           <div>
             <div className="text-[10px] text-muted-foreground tracking-wider mb-0.5">24H HIGH</div>
-            <div className="font-semibold text-slate-300">
+            <div className="font-semibold text-foreground">
               ${ticker ? parseFloat(ticker.highPrice24h).toLocaleString(undefined, { minimumFractionDigits: 2 }) : "0.00"}
             </div>
           </div>
 
           <div>
             <div className="text-[10px] text-muted-foreground tracking-wider mb-0.5">24H LOW</div>
-            <div className="font-semibold text-slate-300">
+            <div className="font-semibold text-foreground">
               ${ticker ? parseFloat(ticker.lowPrice24h).toLocaleString(undefined, { minimumFractionDigits: 2 }) : "0.00"}
             </div>
           </div>
 
           <div>
             <div className="text-[10px] text-muted-foreground tracking-wider mb-0.5">24H VOLUME (BTC)</div>
-            <div className="font-semibold text-slate-400">
+            <div className="font-semibold text-muted-foreground">
               {ticker ? parseFloat(ticker.volume24h).toLocaleString(undefined, { maximumFractionDigits: 2 }) : "0.00"}
             </div>
           </div>
@@ -273,11 +291,11 @@ export function Trading() {
       )}
 
       {/* 2. GRID BODY LAYOUT */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className={cn("grid grid-cols-1 gap-6 items-start", !isReadOnly ? "lg:grid-cols-12" : "")}>
         {/* LEFT COLUMN (CHART + TABS) */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className={!isReadOnly ? "lg:col-span-8 space-y-6" : "space-y-6"}>
           {/* A. CANDLESTICK / PRICE TIMELINE CHART */}
-          <Card className="bg-[#0c0d10]/60 border-border/30 backdrop-blur-sm relative overflow-hidden">
+          <Card className="bg-card/30 border-border/30 backdrop-blur-sm relative overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-border/20">
               <div className="flex items-center gap-2">
                 <Coins className="w-4 h-4 text-primary" />
@@ -289,10 +307,10 @@ export function Trading() {
                     key={interval}
                     onClick={() => setChartInterval(interval)}
                     className={cn(
-                      "px-2.5 py-1 rounded transition-all border",
+                      "px-2.5 py-1 rounded transition-all border cursor-pointer",
                       chartInterval === interval
                         ? "bg-primary/20 text-primary border-primary/40 font-bold"
-                        : "bg-card/40 border-border/10 text-muted-foreground hover:text-slate-200"
+                        : "bg-card/40 border-border/10 text-muted-foreground hover:text-foreground"
                     )}
                   >
                     {CHART_INTERVAL_LABELS[interval]}
@@ -359,7 +377,7 @@ export function Trading() {
           </Card>
 
           {/* B. POSITIONS, ORDERS, CLOSED PNL TABS */}
-          <div className="bg-[#0c0d10]/40 border border-border/30 rounded-lg overflow-hidden backdrop-blur-sm">
+          <div className="bg-card/20 border border-border/30 rounded-lg overflow-hidden backdrop-blur-sm">
             <div className="border-b border-border/20 bg-card/25 px-4 flex gap-1.5">
               {[
                 { id: "positions", label: `POSITIONS (${positions.length})` },
@@ -370,10 +388,10 @@ export function Trading() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
                   className={cn(
-                    "px-4 py-3 text-xs font-mono font-semibold tracking-wider transition-all border-b-2 -mb-[1px]",
+                    "px-4 py-3 text-xs font-mono font-semibold tracking-wider transition-all border-b-2 -mb-[1px] cursor-pointer",
                     activeTab === tab.id
                       ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-slate-300"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {tab.label}
@@ -400,9 +418,9 @@ export function Trading() {
                           <th className="pb-2 text-right">ENTRY</th>
                           <th className="pb-2 text-right">MARK</th>
                           <th className="pb-2 text-right">LIQUIDATION</th>
-                          <th className="pb-2 text-right">UNREALIZED PNL</th>
+                          <th className="pb-2">UNREALIZED PNL</th>
                           <th className="pb-2 text-right">LEVERAGE</th>
-                          <th className="pb-2 text-right">ACTION</th>
+                          {!isReadOnly && <th className="pb-2 text-right">ACTION</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -430,21 +448,23 @@ export function Trading() {
                               <td className="py-2.5 text-right text-amber-500">
                                 {pos.liqPrice > 0 ? `$${pos.liqPrice.toFixed(2)}` : "None"}
                               </td>
-                              <td className={cn("py-2.5 text-right font-bold", pnl >= 0 ? "text-emerald-400" : "text-rose-500")}>
+                              <td className={cn("py-2.5 font-bold", pnl >= 0 ? "text-emerald-400" : "text-rose-500")}>
                                 {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
                               </td>
                               <td className="py-2.5 text-right text-slate-300">{pos.leverage}x</td>
-                              <td className="py-2.5 text-right">
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  className="h-7 text-[10px] px-2.5 font-mono"
-                                  onClick={() => handleClosePosition(pos.symbol, pos.side, pos.size)}
-                                  disabled={closePositionMutation.isPending}
-                                >
-                                  {closePositionMutation.isPending ? "Closing..." : "Market Close"}
-                                </Button>
-                              </td>
+                              {!isReadOnly && (
+                                <td className="py-2.5 text-right">
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="h-7 text-[10px] px-2.5 font-mono"
+                                    onClick={() => handleClosePosition(pos.symbol, pos.side, pos.size)}
+                                    disabled={closePositionMutation.isPending}
+                                  >
+                                    {closePositionMutation.isPending ? "Closing..." : "Market Close"}
+                                  </Button>
+                                </td>
+                              )}
                             </tr>
                           );
                         })}
@@ -474,7 +494,7 @@ export function Trading() {
                           <th className="pb-2 text-right">FILLED</th>
                           <th className="pb-2 text-right">STATUS</th>
                           <th className="pb-2 text-right">TIME</th>
-                          <th className="pb-2 text-right">ACTION</th>
+                          {!isReadOnly && <th className="pb-2 text-right">ACTION</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -510,17 +530,19 @@ export function Trading() {
                               <td className="py-2.5 text-right text-muted-foreground text-[10px]">
                                 {format(new Date(order.createdTime), "MM-dd HH:mm:ss")}
                               </td>
-                              <td className="py-2.5 text-right">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 text-[10px] text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                                  onClick={() => handleCancelOrder(order.symbol, order.orderId)}
-                                  disabled={cancelOrderMutation.isPending}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                              </td>
+                              {!isReadOnly && (
+                                <td className="py-2.5 text-right">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 text-[10px] text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                                    onClick={() => handleCancelOrder(order.symbol, order.orderId)}
+                                    disabled={cancelOrderMutation.isPending}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </td>
+                              )}
                             </tr>
                           );
                         })}
@@ -593,10 +615,11 @@ export function Trading() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN (ORDER PANEL + ASSETS) */}
+        {/* RIGHT COLUMN (ORDER PANEL + ASSETS) — developer/admin only */}
+        {!isReadOnly && (
         <div className="lg:col-span-4 space-y-6">
           {/* A. ORDER ENTRY FORM */}
-          <Card className="bg-[#0c0d10]/60 border-border/30 backdrop-blur-sm font-mono text-xs">
+          <Card className="bg-card/30 border-border/30 backdrop-blur-sm font-mono text-xs">
             <CardHeader className="border-b border-border/20 pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-mono tracking-wider">PLACE ORDER</CardTitle>
@@ -606,10 +629,10 @@ export function Trading() {
                       key={type}
                       onClick={() => setOrderType(type)}
                       className={cn(
-                        "px-3 py-1 text-[10px] font-bold transition-all",
+                        "px-3 py-1 text-[10px] font-bold transition-all cursor-pointer",
                         orderType === type
                           ? "bg-primary text-primary-foreground"
-                          : "bg-transparent text-muted-foreground hover:text-slate-200"
+                          : "bg-transparent text-muted-foreground hover:text-foreground"
                       )}
                     >
                       {type.toUpperCase()}
@@ -652,11 +675,11 @@ export function Trading() {
                 </div>
                 <div className="relative">
                   <Input
-                    type="number"
-                    value={qty}
-                    onChange={(e) => setQty(e.target.value)}
-                    placeholder="0.000"
-                    className="bg-card/40 border-border/30 pl-3 pr-12 h-9 text-xs focus:ring-primary focus:border-primary font-mono text-slate-100"
+                     type="number"
+                     value={qty}
+                     onChange={(e) => setQty(e.target.value)}
+                     placeholder="0.000"
+                     className="bg-card/40 border-border/30 pl-3 pr-12 h-9 text-xs focus:ring-primary focus:border-primary font-mono text-foreground"
                   />
                   <span className="absolute right-3 top-2.5 text-[10px] text-muted-foreground">BTC</span>
                 </div>
@@ -668,7 +691,7 @@ export function Trading() {
                   <button
                     key={p}
                     onClick={() => handlePercentClick(p)}
-                    className="py-1 bg-muted/40 border border-border/10 rounded hover:bg-muted/70 hover:border-border/35 text-slate-300 transition-all"
+                    className="py-1 bg-muted/40 border border-border/10 rounded hover:bg-muted/70 hover:border-border/35 text-muted-foreground hover:text-foreground cursor-pointer transition-all"
                   >
                     {p}%
                   </button>
@@ -677,17 +700,17 @@ export function Trading() {
 
               {/* Dynamic Order Cost Details */}
               {parseFloat(qty) > 0 && (
-                <div className="bg-[#0e1014]/50 border border-border/10 rounded p-2.5 font-mono text-[10px] text-muted-foreground space-y-1">
+                <div className="bg-muted/40 border border-border/10 rounded p-2.5 font-mono text-[10px] text-muted-foreground space-y-1">
                   <div className="flex justify-between">
                     <span>ORDER VALUE:</span>
-                    <span className="font-semibold text-slate-300">
+                    <span className="font-semibold text-foreground">
                       ${(parseFloat(qty) * (orderType === OrderType.Limit ? parseFloat(limitPrice) || lastPrice : lastPrice)).toFixed(2)} USDT
                     </span>
                   </div>
                   {orderType === OrderType.Limit && (
                     <div className="flex justify-between">
                       <span>TIME IN FORCE:</span>
-                      <span className="font-semibold text-slate-400">GTC</span>
+                      <span className="font-semibold text-muted-foreground">GTC</span>
                     </div>
                   )}
                 </div>
@@ -716,7 +739,7 @@ export function Trading() {
           </Card>
 
           {/* B. ACCOUNT SUMMARY PANEL */}
-          <Card className="bg-[#0c0d10]/60 border-border/30 backdrop-blur-sm font-mono text-xs">
+          <Card className="bg-card/30 border-border/30 backdrop-blur-sm font-mono text-xs">
             <CardHeader className="border-b border-border/20 pb-3">
               <CardTitle className="text-sm font-mono tracking-wider flex items-center justify-between">
                 <span>ASSET SUMMARY</span>
@@ -727,11 +750,11 @@ export function Trading() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground text-[10px]">TOTAL EQUITY</span>
-                  <span className="text-base font-bold text-slate-100">${balance.totalEquity.toFixed(2)}</span>
+                  <span className="text-base font-bold text-foreground">${balance.totalEquity.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center border-t border-border/10 pt-2.5">
                   <span className="text-muted-foreground text-[10px]">WALLET BALANCE</span>
-                  <span className="font-semibold text-slate-200">${balance.totalWalletBalance.toFixed(2)}</span>
+                  <span className="font-semibold text-foreground">${balance.totalWalletBalance.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground text-[10px]">AVAILABLE BALANCE</span>
@@ -739,7 +762,7 @@ export function Trading() {
                 </div>
                 <div className="flex justify-between items-center border-t border-border/10 pt-2.5">
                   <span className="text-muted-foreground text-[10px]">INITIAL MARGIN</span>
-                  <span className="font-semibold text-slate-300">${balance.totalInitialMargin.toFixed(2)}</span>
+                  <span className="font-semibold text-foreground">${balance.totalInitialMargin.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground text-[10px]">MAINTENANCE MARGIN</span>
@@ -753,7 +776,7 @@ export function Trading() {
                   <span>MARGIN RATIO</span>
                   <span>{marginRatio.toFixed(1)}%</span>
                 </div>
-                <div className="w-full bg-[#18191e] h-2 rounded overflow-hidden">
+                <div className="w-full bg-muted/50 h-2 rounded overflow-hidden">
                   <div
                     className={cn("h-full transition-all duration-500", getMarginBarColor(marginRatio))}
                     style={{ width: `${Math.min(marginRatio, 100)}%` }}
@@ -769,6 +792,7 @@ export function Trading() {
             </CardContent>
           </Card>
         </div>
+        )}
       </div>
     </div>
   );

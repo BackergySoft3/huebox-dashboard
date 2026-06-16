@@ -1,4 +1,4 @@
-﻿import { useMemo } from "react";
+import { useMemo } from "react";
 import { useLogsStore } from "../../State/logs";
 
 const STEPS = [
@@ -10,13 +10,22 @@ const STEPS = [
   { label: "Cycle Running", keywords: ["cycle starting", "cycle", "loop", "heartbeat"] }
 ];
 
-export function BotStepper() {
+const SIMPLIFIED_STEPS = [
+  { label: "Initializing" },
+  { label: "Analyzing Markets" },
+  { label: "Active Trading" }
+];
+
+interface BotStepperProps {
+  simplified?: boolean;
+}
+
+export function BotStepper({ simplified }: BotStepperProps) {
   const pythonLogs = useLogsStore((state) => state.logBuffer.python);
 
   // Scan logs to determine the highest reached step
   const activeStep = useMemo(() => {
     let highestIdx = -1;
-    // Scan python logs (last 500 lines is enough for performance)
     const logsToScan = pythonLogs.slice(-500);
 
     for (let i = 0; i < STEPS.length; i++) {
@@ -29,12 +38,25 @@ export function BotStepper() {
       }
     }
 
-    // Default to at least Spawned if any logs exist, or -1 if empty
     if (highestIdx === -1 && pythonLogs.length > 0) {
       return 0;
     }
     return highestIdx;
   }, [pythonLogs]);
+
+  // Map 6 steps to 3 simplified steps:
+  // 0, 1, 2 -> 0 (Initializing)
+  // 3 -> 1 (Analyzing Markets)
+  // 4, 5 -> 2 (Active Trading)
+  const activeSimplifiedStep = useMemo(() => {
+    if (activeStep === -1) return -1;
+    if (activeStep <= 2) return 0;
+    if (activeStep === 3) return 1;
+    return 2;
+  }, [activeStep]);
+
+  const currentSteps = simplified ? SIMPLIFIED_STEPS : STEPS;
+  const currentActive = simplified ? activeSimplifiedStep : activeStep;
 
   return (
     <div className="flex flex-col md:flex-row justify-between items-center relative w-full p-4 bg-card/40 border border-border/50 rounded-xl">
@@ -42,17 +64,17 @@ export function BotStepper() {
       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-0.5 bg-muted hidden md:block" />
       
       {/* Filled connector line */}
-      {activeStep >= 0 && (
+      {currentActive >= 0 && (
         <div 
           className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-primary hidden md:block transition-all duration-500" 
-          style={{ width: `${(activeStep / (STEPS.length - 1)) * 100}%` }} 
+          style={{ width: `${(currentActive / (currentSteps.length - 1)) * 100}%` }} 
         />
       )}
 
-      {STEPS.map((step, idx) => {
-        const isCompleted = idx < activeStep;
-        const isActive = idx === activeStep;
-        const isLocked = idx > activeStep;
+      {currentSteps.map((step, idx) => {
+        const isCompleted = idx < currentActive;
+        const isActive = idx === currentActive;
+        const isLocked = idx > currentActive;
 
         return (
           <div key={idx} className="relative z-10 flex flex-col items-center gap-2 my-2 md:my-0 bg-background/80 px-3 py-1 rounded-md">
@@ -80,3 +102,4 @@ export function BotStepper() {
     </div>
   );
 }
+

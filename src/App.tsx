@@ -10,6 +10,8 @@ import { Overview } from "./Containers/Overview";
 import { BotControl } from "./Containers/BotControl";
 import { Progress } from "./Containers/Progress";
 import { Performance } from "./Containers/Performance";
+import { MyBot } from "./Containers/MyBot";
+import { Settings } from "./Containers/Settings";
 import { Payments } from "./Containers/Payments";
 import { PaymentReturn } from "./Containers/PaymentReturn";
 import { Trading } from "./Containers/Trading";
@@ -20,6 +22,7 @@ import { AdminKyc } from "./Containers/AdminKyc";
 import { AdminFinance } from "./Containers/AdminFinance";
 import { AdminConfig } from "./Containers/AdminConfig";
 import { System } from "./Containers/System";
+import { ThemeProvider } from "./Components/ThemeProvider";
 import "./index.css";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -54,59 +57,63 @@ function SocketConnector() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <SocketConnector />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <SocketConnector />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
 
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            {/* User routes */}
-            <Route index element={<AdminIndexRoute />} />
-            <Route path="control" element={<BotControl />} />
-            <Route path="progress" element={<Progress />} />
-            <Route path="performance" element={<Performance />} />
-            <Route path="payments" element={<Payments />} />
-            <Route path="payment/return" element={<PaymentReturn />} />
-            <Route path="trading" element={<Trading />} />
-            <Route path="logs" element={<LiveLogs />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              {/* User routes */}
+              <Route index element={<AdminIndexRoute />} />
+              <Route path="control" element={<BotControl />} />
+              <Route path="progress" element={<Progress />} />
+              <Route path="performance" element={<Performance />} />
+              <Route path="my-bot" element={<MyBot />} />
+              <Route path="payments" element={<Payments />} />
+              <Route path="payment/return" element={<PaymentReturn />} />
+              <Route path="trading" element={<Trading />} />
+              <Route path="logs" element={<LiveLogs />} />
+              <Route path="settings" element={<Settings />} />
 
-            {/* Admin routes */}
-            <Route
-              path="users"
-              element={<AdminRoute><AdminUsers /></AdminRoute>}
-            />
-            <Route
-              path="admin/bots"
-              element={<AdminRoute><AdminBots /></AdminRoute>}
-            />
-            <Route
-              path="admin/kyc"
-              element={<AdminRoute><AdminKyc /></AdminRoute>}
-            />
-            <Route
-              path="admin/finance"
-              element={<AdminRoute><AdminFinance /></AdminRoute>}
-            />
-            <Route
-              path="system"
-              element={<AdminRoute><System /></AdminRoute>}
-            />
-            <Route
-              path="admin/config"
-              element={<AdminRoute><AdminConfig /></AdminRoute>}
-            />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
+              {/* Admin routes */}
+              <Route
+                path="users"
+                element={<AdminRoute><AdminUsers /></AdminRoute>}
+              />
+              <Route
+                path="admin/bots"
+                element={<AdminRoute><AdminBots /></AdminRoute>}
+              />
+              <Route
+                path="admin/kyc"
+                element={<AdminRoute><AdminKyc /></AdminRoute>}
+              />
+              <Route
+                path="admin/finance"
+                element={<AdminRoute><AdminFinance /></AdminRoute>}
+              />
+              <Route
+                path="system"
+                element={<AdminRoute><System /></AdminRoute>}
+              />
+              <Route
+                path="admin/config"
+                element={<AdminRoute><AdminConfig /></AdminRoute>}
+              />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
