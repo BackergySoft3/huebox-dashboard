@@ -16,6 +16,7 @@ export const ROUTES = {
   ADMIN_FINANCE:  "/admin/finance",
   ADMIN_CONFIG:   "/admin/config",
   SYSTEM:         "/system",
+  ADMIN_TRANSFER_COIN: "/admin/transfer-coin",
 } as const;
 
 export type AppRoute = typeof ROUTES[keyof typeof ROUTES];

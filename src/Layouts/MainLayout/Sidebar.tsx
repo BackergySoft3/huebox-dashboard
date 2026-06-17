@@ -13,6 +13,7 @@ import {
   Settings,
   LogOut,
   Activity,
+  ArrowLeftRight,
   ListTree,
   Wallet,
   CandlestickChart,
@@ -84,6 +85,7 @@ export function Sidebar() {
     { name: "Bot Oversight", href: "/admin/bots", icon: Bot, adminOnly: true },
     { name: "KYC Review", href: "/admin/kyc", icon: BadgeCheck, adminOnly: true },
     { name: "Finance", href: "/admin/finance", icon: DollarSign, adminOnly: true },
+    { name: "Transfer Coin", href: "/admin/transfer-coin", icon: ArrowLeftRight, adminOnly: true },
     { name: "System", href: "/system", icon: Settings, adminOnly: true },
     { name: "Platform Config", href: "/admin/config", icon: Sliders, superAdminOnly: true },
   ];

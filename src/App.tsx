@@ -20,6 +20,7 @@ import { AdminUsers } from "./Containers/AdminUsers";
 import { AdminBots } from "./Containers/AdminBots";
 import { AdminKyc } from "./Containers/AdminKyc";
 import { AdminFinance } from "./Containers/AdminFinance";
+import { AdminTransferCoin } from "./Containers/AdminTransferCoin";
 import { AdminConfig } from "./Containers/AdminConfig";
 import { System } from "./Containers/System";
 import { ThemeProvider } from "./Components/ThemeProvider";
@@ -100,6 +101,10 @@ function App() {
               <Route
                 path="admin/finance"
                 element={<AdminRoute><AdminFinance /></AdminRoute>}
+              />
+              <Route
+                path="admin/transfer-coin"
+                element={<AdminRoute><AdminTransferCoin /></AdminRoute>}
               />
               <Route
                 path="system"

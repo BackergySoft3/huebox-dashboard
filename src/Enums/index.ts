@@ -16,3 +16,5 @@ export { PaymentsTab } from "./PaymentsTab.enum";
 export { FinanceTab } from "./FinanceTab.enum";
 export { ChartInterval } from "./ChartInterval.enum";
 export { Currency } from "./Currency.enum";
+export { BybitAccountType } from "./BybitAccountType.enum";
+
