@@ -9,10 +9,10 @@ export function Layout() {
       <Sidebar />
 
       {/* Main Content Area */}
-      <div className="pl-[220px] flex-1 flex flex-col min-w-0 h-full relative">
+      <div className="pl-[260px] flex-1 flex flex-col min-w-0 h-full relative">
         {/* Glow effect */}
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/5 blur-[150px] pointer-events-none z-0" />
-        
+
         {/* Topbar */}
         <TopBar />
 

@@ -1,4 +1,4 @@
-﻿import type { ElementType, ReactNode } from "react";
+import type { ElementType, ReactNode } from "react";
 import type { LogLine } from "./logs";
 import { BotStatus } from "../Enums/BotStatus.enum";
 
@@ -14,6 +14,7 @@ export interface NavItem {
   icon: ElementType;
   adminOnly?: boolean;
   superAdminOnly?: boolean;
+  category?: string;
 }
 
 export interface Action {

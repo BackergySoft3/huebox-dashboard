@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../Services/http.service";
-import { Card, CardContent, CardHeader, CardTitle } from "../Components/Atoms/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../Components/Atoms/card";
 import { Badge } from "../Components/Atoms/badge";
 import { Button } from "../Components/Atoms/button";
 import { ConfirmModal } from "../Components/Organisms/ConfirmModal";
 import { CheckCircle2, XCircle, BadgeCheck, RefreshCw, ChevronRight } from "lucide-react";
 import { KycStatus } from "../Enums/KycStatus.enum";
+import { cn } from "../Helpers/utils";
 
 const STATUS_COLORS: Partial<Record<KycStatus, string>> = {
-  [KycStatus.Pending]:  "text-amber-400 border-amber-500/20 bg-amber-500/5",
-  [KycStatus.InReview]: "text-blue-400 border-blue-500/20 bg-blue-500/5",
-  [KycStatus.Approved]: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
-  [KycStatus.Rejected]: "text-red-400 border-red-500/20 bg-red-500/5",
+  [KycStatus.Pending]:  "text-amber-400 border-amber-500/20 bg-amber-500/10",
+  [KycStatus.InReview]: "text-blue-400 border-blue-500/20 bg-blue-500/10",
+  [KycStatus.Approved]: "text-emerald-400 border-emerald-500/20 bg-emerald-500/10",
+  [KycStatus.Rejected]: "text-rose-455 border-rose-500/20 bg-rose-500/10",
 };
 
 const formatKycStatus = (status: string) => {
@@ -91,68 +92,70 @@ export function AdminKyc() {
   const items: any[] = listData?.items ?? [];
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">KYC Review</h1>
-          <p className="text-muted-foreground mt-1 font-mono text-xs">
-            Pending: {stats?.pendingCount ?? "—"} · Approved this week: {stats?.approvedThisWeekCount ?? "—"}
+          <h1 className="text-3xl font-extrabold tracking-tight font-sans text-foreground">KYC Review</h1>
+          <p className="text-muted-foreground mt-1 font-mono text-[11px] uppercase tracking-wider">
+            Awaiting verification: {stats?.pendingCount ?? "—"} · Approved this week: {stats?.approvedThisWeekCount ?? "—"}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
-          <RefreshCw className="w-3.5 h-3.5" /> Refresh
+        <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2 font-mono text-xs font-bold shadow-sm shrink-0">
+          <RefreshCw className="w-3.5 h-3.5" /> Refresh List
         </Button>
       </div>
 
-      <div className="flex gap-6 h-[calc(100vh-240px)] min-h-[500px]">
-        {/* Left Panel — List */}
-        <div className="w-[35%] flex flex-col gap-3">
+      <div className="flex flex-col lg:flex-row gap-6 min-h-[500px]">
+        {/* Left Queue Panel */}
+        <div className="w-full lg:w-[35%] flex flex-col gap-4">
           {/* Status Tabs */}
-          <div className="flex border-b border-border/40">
+          <div className="flex border-b border-border/40 overflow-x-auto scrollbar-none">
             {Object.values(KycStatus).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`px-3 py-2 text-xs font-mono uppercase border-b-2 transition-colors ${
-                  tab === t ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
+                className={cn(
+                  "px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap",
+                  tab === t ? "border-primary text-primary" : "border-transparent text-muted-foreground/60 hover:text-foreground"
+                )}
               >
                 {t.replace(/[-_]/g, " ")}
               </button>
             ))}
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+          <div className="flex-1 overflow-y-auto space-y-2.5 max-h-[500px] lg:max-h-[600px] pr-1">
             {isLoading ? (
-              <p className="text-sm text-muted-foreground italic pt-4">Loading queue…</p>
+              <p className="text-xs text-muted-foreground/60 font-mono italic animate-pulse">Scanning submissions queue...</p>
             ) : items.length === 0 ? (
-              <p className="text-sm text-muted-foreground pt-4">No submissions in this category.</p>
+              <p className="text-xs text-muted-foreground/60 font-mono italic">No pending submissions registered.</p>
             ) : (
               items.map((item: any) => (
                 <button
                   key={item.id}
                   onClick={() => setSelectedUserId(item.id)}
-                  className={`w-full text-left bg-card/30 border rounded-lg p-3 transition-all hover:border-primary/40 ${
-                    selectedUserId === item.id ? "border-primary/50 bg-primary/5" : "border-border/40"
-                  }`}
+                  className={cn(
+                    "w-full text-left bg-card/30 border rounded-xl p-3.5 transition-all duration-200 hover:border-border/80 hover:bg-card/45 cursor-pointer block",
+                    selectedUserId === item.id ? "border-primary/50 bg-primary/5 shadow-sm" : "border-border/30"
+                  )}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0">
                         {item.email?.[0]?.toUpperCase() ?? "?"}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">{item.email}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
+                        <p className="text-xs font-bold font-sans text-foreground truncate">{item.email}</p>
+                        <p className="text-[9px] text-muted-foreground/50 font-mono mt-0.5">
+                          Submitted: {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[item.kycStatus as KycStatus] ?? ""}`}>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Badge variant="outline" className={cn("text-[9px] font-bold uppercase border px-2 py-0.5", STATUS_COLORS[item.kycStatus as KycStatus] ?? "")}>
                         {formatKycStatus(item.kycStatus)}
                       </Badge>
-                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" />
                     </div>
                   </div>
                 </button>
@@ -161,82 +164,85 @@ export function AdminKyc() {
           </div>
         </div>
 
-        {/* Right Panel — Detail */}
+        {/* Right Detail Panel */}
         <div className="flex-1 flex flex-col">
           {!selectedUserId ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
+            <Card className="flex-1 bg-card/30 border-border/40 backdrop-blur-sm min-h-[300px] flex items-center justify-center border-dashed">
+              <div className="text-center p-6">
                 <BadgeCheck className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
-                <p className="text-muted-foreground text-sm">Select a submission to review</p>
+                <p className="text-muted-foreground/80 font-mono text-xs">Select a submission from queue to begin review.</p>
               </div>
-            </div>
+            </Card>
           ) : (
-            <Card className="flex-1 bg-card/30 border-border/40 flex flex-col">
-              <CardHeader className="border-b border-border/40">
+            <Card className="flex-1 bg-card/30 border-border/40 backdrop-blur-sm flex flex-col shadow-md">
+              <CardHeader className="border-b border-border/20 pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold text-foreground">
-                    {detail?.email ?? "Loading…"}
-                  </CardTitle>
+                  <div>
+                    <CardTitle className="text-sm font-bold font-sans text-foreground">
+                      {detail?.email ?? "Querying Details..."}
+                    </CardTitle>
+                    <CardDescription className="text-[10px] font-mono text-muted-foreground/60 mt-0.5">Operator registration payload</CardDescription>
+                  </div>
                   {detail?.kycStatus && (
-                    <Badge variant="outline" className={`${STATUS_COLORS[detail.kycStatus as KycStatus] ?? ""}`}>
+                    <Badge variant="outline" className={cn("text-[9px] font-bold uppercase border px-2.5 py-0.5", STATUS_COLORS[detail.kycStatus as KycStatus] ?? "")}>
                       {formatKycStatus(detail.kycStatus)}
                     </Badge>
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto pt-4 space-y-4">
+              <CardContent className="flex-1 overflow-y-auto pt-5 space-y-4">
                 {detail && (
                   <div className="grid grid-cols-2 gap-3 text-xs font-mono">
                     {[
-                      ["Name", `${detail.firstName ?? ""} ${detail.lastName ?? ""}`.trim() || "—"],
-                      ["Phone", detail.phoneNumber || "—"],
-                      ["Country", detail.country || "—"],
-                      ["Joined", detail.createdAt ? new Date(detail.createdAt).toLocaleDateString() : "—"],
-                      ["Last Update", detail.updatedAt ? new Date(detail.updatedAt).toLocaleDateString() : "—"],
-                      ["Rejection Reason", detail.kycRejectedReason || "—"],
+                      ["Legal Name", `${detail.firstName ?? ""} ${detail.lastName ?? ""}`.trim() || "—"],
+                      ["Phone Number", detail.phoneNumber || "—"],
+                      ["Country Origin", detail.country || "—"],
+                      ["Joined System", detail.createdAt ? new Date(detail.createdAt).toLocaleDateString() : "—"],
+                      ["Last Revision", detail.updatedAt ? new Date(detail.updatedAt).toLocaleDateString() : "—"],
+                      ["Rejection Code", detail.kycRejectedReason || "—"],
                     ].map(([label, val]) => (
-                      <div key={label} className="bg-muted/20 rounded-lg p-3">
-                        <p className="text-[10px] text-muted-foreground uppercase mb-1">{label}</p>
-                        <p className="text-foreground">{val}</p>
+                      <div key={label} className="bg-muted/20 rounded-xl p-3.5 border border-border/30">
+                        <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest mb-1.5">{label}</p>
+                        <p className="text-foreground font-sans font-bold text-xs">{val}</p>
                       </div>
                     ))}
                   </div>
                 )}
               </CardContent>
               {detail?.kycStatus && (
-                <div className="p-4 border-t border-border/40 flex gap-3 flex-wrap">
+                <div className="p-4 border-t border-border/20 flex gap-3 flex-wrap bg-muted/5 font-mono text-xs">
                   {detail.kycStatus !== KycStatus.Approved && (
                     <Button
-                      className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                      className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-9.5 rounded-lg border border-emerald-500/20 shadow-sm cursor-pointer"
                       onClick={() => setModal("approve")}
                     >
-                      <CheckCircle2 className="w-4 h-4" /> Approve
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Approve
                     </Button>
                   )}
                   {detail.kycStatus !== KycStatus.Rejected && (
                     <Button
-                      className="flex-1 gap-2 bg-red-600 hover:bg-red-700 text-white"
+                      className="flex-1 gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold h-9.5 rounded-lg border border-rose-500/20 shadow-sm cursor-pointer"
                       onClick={() => setModal("reject")}
                     >
-                      <XCircle className="w-4 h-4" /> Reject
+                      <XCircle className="w-3.5 h-3.5" /> Reject
                     </Button>
                   )}
                   {detail.kycStatus === KycStatus.Pending && (
                     <Button
                       variant="outline"
-                      className="flex-1 gap-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                      className="flex-1 gap-1.5 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 font-bold h-9.5 rounded-lg cursor-pointer"
                       onClick={() => setModal("in_review")}
                     >
-                      <RefreshCw className="w-4 h-4" /> Mark as In Review
+                      <RefreshCw className="w-3.5 h-3.5" /> Mark In Review
                     </Button>
                   )}
                   {detail.kycStatus !== KycStatus.Pending && (
                     <Button
                       variant="outline"
-                      className="flex-1 gap-2 border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                      className="flex-1 gap-1.5 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 font-bold h-9.5 rounded-lg cursor-pointer"
                       onClick={() => setModal("pending")}
                     >
-                      <RefreshCw className="w-4 h-4" /> Reset to Pending
+                      <RefreshCw className="w-3.5 h-3.5" /> Reset Pending
                     </Button>
                   )}
                 </div>
@@ -248,9 +254,9 @@ export function AdminKyc() {
 
       {modal === "approve" && (
         <ConfirmModal
-          title="Approve KYC Submission"
-          description="This will mark the user as KYC verified and provision their Bybit sub-account (if not already provisioned)."
-          confirmLabel="Approve"
+          title="Approve KYC Verification"
+          description="Confirm approval for this document registry. This will assign Verified flags to the user account."
+          confirmLabel="Approve Verified"
           onCancel={() => setModal(null)}
           onConfirm={async () => { await approve.mutateAsync(); }}
         />
@@ -258,9 +264,9 @@ export function AdminKyc() {
       {modal === "reject" && (
         <ConfirmModal
           title="Reject KYC Submission"
-          description="The user will be notified and allowed to resubmit. Provide a clear reason."
+          description="State details for verification rejection. This notifies the operator to resubmit."
           requireReason
-          confirmLabel="Reject"
+          confirmLabel="Reject KYC"
           danger
           onCancel={() => setModal(null)}
           onConfirm={async (reason) => { await reject.mutateAsync(reason!); }}
@@ -269,8 +275,8 @@ export function AdminKyc() {
       {modal === "pending" && (
         <ConfirmModal
           title="Reset KYC to Pending"
-          description="This will reset the user's KYC verification status back to pending. Any active sub-account state will remain safe."
-          confirmLabel="Reset"
+          description="Reset verification status triggers back to pending. Sub-account sweep states remain safe."
+          confirmLabel="Reset status"
           onCancel={() => setModal(null)}
           onConfirm={async () => { await markPending.mutateAsync(); }}
         />
@@ -278,8 +284,8 @@ export function AdminKyc() {
       {modal === "in_review" && (
         <ConfirmModal
           title="Mark KYC as In Review"
-          description="This will change the user's KYC verification status to In Review."
-          confirmLabel="Confirm"
+          description="Move user verification status to In Review queues."
+          confirmLabel="Mark In Review"
           onCancel={() => setModal(null)}
           onConfirm={async () => { await markInReview.mutateAsync(); }}
         />

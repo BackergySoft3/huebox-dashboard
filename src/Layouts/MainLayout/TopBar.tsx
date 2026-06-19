@@ -50,6 +50,7 @@ export function TopBar() {
               <span>HEARTBEAT:</span>
               <span className="text-foreground">{formattedHeartbeat}</span>
             </div>
+
           </>
         )}
       </div>

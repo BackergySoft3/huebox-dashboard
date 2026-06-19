@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   HelpCircle
 } from "lucide-react";
+import { cn } from "../Helpers/utils";
 
 export function AdminTransferCoin() {
   // Form State
@@ -112,8 +113,6 @@ export function AdminTransferCoin() {
   const fundingUSDT = getUSDTFromFunding(balanceData?.masterSub?.funding);
   const unifiedUSDT = getUSDTFromUnified(balanceData?.masterSub?.unified);
 
-
-
   const handleTransferSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setStatusMessage({ type: null, text: "" });
@@ -150,13 +149,13 @@ export function AdminTransferCoin() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Transfer Coin</h1>
-          <p className="text-muted-foreground mt-1 font-mono text-xs">
-            Universal wallet transfers from Master Sub-Account to client sub-accounts.
+          <h1 className="text-3xl font-extrabold tracking-tight font-sans text-foreground">Transfer Coin</h1>
+          <p className="text-muted-foreground mt-1 font-mono text-[11px] uppercase tracking-wider">
+            Universal wallet sweeps from Master sub-account to target user sub-accounts.
           </p>
         </div>
         <Button
@@ -164,124 +163,121 @@ export function AdminTransferCoin() {
           size="sm"
           onClick={() => refetch()}
           disabled={isBalanceLoading || isRefetching}
-          className="gap-2"
+          className="gap-2 font-mono text-xs font-bold shadow-sm shrink-0"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isRefetching || (isBalanceLoading && balanceData) ? "animate-spin" : ""}`} />
-          Refresh Balances
+          <RefreshCw className={cn("w-3.5 h-3.5", isRefetching || (isBalanceLoading && balanceData) ? "animate-spin" : "")} />
+          Refresh Master Balance
         </Button>
       </div>
 
-      {/* Balance Cards Grid */}
-      <div className="grid grid-cols-1 gap-6">
-        {/* Master Sub Balance Card */}
-        <Card className="bg-gradient-to-br from-card/40 to-indigo-950/10 border-border/40 backdrop-blur-sm overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
-          <CardHeader className="pb-2">
-            <CardTitle className="font-mono text-xs tracking-wider text-primary flex items-center gap-2">
-              <Coins className="w-4 h-4 text-primary" /> CONFIG MASTER SUB-ACCOUNT
-            </CardTitle>
-            <CardDescription className="font-mono text-[10px] text-muted-foreground/80">
-              UID: <span className="text-foreground font-bold">{masterSubUid}</span>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-            {isBalanceLoading && !balanceData ? (
-              <div className="space-y-3 py-2 animate-pulse">
-                <div className="h-12 bg-muted/40 rounded-lg" />
-                <div className="h-12 bg-muted/40 rounded-lg" />
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-background/40 border border-border/30 rounded-lg p-4 relative group hover:border-primary/20 transition-all duration-300">
-                  <span className="text-[10px] font-mono uppercase text-muted-foreground/60 block">Funding USDT</span>
-                  <div className="flex items-baseline gap-1 mt-1.5">
-                    <span className="text-2xl font-mono font-bold text-foreground">{fundingUSDT}</span>
-                    <span className="text-[10px] font-mono text-primary font-medium">USDT</span>
-                  </div>
-                  <Wallet className="absolute right-3 bottom-3 w-8 h-8 text-primary opacity-[0.04] group-hover:opacity-[0.08] transition-all" />
-                </div>
-
-                <div className="bg-background/40 border border-border/30 rounded-lg p-4 relative group hover:border-cyan-500/20 transition-all duration-300">
-                  <span className="text-[10px] font-mono uppercase text-muted-foreground/60 block">Unified USDT</span>
-                  <div className="flex items-baseline gap-1 mt-1.5">
-                    <span className="text-2xl font-mono font-bold text-cyan-400">{unifiedUSDT}</span>
-                    <span className="text-[10px] font-mono text-cyan-400 font-medium">USDT</span>
-                  </div>
-                  <TrendingUp className="absolute right-3 bottom-3 w-8 h-8 text-cyan-400 opacity-[0.04] group-hover:opacity-[0.08] transition-all" />
-                </div>
-              </div>
-            )}
-            <div className="text-[10px] font-mono text-muted-foreground/60 flex items-center gap-1.5 pt-1">
-              <HelpCircle className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>Universal transfers will pull balance from the configured Master Sub-account.</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Transfer Form Section */}
-      <Card className="bg-card/30 border-border/40 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="font-mono text-xs tracking-wider text-slate-200 flex items-center gap-2">
-            <ArrowLeftRight className="w-4 h-4 text-primary" /> INITIATE UNIVERSAL SUB-ACCOUNT TRANSFER
+      {/* Master Sub Balance Card */}
+      <Card className="bg-gradient-to-br from-card to-card/65 border-border/40 backdrop-blur-sm overflow-hidden relative shadow-md">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[60px] pointer-events-none" />
+        <CardHeader className="pb-3 border-b border-border/25">
+          <CardTitle className="font-mono text-xs tracking-widest text-muted-foreground uppercase flex items-center gap-2 font-bold">
+            <Coins className="w-4 h-4 text-primary" /> Master Sweeper Configuration
           </CardTitle>
-          <CardDescription className="text-xs text-muted-foreground">
-            Executes a universal transfer from the Master Sub-account to the target sub-account UID.
+          <CardDescription className="font-mono text-[10px] text-muted-foreground/60 mt-0.5">
+            UID Link: <span className="text-foreground font-bold">{masterSubUid}</span>
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-5 space-y-4">
+          {isBalanceLoading && !balanceData ? (
+            <div className="grid grid-cols-2 gap-4 py-2 animate-pulse">
+              <div className="h-16 bg-muted/40 rounded-xl" />
+              <div className="h-16 bg-muted/40 rounded-xl" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+              <div className="bg-muted/20 border border-border/30 rounded-xl p-4 relative group hover:border-primary/20 transition-all duration-300">
+                <span className="text-[9px] uppercase text-muted-foreground/60 block font-bold tracking-wider">Funding Wallet (USDT)</span>
+                <div className="flex items-baseline gap-1 mt-1.5">
+                  <span className="text-2xl font-bold font-sans text-foreground">${Number(fundingUSDT).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  <span className="text-[10px] text-primary font-bold">USDT</span>
+                </div>
+                <Wallet className="absolute right-4 bottom-4 w-7 h-7 text-primary opacity-[0.03] group-hover:opacity-[0.07] transition-all" />
+              </div>
+
+              <div className="bg-muted/20 border border-border/30 rounded-xl p-4 relative group hover:border-cyan-500/20 transition-all duration-300">
+                <span className="text-[9px] uppercase text-muted-foreground/60 block font-bold tracking-wider">Unified Wallet (USDT)</span>
+                <div className="flex items-baseline gap-1 mt-1.5">
+                  <span className="text-2xl font-bold font-sans text-cyan-400">${Number(unifiedUSDT).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  <span className="text-[10px] text-cyan-400 font-bold">USDT</span>
+                </div>
+                <TrendingUp className="absolute right-4 bottom-4 w-7 h-7 text-cyan-400 opacity-[0.03] group-hover:opacity-[0.07] transition-all" />
+              </div>
+            </div>
+          )}
+          <div className="text-[10px] font-mono text-muted-foreground/50 flex items-center gap-1.5 pt-1.5">
+            <HelpCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Universal sweeps trigger instant wallet transfers across Bybit UID systems.</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Transfer Form Section */}
+      <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
+        <CardHeader className="pb-3 border-b border-border/20">
+          <CardTitle className="font-mono text-xs tracking-widest text-muted-foreground uppercase flex items-center gap-2 font-bold">
+            <ArrowLeftRight className="w-4 h-4 text-primary" /> INITIATE SWEEP ROUTING
+          </CardTitle>
+          <CardDescription className="text-[10px] font-mono text-muted-foreground/60 mt-0.5">
+            Sweep target balances directly from configured master accounts to user keys.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6">
           <form onSubmit={handleTransferSubmit} className="space-y-6 font-mono text-xs">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Coin Input */}
-              <div className="space-y-2">
-                <label className="text-slate-300 font-medium block">Coin Symbol</label>
+              <div className="space-y-1.5">
+                <label className="text-muted-foreground/75 font-bold text-[10px] uppercase block tracking-widest">Coin Symbol</label>
                 <Input
                   type="text"
                   placeholder="USDT"
                   value={coin}
                   onChange={(e) => setCoin(e.target.value)}
-                  className="font-mono uppercase bg-background/50 border-border/40 focus:border-primary"
+                  className="font-mono uppercase bg-muted/30 border-border/30 h-9.5 focus:ring-primary focus:border-primary text-foreground"
                   required
                 />
               </div>
 
               {/* Amount Input */}
-              <div className="space-y-2">
-                <label className="text-slate-300 font-medium block">Amount</label>
+              <div className="space-y-1.5">
+                <label className="text-muted-foreground/75 font-bold text-[10px] uppercase block tracking-widest">Sweep Quantity</label>
                 <Input
                   type="text"
-                  placeholder="e.g. 25.5"
+                  placeholder="e.g. 25.50"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="font-mono bg-background/50 border-border/40 focus:border-primary"
+                  className="font-mono bg-muted/30 border-border/30 h-9.5 focus:ring-primary focus:border-primary text-foreground"
                   required
                 />
               </div>
 
               {/* Target Subaccount UID */}
-              <div className="space-y-2">
-                <label className="text-slate-300 font-medium block">Target Sub-account UID</label>
+              <div className="space-y-1.5">
+                <label className="text-muted-foreground/75 font-bold text-[10px] uppercase block tracking-widest">Recipient Sub UID</label>
                 <Input
                   type="text"
                   placeholder="e.g. 987654321"
                   value={targetSubUid}
                   onChange={(e) => setTargetSubUid(e.target.value)}
-                  className="font-mono bg-background/50 border-border/40 focus:border-primary"
+                  className="font-mono bg-muted/30 border-border/30 h-9.5 focus:ring-primary focus:border-primary text-foreground"
                   required
                 />
               </div>
             </div>
 
             {/* Account Types Direction Panel */}
-            <div className="bg-background/20 border border-border/30 rounded-xl p-6 relative">
+            <div className="bg-muted/20 border border-border/30 rounded-xl p-6 relative">
               <div className="grid grid-cols-1 md:grid-cols-7 items-center gap-4">
                 {/* From Account */}
-                <div className="md:col-span-3 space-y-2">
-                  <label className="text-slate-300 font-medium block">From Account Type</label>
+                <div className="md:col-span-3 space-y-1.5">
+                  <label className="text-muted-foreground/75 font-bold text-[10px] uppercase tracking-widest block">Source Account Ledger</label>
                   <select
                     value={fromAccountType}
                     onChange={(e) => setFromAccountType(e.target.value as BybitAccountType)}
-                    className="w-full h-10 px-3 rounded-md border border-border/40 bg-background/60 text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary font-mono text-xs"
+                    className="w-full h-9.5 px-3 rounded-lg border border-border/30 bg-muted/30 text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary font-mono text-xs cursor-pointer"
                   >
                     {Object.values(BybitAccountType).map((type) => (
                       <option key={type} value={type} className="bg-slate-900 text-slate-200">
@@ -292,13 +288,13 @@ export function AdminTransferCoin() {
                 </div>
 
                 {/* Swap / Direction Arrow */}
-                <div className="md:col-span-1 flex justify-center pt-5">
+                <div className="md:col-span-1 flex justify-center pt-3 md:pt-4">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={swapAccountTypes}
-                    className="h-10 w-10 p-0 rounded-full hover:bg-primary/20 hover:text-primary transition-all duration-300 active:scale-95"
+                    className="h-9 w-9 p-0 rounded-full hover:bg-primary/20 hover:text-primary transition-all duration-300 active:scale-95 cursor-pointer"
                     title="Swap direction"
                   >
                     <ArrowLeftRight className="w-4 h-4 rotate-90 md:rotate-0" />
@@ -306,12 +302,12 @@ export function AdminTransferCoin() {
                 </div>
 
                 {/* To Account */}
-                <div className="md:col-span-3 space-y-2">
-                  <label className="text-slate-300 font-medium block">To Account Type</label>
+                <div className="md:col-span-3 space-y-1.5">
+                  <label className="text-muted-foreground/75 font-bold text-[10px] uppercase tracking-widest block">Target Account Ledger</label>
                   <select
                     value={toAccountType}
                     onChange={(e) => setToAccountType(e.target.value as BybitAccountType)}
-                    className="w-full h-10 px-3 rounded-md border border-border/40 bg-background/60 text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary font-mono text-xs"
+                    className="w-full h-9.5 px-3 rounded-lg border border-border/30 bg-muted/30 text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary font-mono text-xs cursor-pointer"
                   >
                     {Object.values(BybitAccountType).map((type) => (
                       <option key={type} value={type} className="bg-slate-900 text-slate-200">
@@ -323,36 +319,36 @@ export function AdminTransferCoin() {
               </div>
             </div>
 
-            {/* Transfer Summary */}
+            {/* Transfer Summary confirmation note */}
             {amount && targetSubUid && !isNaN(Number(amount)) && !isNaN(Number(targetSubUid)) && (
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-[11px] font-mono text-slate-300 flex items-center justify-between gap-4 animate-in fade-in duration-300">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-foreground">Summary:</span>
-                  <span>Transferring</span>
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-[11px] font-mono text-muted-foreground flex items-center justify-between gap-4 animate-in fade-in duration-300">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-foreground">Sweep review:</span>
+                  <span>Sweeping</span>
                   <span className="font-bold text-primary">{parseFloat(amount).toFixed(2)} {coin.toUpperCase()}</span>
-                  <span>from Master Sub <strong className="text-slate-200">{fromAccountType}</strong></span>
+                  <span>from Master {fromAccountType}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-primary inline" />
-                  <span>Sub-Account <strong className="text-slate-200">{targetSubUid}</strong> <strong className="text-slate-200">{toAccountType}</strong></span>
+                  <span>Sub-Account UID <strong className="text-foreground">{targetSubUid}</strong> ({toAccountType})</span>
                 </div>
               </div>
             )}
 
-            {/* Action buttons */}
+            {/* Action button */}
             <div className="flex items-center justify-end gap-3 pt-2">
               <Button
                 type="submit"
                 disabled={transferMutation.isPending}
-                className="w-full md:w-auto bg-primary text-primary-foreground font-semibold px-6"
+                className="w-full md:w-auto bg-primary text-primary-foreground font-bold px-6 h-9.5 cursor-pointer shadow-sm"
               >
                 {transferMutation.isPending ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Executing Transfer...
+                    Executing Sweep...
                   </>
                 ) : (
                   <>
                     <ArrowLeftRight className="w-4 h-4 mr-2" />
-                    Transfer Coin
+                    Execute Sweep
                   </>
                 )}
               </Button>
@@ -361,21 +357,22 @@ export function AdminTransferCoin() {
             {/* Status Feedback Banners */}
             {statusMessage.type && (
               <div
-                className={`flex gap-3 p-4 rounded-lg border animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+                className={cn(
+                  "flex gap-3 p-4 rounded-xl border animate-in fade-in slide-in-from-bottom-2 duration-300",
                   statusMessage.type === "success"
-                    ? "bg-emerald-500/5 border-emerald-500/25 text-emerald-300"
-                    : "bg-red-500/5 border-red-500/25 text-red-300"
-                }`}
+                    ? "bg-emerald-500/5 border-emerald-500/25 text-emerald-350"
+                    : "bg-rose-500/5 border-rose-500/25 text-rose-350"
+                )}
               >
                 {statusMessage.type === "success" ? (
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
                 ) : (
-                  <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
                 )}
                 <div>
-                  <h4 className="font-bold">{statusMessage.text}</h4>
+                  <h4 className="font-bold text-foreground">{statusMessage.text}</h4>
                   {statusMessage.details && (
-                    <p className="mt-1 text-[10px] text-muted-foreground/90 font-mono break-all">
+                    <p className="mt-1 text-[10px] text-muted-foreground/80 font-mono break-all leading-normal">
                       {statusMessage.details}
                     </p>
                   )}

@@ -61,33 +61,33 @@ export function Sidebar() {
 
   // Full developer nav (for client@huebox.dev.com)
   const developerNavigation: NavItem[] = [
-    { name: "Overview", href: "/", icon: LayoutDashboard },
-    { name: "Bot Control", href: "/control", icon: PlayCircle },
-    { name: "Progress", href: "/progress", icon: ListTree },
-    { name: "Performance", href: "/performance", icon: TrendingUp },
-    { name: "Live Trading", href: "/trading", icon: CandlestickChart },
-    { name: "Payments", href: "/payments", icon: Wallet },
-    { name: "Live Logs", href: "/logs", icon: Terminal },
+    { name: "Dashboard", href: "/", icon: LayoutDashboard, category: "Core Services" },
+    { name: "Wallet", href: "/payments", icon: Wallet, category: "Core Services" },
+    { name: "Investment Strategies", href: "/control", icon: PlayCircle, category: "AI Operations" },
+    { name: "Progress", href: "/progress", icon: ListTree, category: "AI Operations" },
+    { name: "Analytics", href: "/performance", icon: TrendingUp, category: "Market Intelligence" },
+    { name: "Market Insights", href: "/trading", icon: CandlestickChart, category: "Market Intelligence" },
+    { name: "Activity Center", href: "/logs", icon: Terminal, category: "Market Intelligence" },
   ];
 
   // Simplified client nav (all other USER-role accounts)
   const clientNavigation: NavItem[] = [
-    { name: "Overview", href: "/", icon: LayoutDashboard },
-    { name: "Bot Control", href: "/control", icon: PlayCircle },
-    { name: "My Bot", href: "/my-bot", icon: BarChart3 },
-    { name: "Live Markets", href: "/trading", icon: CandlestickChart },
-    { name: "Payments", href: "/payments", icon: Wallet },
-    { name: "Preferences", href: "/settings", icon: SlidersHorizontal },
+    { name: "Dashboard", href: "/", icon: LayoutDashboard, category: "Portfolio & Cash" },
+    { name: "Portfolio", href: "/my-bot", icon: BarChart3, category: "Portfolio & Cash" },
+    { name: "Wallet", href: "/payments", icon: Wallet, category: "Portfolio & Cash" },
+    { name: "Investment Strategies", href: "/control", icon: PlayCircle, category: "AI Automation" },
+    { name: "Market Insights", href: "/trading", icon: CandlestickChart, category: "Market Intelligence" },
+    { name: "Preferences", href: "/settings", icon: SlidersHorizontal, category: "System Settings" },
   ];
 
   const adminNavigation: NavItem[] = [
-    { name: "User Management", href: "/users", icon: Users, adminOnly: true },
-    { name: "Bot Oversight", href: "/admin/bots", icon: Bot, adminOnly: true },
-    { name: "KYC Review", href: "/admin/kyc", icon: BadgeCheck, adminOnly: true },
-    { name: "Finance", href: "/admin/finance", icon: DollarSign, adminOnly: true },
-    { name: "Transfer Coin", href: "/admin/transfer-coin", icon: ArrowLeftRight, adminOnly: true },
-    { name: "System", href: "/system", icon: Settings, adminOnly: true },
-    { name: "Platform Config", href: "/admin/config", icon: Sliders, superAdminOnly: true },
+    { name: "User Management", href: "/users", icon: Users, adminOnly: true, category: "User Operations" },
+    { name: "KYC Review", href: "/admin/kyc", icon: BadgeCheck, adminOnly: true, category: "User Operations" },
+    { name: "Finance", href: "/admin/finance", icon: DollarSign, adminOnly: true, category: "Treasury" },
+    { name: "Transfer Coin", href: "/admin/transfer-coin", icon: ArrowLeftRight, adminOnly: true, category: "Treasury" },
+    { name: "Bot Oversight", href: "/admin/bots", icon: Bot, adminOnly: true, category: "Platform Administration" },
+    { name: "System", href: "/system", icon: Settings, adminOnly: true, category: "Platform Administration" },
+    { name: "Platform Config", href: "/admin/config", icon: Sliders, superAdminOnly: true, category: "Platform Administration" },
   ];
 
   const visibleAdminNav = adminNavigation.filter((item) => {
@@ -108,16 +108,39 @@ export function Sidebar() {
       <Link
         key={item.name}
         to={item.href}
-        className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-all relative ${
+        className={cn(
+          "group flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold rounded-lg transition-all duration-200 relative whitespace-nowrap font-sans",
           isActive
-            ? "bg-primary/10 text-primary pl-4 border-l-2 border-primary rounded-l-none"
-            : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-        }`}
+            ? "bg-primary text-white shadow-[0_4px_12px_rgba(0,122,255,0.25)]"
+            : "text-sidebar-foreground hover:text-foreground hover:bg-muted/40"
+        )}
       >
-        <Icon className={`w-4 h-4 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+        <Icon className={cn("w-4 h-4 transition-transform duration-200 group-hover:scale-110", isActive ? "text-white" : "text-sidebar-foreground/75 group-hover:text-foreground")} />
         {item.name}
       </Link>
     );
+  };
+
+  const renderGroupedLinks = (items: NavItem[]) => {
+    let currentCategory = "";
+    return items.map((item) => {
+      const showHeader = item.category && item.category !== currentCategory;
+      if (showHeader) {
+        currentCategory = item.category!;
+      }
+      return (
+        <div key={item.name} className="space-y-1">
+          {showHeader && (
+            <div className="pt-4 pb-1.5 px-4">
+              <p className="text-[10px] font-sans font-bold tracking-wider text-muted-foreground/60 uppercase">
+                {item.category}
+              </p>
+            </div>
+          )}
+          {renderLink(item)}
+        </div>
+      );
+    });
   };
 
   const themeButtonClass = (t: string) =>
@@ -129,33 +152,38 @@ export function Sidebar() {
     );
 
   return (
-    <aside className="w-[220px] fixed inset-y-0 left-0 bg-card border-r border-border flex flex-col z-50 dark:bg-card dark:border-border">
+    <aside className="w-[260px] fixed inset-y-0 left-0 bg-sidebar border-r border-border flex flex-col z-50 shadow-md">
       {/* Brand Header */}
-      <div className="h-14 border-b border-border flex items-center px-6 gap-2">
-        <Activity className="w-5 h-5 text-primary" />
-        <span className="font-bold tracking-wider text-sm font-mono">HUEBOX</span>
+      <div className="h-16 border-b border-border/60 flex items-center px-6 gap-3">
+        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 shadow-[0_0_12px_rgba(0,122,255,0.15)]">
+          <Activity className="w-4 h-4 text-primary" />
+        </div>
+        <div className="flex flex-col">
+          <span className="font-bold tracking-wide text-sm font-sans text-foreground leading-none">HUEBOX</span>
+          <span className="text-[8px] text-muted-foreground/50 tracking-wider font-semibold uppercase mt-1">Asset Intelligence</span>
+        </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
         {/* Regular USER role: show user tabs only */}
-        {!isAdmin && userNavigation.map(renderLink)}
+        {!isAdmin && renderGroupedLinks(userNavigation)}
 
         {/* ADMIN / SUPERADMIN: show ONLY their admin tabs */}
         {isAdmin && (
           <>
-            <div className="pb-1 px-3">
-              <p className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-widest flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" />
-                {isSuperAdmin ? "Super Admin" : "Admin"}
+            <div className="pb-1 pt-3 px-3 border-b border-border/20 mb-2">
+              <p className="text-[10px] font-mono text-primary/80 uppercase tracking-widest flex items-center gap-1.5 font-bold">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                {isSuperAdmin ? "Super Admin" : "Admin Panel"}
               </p>
             </div>
-            {visibleAdminNav.map(renderLink)}
+            {renderGroupedLinks(visibleAdminNav)}
           </>
         )}
       </nav>
 
       {/* User Info + Theme + Logout Footer */}
-      <div className="p-4 border-t border-border bg-card/50 space-y-2">
+      <div className="p-4 border-t border-border bg-sidebar space-y-2">
         {user && (
           <div className="flex items-center gap-2 px-1">
             <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">

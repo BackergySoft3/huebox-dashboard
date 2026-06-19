@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 
 /* ─── Dark Mode: class-based via Tailwind v4 ─────────────────────── */
@@ -11,6 +11,9 @@
   --color-ring: hsl(var(--ring));
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
 
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
@@ -38,75 +41,84 @@
   --radius-sm: calc(var(--radius) - 4px);
 }
 
-/* ─── Color Palette: Dark Terminal ──────────────────────────────── */
+/* ─── Color Palette: Dark Terminal / Modern FinTech ─────────────── */
 @layer base {
   :root {
-    /* Terminal black background — default dark theme */
-    --background: 0 0% 4%;
-    --foreground: 210 20% 88%;
+    /* Premium dark navy background */
+    --background: 233 23% 10%; /* #13141F */
+    --foreground: 210 20% 96%; /* #F1F3F9 */
 
-    /* Card: slightly lighter panel */
-    --card: 220 8% 7%;
-    --card-foreground: 210 20% 88%;
+    /* Dedicated Sidebar Color */
+    --sidebar: 229 26% 11%; /* #141622 */
+    --sidebar-foreground: 231 16% 62%; /* #8F96B2 */
 
-    --popover: 220 8% 7%;
-    --popover-foreground: 210 20% 88%;
+    /* Card: slightly lighter navy surface */
+    --card: 232 28% 18%; /* #20233C */
+    --card-foreground: 210 20% 96%;
 
-    /* Primary: cyan-teal accent (terminal cursor feel) */
-    --primary: 180 60% 55%;
-    --primary-foreground: 220 8% 4%;
+    --popover: 232 28% 18%;
+    --popover-foreground: 210 20% 96%;
 
-    --secondary: 220 10% 12%;
-    --secondary-foreground: 210 20% 88%;
+    /* Primary: vibrant premium royal blue */
+    --primary: 211 100% 50%; /* #0079FF */
+    --primary-foreground: 0 0% 100%;
 
-    /* Muted: subtle separator tones */
-    --muted: 220 10% 11%;
-    --muted-foreground: 215 12% 48%;
+    /* Secondary: modern deep slate/blue-grey */
+    --secondary: 232 22% 13%; /* #1B1D2B */
+    --secondary-foreground: 210 20% 98%;
 
-    /* Accent: slightly blue-tinted panel highlight */
-    --accent: 220 12% 14%;
-    --accent-foreground: 210 20% 88%;
+    /* Muted: panels and separators */
+    --muted: 233 22% 13%; /* #1B1D2B */
+    --muted-foreground: 231 16% 62%; /* #8F96B2 */
 
-    /* Destructive: vivid red */
-    --destructive: 0 72% 51%;
+    /* Accent: hover and active highlights */
+    --accent: 232 27% 20%; /* #262940 */
+    --accent-foreground: 210 20% 96%;
+
+    /* Destructive: clear vivid red/pink-red */
+    --destructive: 348 100% 67%; /* #FF5A79 */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 220 10% 14%;
-    --input: 220 10% 14%;
-    --ring: 180 60% 55%;
+    --border: 233 22% 19%; /* #262940 */
+    --input: 233 22% 19%;
+    --ring: 211 100% 50%;
 
-    --radius: 0.5rem;
+    --radius: 1rem; /* Premium 16px radius */
   }
 
   /* ─── Light Mode Overrides ────────────────────────────────────── */
   :root:not(.dark) {
-    --background: 0 0% 98%;
-    --foreground: 222 20% 12%;
+    --background: 220 33% 97%; /* #F4F6FA */
+    --foreground: 230 25% 15%; /* #1C1E2D */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 20% 12%;
+    --sidebar: 0 0% 100%; /* #FFFFFF */
+    --sidebar-foreground: 217 13% 55%; /* #8A92A6 */
+
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 230 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 20% 12%;
+    --popover-foreground: 230 25% 15%;
 
-    --primary: 180 55% 42%;
+    /* Primary: same vibrant royal blue */
+    --primary: 211 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 214 16% 93%;
-    --secondary-foreground: 222 20% 12%;
+    --secondary: 220 14% 96%; /* #F1F3F7 */
+    --secondary-foreground: 230 25% 15%;
 
-    --muted: 210 16% 94%;
-    --muted-foreground: 215 12% 44%;
+    --muted: 220 14% 96%; /* #F1F3F7 */
+    --muted-foreground: 217 13% 55%; /* #8A92A6 */
 
-    --accent: 210 18% 96%;
-    --accent-foreground: 222 20% 12%;
+    --accent: 220 14% 90%;
+    --accent-foreground: 230 25% 15%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 348 90% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 214 18% 86%;
-    --input: 214 18% 86%;
-    --ring: 180 55% 42%;
+    --border: 220 20% 92%; /* #EFF1F6 */
+    --input: 220 20% 92%;
+    --ring: 211 100% 50%;
   }
 }
 
@@ -125,9 +137,15 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
     background-color: hsl(var(--background));
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
 
   /* Monospace system: used in log panels, stat values, timestamps */
@@ -193,7 +211,7 @@
   .glow-green  { box-shadow: 0 0 12px hsl(142 70% 45% / 0.35); }
   .glow-red    { box-shadow: 0 0 12px hsl(0 72% 51% / 0.35); }
   .glow-amber  { box-shadow: 0 0 12px hsl(38 92% 50% / 0.35); }
-  .glow-cyan   { box-shadow: 0 0 12px hsl(180 60% 55% / 0.35); }
+  .glow-cyan   { box-shadow: 0 0 12px hsl(185 48% 50% / 0.25); }
 
   /* Terminal scan-line overlay (optional — apply to log panels) */
   .scanlines::after {
