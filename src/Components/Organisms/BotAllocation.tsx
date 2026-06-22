@@ -7,13 +7,18 @@ import { Wallet, ChevronRight, Info } from "lucide-react";
 interface BotAllocationProps {
   availableBalance: number;
   onConfirm: (amount: number) => void;
+  defaultAmount?: number | null;
 }
 
-export function BotAllocation({ availableBalance, onConfirm }: BotAllocationProps) {
-  const [rawInput, setRawInput] = useState("");
-  const [_amount, setAmount] = useState<number | null>(null);
+export function BotAllocation({ availableBalance, onConfirm, defaultAmount }: BotAllocationProps) {
+  const [rawInput, setRawInput] = useState(defaultAmount ? String(defaultAmount) : "");
+  const [_amount, setAmount] = useState<number | null>(defaultAmount ?? null);
   const [error, setError] = useState<string | null>(null);
-  const [sliderValue, setSliderValue] = useState(0);
+  const [sliderValue, setSliderValue] = useState(
+    defaultAmount && availableBalance > 0
+      ? Math.min(100, Math.round((defaultAmount / availableBalance) * 100))
+      : 0
+  );
 
   // Sync slider → input
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {

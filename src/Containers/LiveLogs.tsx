@@ -69,10 +69,10 @@ export function LiveLogs() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <SplitSquareHorizontal className="w-8 h-8" /> Dual Log Stream
+            <SplitSquareHorizontal className="w-8 h-8" /> Activity Center
             {cycleCounter > 0 && <Badge variant="default" className="ml-2">CYCLE {cycleCounter}</Badge>}
           </h1>
-          <p className="text-muted-foreground mt-1 text-xs font-mono">Real-time split panel monitoring of system processes.</p>
+          <p className="text-muted-foreground mt-1 text-xs font-mono">Live monitoring of your investment platform activity.</p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap font-mono text-xs">
@@ -104,7 +104,7 @@ export function LiveLogs() {
         <Card className="flex flex-col min-h-0 bg-card/30 border-border/40 shadow-inner backdrop-blur-sm">
           <CardHeader className="py-2.5 px-4 border-b border-border/20 bg-muted/10 shrink-0">
             <CardTitle className="text-xs font-mono tracking-wider flex items-center text-primary">
-              <Terminal className="w-3.5 h-3.5 mr-2" /> NESTJS BACKEND LOGS
+              <Terminal className="w-3.5 h-3.5 mr-2" /> PLATFORM LOGS
               <Badge variant="outline" className="ml-auto text-[10px] h-4 py-0 font-mono">
                 {logBuffer.nestjs.length} LINES
               </Badge>
@@ -124,7 +124,7 @@ export function LiveLogs() {
         <Card className="flex flex-col min-h-0 bg-card/30 border-border/40 shadow-inner backdrop-blur-sm">
           <CardHeader className="py-2.5 px-4 border-b border-border/20 bg-muted/10 shrink-0">
             <CardTitle className="text-xs font-mono tracking-wider flex items-center text-emerald-400">
-              <Terminal className="w-3.5 h-3.5 mr-2" /> PYTHON ENGINE LOGS
+              <Terminal className="w-3.5 h-3.5 mr-2" /> STRATEGY ENGINE LOGS
               <Badge variant="outline" className="ml-auto text-[10px] h-4 py-0 font-mono">
                 {logBuffer.python.length} LINES
               </Badge>

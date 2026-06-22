@@ -1,4 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://cdn.jsdelivr.net/npm/@fontsource-variable/mona-sans/index.css");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 
 /* ─── Dark Mode: class-based via Tailwind v4 ─────────────────────── */
@@ -6,11 +7,18 @@
 
 /* ─── Design Tokens ─────────────────────────────────────────────── */
 @theme {
+  --font-sans: "Poppins", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Mona Sans Variable", "Mona Sans", "Poppins", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
 
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
@@ -38,75 +46,84 @@
   --radius-sm: calc(var(--radius) - 4px);
 }
 
-/* ─── Color Palette: Dark Terminal ──────────────────────────────── */
+/* ─── Color Palette: Dark Terminal / Modern FinTech ─────────────── */
 @layer base {
   :root {
-    /* Terminal black background — default dark theme */
-    --background: 0 0% 4%;
-    --foreground: 210 20% 88%;
+    /* Premium black background matching design */
+    --background: 0 0% 0%; /* #000000 */
+    --foreground: 0 0% 100%; /* #FFFFFF */
 
-    /* Card: slightly lighter panel */
-    --card: 220 8% 7%;
-    --card-foreground: 210 20% 88%;
+    /* Dedicated Sidebar Color */
+    --sidebar: 0 0% 0%; /* #000000 */
+    --sidebar-foreground: 215 16% 70%; /* Muted slate #8F96B2 */
 
-    --popover: 220 8% 7%;
-    --popover-foreground: 210 20% 88%;
+    /* Card: dark gray surface */
+    --card: 0 0% 10%; /* #191919 */
+    --card-foreground: 0 0% 100%;
 
-    /* Primary: cyan-teal accent (terminal cursor feel) */
-    --primary: 180 60% 55%;
-    --primary-foreground: 220 8% 4%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 100%;
 
-    --secondary: 220 10% 12%;
-    --secondary-foreground: 210 20% 88%;
+    /* Primary: vibrant premium blue #1F659D */
+    --primary: 207 67% 37%; /* #1F659D */
+    --primary-foreground: 0 0% 100%;
 
-    /* Muted: subtle separator tones */
-    --muted: 220 10% 11%;
-    --muted-foreground: 215 12% 48%;
+    /* Secondary: modern deep slate/blue-grey */
+    --secondary: 0 0% 10%; /* #191919 */
+    --secondary-foreground: 0 0% 100%;
 
-    /* Accent: slightly blue-tinted panel highlight */
-    --accent: 220 12% 14%;
-    --accent-foreground: 210 20% 88%;
+    /* Muted: panels and separators */
+    --muted: 0 0% 10%; /* #191919 */
+    --muted-foreground: 215 16% 70%;
 
-    /* Destructive: vivid red */
-    --destructive: 0 72% 51%;
+    /* Accent: hover and active highlights */
+    --accent: 0 0% 15%; /* #262626 */
+    --accent-foreground: 0 0% 100%;
+
+    /* Destructive: clear vivid red/pink-red */
+    --destructive: 348 100% 67%; /* #FF5A79 */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 220 10% 14%;
-    --input: 220 10% 14%;
-    --ring: 180 60% 55%;
+    --border: 0 0% 15%; /* #262626 */
+    --input: 0 0% 15%;
+    --ring: 207 67% 37%;
 
-    --radius: 0.5rem;
+    --radius: 1rem; /* Premium 16px radius */
   }
 
   /* ─── Light Mode Overrides ────────────────────────────────────── */
   :root:not(.dark) {
-    --background: 0 0% 98%;
-    --foreground: 222 20% 12%;
+    --background: 220 15% 97%; /* Soft grey-white background #F5F6F8 */
+    --foreground: 222 47% 11%; /* Slate black #0F172A */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 20% 12%;
+    --sidebar: 0 0% 100%; /* Pure white #FFFFFF */
+    --sidebar-foreground: 215.4 16.3% 46.9%; /* Muted slate #64748B */
+
+    --card: 0 0% 100%; /* Pure white #FFFFFF */
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 20% 12%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 180 55% 42%;
+    /* Primary: brand blue #1F659D */
+    --primary: 207 67% 37%; /* #1F659D */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 214 16% 93%;
-    --secondary-foreground: 222 20% 12%;
+    --secondary: 210 40% 96.1%; /* Soft grey-blue hover/secondary #F1F5F9 */
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 210 16% 94%;
-    --muted-foreground: 215 12% 44%;
+    --muted: 210 40% 96.1%; /* #F1F5F9 */
+    --muted-foreground: 215.4 16.3% 46.9%; /* #64748B */
 
-    --accent: 210 18% 96%;
-    --accent-foreground: 222 20% 12%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 348 90% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 214 18% 86%;
-    --input: 214 18% 86%;
-    --ring: 180 55% 42%;
+    --border: 214.3 31.8% 91.4%; /* Thin light border #E2E8F0 */
+    --input: 214.3 31.8% 91.4%;
+    --ring: 207 67% 37%;
   }
 }
 
@@ -125,9 +142,15 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-family: "Poppins", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
     background-color: hsl(var(--background));
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Mona Sans Variable", "Mona Sans", "Poppins", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
 
   /* Monospace system: used in log panels, stat values, timestamps */
@@ -158,13 +181,17 @@
     background: hsl(214 18% 78%);
   }
   :root:not(.dark) ::-webkit-scrollbar-thumb:hover {
-    background: hsl(180 55% 42%);
+    background: hsl(var(--primary) / 0.85);
   }
 
   /* Selection highlight */
   ::selection {
     background: hsl(180 60% 55% / 0.25);
     color: hsl(180 60% 90%);
+  }
+  :root:not(.dark) ::selection {
+    background: hsl(var(--primary) / 0.15);
+    color: hsl(var(--primary));
   }
 }
 
@@ -193,7 +220,7 @@
   .glow-green  { box-shadow: 0 0 12px hsl(142 70% 45% / 0.35); }
   .glow-red    { box-shadow: 0 0 12px hsl(0 72% 51% / 0.35); }
   .glow-amber  { box-shadow: 0 0 12px hsl(38 92% 50% / 0.35); }
-  .glow-cyan   { box-shadow: 0 0 12px hsl(180 60% 55% / 0.35); }
+  .glow-cyan   { box-shadow: 0 0 12px hsl(185 48% 50% / 0.25); }
 
   /* Terminal scan-line overlay (optional — apply to log panels) */
   .scanlines::after {

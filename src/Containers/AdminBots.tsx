@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminBotsApi } from "../Services/adminBotsApi";
 import type { BotSummary } from "../Interfaces/bot";
@@ -9,12 +9,13 @@ import { Badge } from "../Components/Atoms/badge";
 import { Bot, Cpu, AlertTriangle, RefreshCw, Activity, Square, Pause, Play, Edit, Megaphone } from "lucide-react";
 import { Button } from "../Components/Atoms/button";
 import { ConfirmModal } from "../Components/Organisms/ConfirmModal";
+import { cn } from "../Helpers/utils";
 
 const STATUS_COLORS: Record<BotStatus, string> = {
-  [BotStatus.Running]: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
-  [BotStatus.Paused]:  "text-amber-400 border-amber-500/20 bg-amber-500/5",
-  [BotStatus.Stalled]: "text-red-400 border-red-500/20 bg-red-500/5",
-  [BotStatus.Stopped]: "text-slate-400 border-slate-500/20 bg-slate-500/5",
+  [BotStatus.Running]: "text-emerald-400 border-emerald-500/20 bg-emerald-500/10",
+  [BotStatus.Paused]:  "text-amber-400 border-amber-500/20 bg-amber-500/10",
+  [BotStatus.Stalled]: "text-rose-455 border-rose-500/20 bg-rose-500/10",
+  [BotStatus.Stopped]: "text-muted-foreground/60 border-border/30 bg-muted/5",
 };
 
 export function AdminBots() {
@@ -44,7 +45,6 @@ export function AdminBots() {
   const stopMutation = useMutation({
     mutationFn: (userId: string) => adminBotsApi.forceStop(userId),
     onSuccess: () => {
-      // alert(data.message || "Bot force stopped");
       queryClient.invalidateQueries({ queryKey: ["admin-bots"] });
     },
     onError: (err: any) => alert(err?.data?.message?.[0] || err.message || "Failed to stop bot")
@@ -53,7 +53,6 @@ export function AdminBots() {
   const pauseMutation = useMutation({
     mutationFn: (userId: string) => adminBotsApi.forcePause(userId),
     onSuccess: () => {
-      // alert(data.message || "Bot force paused");
       queryClient.invalidateQueries({ queryKey: ["admin-bots"] });
     },
     onError: (err: any) => alert(err?.data?.message?.[0] || err.message || "Failed to pause bot")
@@ -62,7 +61,6 @@ export function AdminBots() {
   const resumeMutation = useMutation({
     mutationFn: (userId: string) => adminBotsApi.forceResume(userId),
     onSuccess: () => {
-      // alert(data.message || "Bot force resumed");
       queryClient.invalidateQueries({ queryKey: ["admin-bots"] });
     },
     onError: (err: any) => alert(err?.data?.message?.[0] || err.message || "Failed to resume bot")
@@ -71,7 +69,6 @@ export function AdminBots() {
   const personalityMutation = useMutation({
     mutationFn: ({ userId, p }: { userId: string, p: string }) => adminBotsApi.overridePersonality(userId, p),
     onSuccess: () => {
-      // alert("Personality overridden");
       queryClient.invalidateQueries({ queryKey: ["admin-bots"] });
       setTimeout(() => queryClient.invalidateQueries({ queryKey: ["admin-bots"] }), 2000);
     },
@@ -81,7 +78,6 @@ export function AdminBots() {
   const broadcastPauseMutation = useMutation({
     mutationFn: () => adminBotsApi.broadcastPause(),
     onSuccess: () => {
-      // alert(data.message || "Broadcast pause successful");
       queryClient.invalidateQueries({ queryKey: ["admin-bots"] });
     },
     onError: (err: any) => {
@@ -140,43 +136,43 @@ export function AdminBots() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-card/20 border border-border/40 p-5 rounded-2xl shadow-sm">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Bot Oversight</h1>
-          <p className="text-muted-foreground mt-1 font-mono text-xs">
-            Live-polling · Updated {dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString() : "—"}
+          <h1 className="text-3xl font-extrabold tracking-tight font-sans text-foreground">Bot Oversight</h1>
+          <p className="text-muted-foreground mt-1 font-mono text-[11px] uppercase tracking-wider">
+            Live monitoring · Polled {dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString() : "—"}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="destructive" size="sm" onClick={() => openModal('broadcast-pause')} className="gap-2 font-mono text-xs">
-            <Megaphone className="w-3.5 h-3.5" /> Broadcast Pause
+        <div className="flex items-center gap-3 shrink-0">
+          <Button variant="destructive" size="sm" onClick={() => openModal('broadcast-pause')} className="gap-2 font-mono text-xs font-bold border border-rose-500/25 bg-rose-600 hover:bg-rose-500 shadow-md">
+            <Megaphone className="w-3.5 h-3.5 animate-pulse" /> Emergency Pause
           </Button>
-          <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2 font-mono text-xs font-bold shadow-sm bg-card/40">
             <RefreshCw className="w-3.5 h-3.5" /> Refresh
           </Button>
         </div>
       </div>
 
-      {/* Aggregate Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card className="bg-card/30 border-border/40">
+      {/* Aggregate Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 font-mono text-xs">
+        <Card className="bg-card/30 border-border/40 shadow-sm">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-mono text-muted-foreground uppercase">Active Slots</p>
-                <p className="text-2xl font-bold mt-1 text-emerald-400">{aggregate?.totalActiveSlots ?? 0}</p>
+                <p className="text-[10px] text-foreground uppercase tracking-wider font-extrabold">Active Slots</p>
+                <p className="text-2xl font-bold mt-1.5 text-emerald-450 font-sans tracking-tight">{aggregate?.totalActiveSlots ?? 0}</p>
               </div>
-              <Activity className="w-8 h-8 text-emerald-400 opacity-20" />
+              <Activity className="w-8 h-8 text-emerald-450 opacity-20" />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-card/30 border-border/40">
+        <Card className="bg-card/30 border-border/40 shadow-sm">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-mono text-muted-foreground uppercase">Unrealised PnL</p>
-                <p className={`text-2xl font-bold mt-1 ${(aggregate?.combinedUnrealisedPnl ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                <p className="text-[10px] text-foreground uppercase tracking-wider font-extrabold">Aggregate P&L</p>
+                <p className={cn("text-2xl font-bold mt-1.5 font-sans tracking-tight", (aggregate?.combinedUnrealisedPnl ?? 0) >= 0 ? "text-emerald-455" : "text-rose-455")}>
                   ${aggregate?.combinedUnrealisedPnl?.toFixed(2) ?? "0.00"}
                 </p>
               </div>
@@ -184,24 +180,24 @@ export function AdminBots() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-card/30 border-border/40">
+        <Card className="bg-card/30 border-border/40 shadow-sm">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-mono text-muted-foreground uppercase">Stalled Bots</p>
-                <p className="text-2xl font-bold mt-1 text-red-400">{aggregate?.stalledCount ?? 0}</p>
+                <p className="text-[10px] text-foreground uppercase tracking-wider font-extrabold">Stalled Bots</p>
+                <p className="text-2xl font-bold mt-1.5 text-rose-500 font-sans tracking-tight">{aggregate?.stalledCount ?? 0}</p>
               </div>
-              <AlertTriangle className="w-8 h-8 text-red-400 opacity-20" />
+              <AlertTriangle className="w-8 h-8 text-rose-500 opacity-20 animate-pulse" />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-card/30 border-border/40">
+        <Card className="bg-card/30 border-border/40 shadow-sm">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-mono text-muted-foreground uppercase">Regime Split</p>
-                <p className="text-2xl font-bold mt-1 text-primary">
-                  {aggregate?.regimeSplit?.scouting ?? 0} <span className="text-sm font-normal text-muted-foreground">Scout</span> / {aggregate?.regimeSplit?.farming ?? 0} <span className="text-sm font-normal text-muted-foreground">Farm</span>
+                <p className="text-[10px] text-foreground uppercase tracking-wider font-extrabold">Active Regimes</p>
+                <p className="text-sm font-bold mt-2.5 font-sans text-foreground">
+                  {aggregate?.regimeSplit?.scouting ?? 0} <span className="text-[10px] font-mono font-normal text-muted-foreground/60">Scout</span> · {aggregate?.regimeSplit?.farming ?? 0} <span className="text-[10px] font-mono font-normal text-muted-foreground/60">Farm</span>
                 </p>
               </div>
               <Cpu className="w-8 h-8 text-primary opacity-20" />
@@ -211,70 +207,81 @@ export function AdminBots() {
       </div>
 
       {/* Bot Table */}
-      <Card className="bg-card/30 border-border/40 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-wider text-slate-200">
-            <Cpu className="w-4 h-4 text-primary" /> ACTIVE BOT STATES
+      <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
+        <CardHeader className="pb-3 border-b border-border/20">
+          <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase flex items-center gap-2 font-bold">
+            <Cpu className="w-4 h-4 text-primary" /> USER BOT CORE MONITOR
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse font-mono">
               <thead>
-                <tr className="border-b border-border/40 text-muted-foreground bg-muted/10">
-                  <th className="py-2.5 px-4">USER</th>
-                  <th className="py-2.5 px-4">STATUS</th>
-                  <th className="py-2.5 px-4">REGIME</th>
-                  <th className="py-2.5 px-4">PERSONALITY</th>
-                  <th className="py-2.5 px-4">SLOTS</th>
-                  <th className="py-2.5 px-4">UNREAL. PNL</th>
-                  <th className="py-2.5 px-4">HEARTBEAT</th>
-                  <th className="py-2.5 px-4 text-right">ACTIONS</th>
+                <tr className="border-b border-border/30 text-muted-foreground bg-muted/15 text-[9px] uppercase tracking-wider">
+                  <th className="py-3 px-4">OPERATOR</th>
+                  <th className="py-3 px-4">STATUS</th>
+                  <th className="py-3 px-4">REGIME</th>
+                  <th className="py-3 px-4">PERSONALITY</th>
+                  <th className="py-3 px-4">SLOTS</th>
+                  <th className="py-3 px-4">UNREAL. P&L</th>
+                  <th className="py-3 px-4">HEARTBEAT</th>
+                  <th className="py-3 px-4 text-right">CONTROLS</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/20">
+              <tbody className="divide-y divide-border/15">
                 {isLoading ? (
-                  <tr><td colSpan={8} className="py-10 text-center text-slate-500 italic">Loading bot states…</td></tr>
+                  <tr><td colSpan={8} className="py-12 text-center text-muted-foreground italic font-mono animate-pulse">Querying active threads...</td></tr>
                 ) : (!bots || bots.length === 0) ? (
-                  <tr><td colSpan={8} className="py-10 text-center text-slate-500">No active bots.</td></tr>
+                  <tr><td colSpan={8} className="py-10 text-center text-muted-foreground italic font-mono">No active bot threads running.</td></tr>
                 ) : (
                   bots.map((bot: BotSummary, i: number) => {
                     return (
-                      <tr key={bot.userId ?? i} className="hover:bg-muted/10 transition-colors">
-                        <td className="py-2.5 px-4 text-foreground truncate max-w-[150px]">{bot.email ?? bot.userId ?? "—"}</td>
-                        <td className="py-2.5 px-4">
-                          <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[bot.status] ?? ""}`}>
+                      <tr key={bot.userId ?? i} className="hover:bg-muted/15 transition-colors">
+                        <td className="py-3.5 px-4 font-sans font-bold text-foreground truncate max-w-[155px]">
+                          {bot.email ?? bot.userId ?? "—"}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <Badge variant="outline" className={cn("text-[9px] font-bold uppercase border px-2 py-0.5", STATUS_COLORS[bot.status] ?? "")}>
                             {bot.status ?? "—"}
                           </Badge>
                         </td>
-                        <td className="py-2.5 px-4 text-slate-300">
-                          {bot.regime === "SCOUTING" ? "Scanning" : bot.regime === "FARMING" ? "Active" : "Unknown"}
+                        <td className="py-3.5 px-4">
+                          <Badge variant="outline" className={cn("text-[9px] font-bold uppercase border px-2 py-0.5", bot.regime === "SCOUTING" ? "text-sky-400 border-sky-500/20 bg-sky-500/5" : "text-emerald-400 border-emerald-500/20 bg-emerald-500/5")}>
+                            {bot.regime === "SCOUTING" ? "Scouting" : bot.regime === "FARMING" ? "Farming" : "Unknown"}
+                          </Badge>
                         </td>
-                        <td className="py-2.5 px-4 text-slate-300">{bot.personality ?? "—"}</td>
-                        <td className="py-2.5 px-4 text-slate-300">{bot.activeSlots} / {bot.maxSlots}</td>
-                        <td className={`py-2.5 px-4 font-bold ${bot.unrealisedPnlUsdt >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                          {bot.unrealisedPnlUsdt >= 0 ? "+" : ""}{bot.unrealisedPnlUsdt.toFixed(2)} USDT
+                        <td className="py-3.5 px-4 text-slate-300 font-bold uppercase text-[10px]">{bot.personality ?? "—"}</td>
+                        <td className="py-3.5 px-4 text-slate-300 font-bold">{bot.activeSlots} / {bot.maxSlots}</td>
+                        <td className={cn("py-3.5 px-4 font-sans font-bold text-[13px]", bot.unrealisedPnlUsdt >= 0 ? "text-emerald-400" : "text-rose-455")}>
+                          {bot.unrealisedPnlUsdt >= 0 ? "+" : ""}{bot.unrealisedPnlUsdt.toFixed(2)} <span className="text-[9px] font-mono text-muted-foreground font-normal">USDT</span>
                         </td>
-                        <td className={`py-2.5 px-4 ${bot.heartbeatAgeSeconds > 300 ? "text-red-400" : "text-slate-400"}`}>
-                          {bot.heartbeatAgeSeconds < 60 
-                            ? `${bot.heartbeatAgeSeconds}s ago` 
-                            : `${Math.floor(bot.heartbeatAgeSeconds / 60)}m ago`}
+                        <td className="py-3.5 px-4">
+                          <span className={cn(
+                            "font-bold text-[10px] px-1.5 py-0.5 rounded border inline-block",
+                            bot.heartbeatAgeSeconds > 300 
+                              ? "text-rose-455 border-rose-500/20 bg-rose-500/5 animate-pulse" 
+                              : "text-muted-foreground border-border/30 bg-muted/5"
+                          )}>
+                            {bot.heartbeatAgeSeconds < 60 
+                              ? `${bot.heartbeatAgeSeconds}s ago` 
+                              : `${Math.floor(bot.heartbeatAgeSeconds / 60)}m ago`}
+                          </span>
                         </td>
-                        <td className="py-2.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-sky-400" onClick={() => openModal('edit-personality', bot.userId, bot.email, bot.personality)} title="Edit Personality">
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-sky-400 hover:bg-sky-500/10 rounded-md" onClick={() => openModal('edit-personality', bot.userId, bot.email, bot.personality)} title="Edit Personality">
                               <Edit className="w-3.5 h-3.5" />
                             </Button>
                             {bot.status === 'paused' ? (
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-400" onClick={() => openModal('force-resume', bot.userId, bot.email)} title="Resume">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-400 hover:bg-emerald-500/10 rounded-md" onClick={() => openModal('force-resume', bot.userId, bot.email)} title="Resume">
                                 <Play className="w-3.5 h-3.5" />
                               </Button>
                             ) : (
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-400" onClick={() => openModal('force-pause', bot.userId, bot.email)} title="Pause">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-400 hover:bg-amber-500/10 rounded-md" onClick={() => openModal('force-pause', bot.userId, bot.email)} title="Pause">
                                 <Pause className="w-3.5 h-3.5" />
                               </Button>
                             )}
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-500 hover:bg-red-500/10" onClick={() => openModal('force-stop', bot.userId, bot.email)} title="Force Stop">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-md" onClick={() => openModal('force-stop', bot.userId, bot.email)} title="Force Stop">
                               <Square className="w-3.5 h-3.5 fill-current" />
                             </Button>
                           </div>
@@ -295,17 +302,17 @@ export function AdminBots() {
           description={confirmModal.description}
           onConfirm={handleAction}
           onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
-          confirmLabel="Confirm"
+          confirmLabel="Confirm Action"
           requireConfirmText={confirmModal.type === 'broadcast-pause' ? "PAUSE ALL" : undefined}
           danger={confirmModal.type === 'force-stop' || confirmModal.type === 'broadcast-pause'}
         >
           {confirmModal.type === 'edit-personality' && (
-            <div className="mt-4 space-y-2 text-left">
-              <label className="text-[10px] font-mono text-muted-foreground uppercase">Personality</label>
+            <div className="mt-4 space-y-2 text-left font-mono text-xs">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">Choose Target Strategy Personality</label>
               <select
                 value={confirmModal.selectedPersonality}
                 onChange={(e) => setConfirmModal({ ...confirmModal, selectedPersonality: e.target.value })}
-                className="w-full bg-muted/30 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full bg-muted/30 border border-border/30 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer"
               >
                 {Object.values(Personality).map((p) => (
                   <option key={p} value={p}>{p}</option>

@@ -43,8 +43,8 @@ export function Performance() {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Performance Metrics</h1>
-        <p className="text-muted-foreground mt-1 font-mono text-xs">Deep dive into historical trading execution and fees.</p>
+        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+        <p className="text-muted-foreground mt-1 font-mono text-xs">Track your investment performance and returns.</p>
       </div>
 
       {/* Stat Cards */}
@@ -102,7 +102,7 @@ export function Performance() {
         {/* PnL Chart */}
         <Card className="bg-card/30 border-border/40 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-sm font-mono tracking-wider text-slate-200">HISTORICAL PNL</CardTitle>
+            <CardTitle className="text-sm font-mono tracking-wider text-slate-200">PROFIT HISTORY</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full font-mono text-xs">
@@ -122,7 +122,7 @@ export function Performance() {
         {/* Fees Chart */}
         <Card className="bg-card/30 border-border/40 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-sm font-mono tracking-wider text-slate-200">FEE ACCUMULATION</CardTitle>
+            <CardTitle className="text-sm font-mono tracking-wider text-slate-200">PLATFORM FEES</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full font-mono text-xs">
@@ -144,9 +144,9 @@ export function Performance() {
       <Card className="bg-card/30 border-border/40 backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-wider text-slate-200">
-            <Trophy className="w-4 h-4 text-primary" /> TRADE HISTORY
+            <Trophy className="w-4 h-4 text-primary" /> INVESTMENT HISTORY
           </CardTitle>
-          <CardDescription className="text-[10px] font-mono text-slate-500">Most recent exits and order closures.</CardDescription>
+          <CardDescription className="text-[10px] font-mono text-slate-500">Most recent investment cycle completions.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto border border-border/40 rounded-md bg-card/20">

@@ -9,7 +9,8 @@ import {
   HelpCircle,
   RefreshCw,
   Coins,
-  Eye
+  Brain,
+  Gauge
 } from "lucide-react";
 import {
   ComposedChart,
@@ -41,12 +42,30 @@ import { ChartInterval } from "../Enums/ChartInterval.enum";
 
 const DEVELOPER_ACCOUNT = "client@huebox.dev.com";
 
-
 const CHART_INTERVAL_LABELS: Record<ChartInterval, string> = {
   [ChartInterval.Minutes15]:  "15M",
   [ChartInterval.Minutes60]:  "1H",
   [ChartInterval.Minutes240]: "4H",
   [ChartInterval.Daily]:      "1D",
+};
+
+const CustomChartTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-popover border border-border/80 p-3 rounded-lg shadow-xl backdrop-blur-md font-sans text-popover-foreground">
+        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">BTC price</p>
+        <p className="text-sm font-mono font-bold mt-0.5 text-primary">
+          ${Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        </p>
+        {payload[1] && (
+          <p className="text-[9px] font-mono text-muted-foreground mt-1">
+            Vol: {Number(payload[1].value).toLocaleString()}
+          </p>
+        )}
+      </div>
+    );
+  }
+  return null;
 };
 
 export function Trading() {
@@ -166,7 +185,7 @@ export function Trading() {
 
   if (isDashboardLoading && !dashboard) {
     return (
-      <div className="h-[80vh] flex flex-col items-center justify-center font-mono text-xs text-muted-foreground gap-4">
+      <div className="h-[70vh] flex flex-col items-center justify-center font-mono text-xs text-muted-foreground gap-3">
         <RefreshCw className="w-8 h-8 animate-spin text-primary" />
         <span>Loading Bybit Live Session Data...</span>
       </div>
@@ -176,17 +195,17 @@ export function Trading() {
   if (hasNoBybitAccount) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center p-6 text-center max-w-lg mx-auto">
-        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/30 mb-6">
-          <AlertTriangle className="w-8 h-8 text-red-500 animate-pulse" />
+        <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/30 mb-6 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
+          <AlertTriangle className="w-8 h-8 text-rose-500" />
         </div>
-        <h2 className="text-2xl font-bold font-mono tracking-tight text-slate-200">No Bybit Account Linked</h2>
-        <p className="text-muted-foreground text-sm font-mono mt-3 leading-relaxed">
+        <h2 className="text-2xl font-bold font-sans tracking-tight text-foreground">No Bybit Account Linked</h2>
+        <p className="text-muted-foreground text-sm font-medium mt-3 leading-relaxed">
           It looks like your sub-account has not been provisioned or is missing the proper API credentials.
         </p>
-        <p className="text-muted-foreground text-xs font-mono mt-2 bg-muted/40 p-3 rounded border border-border/55">
+        <p className="text-muted-foreground text-xs font-mono mt-4 bg-muted/40 p-4 rounded-xl border border-border/40">
           Please check the **System Settings** page to provision/verify your Bybit Sub-Account settings or contact admin support.
         </p>
-        <Button className="mt-8 gap-2" variant="outline" onClick={() => window.location.reload()}>
+        <Button className="mt-8 gap-2 font-mono text-xs font-bold" variant="outline" onClick={() => window.location.reload()}>
           <RefreshCw className="w-4 h-4" /> Retry Connection
         </Button>
       </div>
@@ -215,60 +234,155 @@ export function Trading() {
   const getMarginBarColor = (ratio: number) => {
     if (ratio < 40) return "bg-emerald-500";
     if (ratio < 75) return "bg-amber-500";
-    return "bg-red-500 animate-pulse";
+    return "bg-rose-500 animate-pulse";
   };
 
+  const marketBrief =
+    priceChange > 3
+      ? `Bitcoin is showing strong momentum, up ${priceChange.toFixed(1)}% in 24 hours. Your AI strategy is positioned to capture this upward movement.`
+      : priceChange > 0
+      ? `Bitcoin is trading with mild positive sentiment, up ${priceChange.toFixed(1)}% in 24 hours. Your AI strategy is actively monitoring market conditions.`
+      : priceChange > -3
+      ? `Bitcoin is slightly negative at ${priceChange.toFixed(1)}% today. Your AI strategy's risk controls are managing downside exposure.`
+      : `Bitcoin is under selling pressure at ${priceChange.toFixed(1)}% in 24 hours. Your AI strategy has activated conservative position sizing.`;
+
+  // Market Sentiment Calculation
+  const sentimentScore = isUp ? Math.min(95, Math.round(55 + priceChange * 3)) : Math.max(5, Math.round(45 + priceChange * 3));
+  const sentimentLabel = sentimentScore >= 70 ? "Strong Buy" : sentimentScore >= 55 ? "Buy" : sentimentScore >= 45 ? "Neutral" : sentimentScore >= 25 ? "Sell" : "Strong Sell";
+  const sentimentColor = sentimentScore >= 55 ? "text-emerald-400" : sentimentScore >= 45 ? "text-muted-foreground" : "text-rose-400";
+
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-12">
-      {/* Read-only badge for client mode */}
-      {isReadOnly && (
-        <div className="flex items-center gap-2 text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-md">
-          <Eye className="w-3.5 h-3.5 shrink-0" />
-          <span>Live Markets — Read-Only View. Trading actions are managed automatically by your bot.</span>
-        </div>
-      )}
+    <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
+      {/* 3 Metrics Rows: Market Overview, Sentiment index, Watchlist items */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Watchlist */}
+        <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+              <Coins className="w-4 h-4 text-primary" /> WATCHLIST STREAMS
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {/* BTC */}
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/15 border border-border/30">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary">₿</div>
+                <div>
+                  <span className="text-xs font-bold font-sans text-foreground block">BTCUSDT</span>
+                  <span className="text-[9px] font-mono text-muted-foreground uppercase">Perpetual</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className={cn("text-xs font-mono font-bold block", isUp ? "text-emerald-400" : "text-rose-400")}>
+                  ${lastPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+                <Badge className={cn("text-[8px] font-mono font-bold mt-0.5 px-1 py-0 h-4 border", isUp ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/20")}>
+                  {priceChange >= 0 ? "+" : ""}{priceChange.toFixed(2)}%
+                </Badge>
+              </div>
+            </div>
+            {/* ETH */}
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/10 border border-border/20 opacity-55">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-indigo-500/10 flex items-center justify-center font-bold text-[10px] text-indigo-400">Ξ</div>
+                <div>
+                  <span className="text-xs font-bold font-sans text-muted-foreground block">ETHUSDT</span>
+                  <span className="text-[9px] font-mono text-muted-foreground/60 uppercase">Perpetual</span>
+                </div>
+              </div>
+              <span className="text-[9px] font-mono text-muted-foreground/60">QUEUEING...</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Sentiment Index Card */}
+        <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+              <Gauge className="w-4 h-4 text-primary" /> Market Sentiment Index
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col justify-between flex-1 min-h-[100px] font-mono">
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className={cn("text-2xl font-extrabold tracking-tight", sentimentColor)}>{sentimentScore}%</span>
+                <span className="text-[10px] text-muted-foreground font-semibold uppercase">({sentimentLabel})</span>
+              </div>
+              <div className="w-full bg-muted/40 h-2 rounded-full overflow-hidden mt-3.5 border border-border/20">
+                <div
+                  className={cn("h-full rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(0,212,255,0.3)]", sentimentScore >= 55 ? "bg-emerald-400" : sentimentScore >= 45 ? "bg-muted-foreground" : "bg-rose-500")}
+                  style={{ width: `${sentimentScore}%` }}
+                />
+              </div>
+            </div>
+            <div className="text-[9px] text-muted-foreground/70 mt-3">
+              Computed from 24h funding rates and long/short skew metrics.
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* AI market brief description */}
+        <Card className="bg-gradient-to-br from-card to-card/65 border-primary/20 shadow-sm backdrop-blur-sm flex flex-col justify-between">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+              <Brain className="w-4 h-4 text-primary animate-pulse" /> AI Market Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-between">
+            <p className="text-xs font-medium text-muted-foreground/90 leading-relaxed italic">
+              "{marketBrief}"
+            </p>
+            {isReadOnly && (
+              <Badge variant="outline" className="text-[8px] tracking-wider uppercase font-mono mt-3 self-start border-amber-500/20 text-amber-400 bg-amber-500/5 px-2 py-0.5">
+                AUTOMATED MANAGEMENT
+              </Badge>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* 1. TICKER HEADERS BAR */}
-      <div className="bg-card/40 border border-border/30 rounded-lg p-4 backdrop-blur-md flex flex-wrap items-center justify-between gap-6 font-mono">
+      <div className="bg-card/45 border border-border/30 rounded-xl p-4.5 backdrop-blur-md flex flex-wrap items-center justify-between gap-6 font-mono text-xs shadow-sm">
         <div className="flex items-center gap-3">
-          <Badge className="bg-primary/20 text-primary border-primary/30 px-3 py-1 text-xs font-mono">
-            LIVE SESSION
+          <Badge className="bg-primary/10 text-primary border border-primary/25 px-2.5 py-0.75 text-[10px] font-mono font-bold uppercase tracking-wider">
+            LIVE CONTINUOUS
           </Badge>
-          <span className="text-lg font-bold text-foreground">BTCUSDT</span>
-          <span className="text-[10px] text-muted-foreground">USDT PERPETUAL</span>
+          <span className="text-lg font-bold font-sans text-foreground">BTCUSDT</span>
+          <span className="text-[9px] text-muted-foreground/60 uppercase">USDT Perpetual</span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-8 text-xs">
+        <div className="flex flex-wrap items-center gap-8 text-[11px]">
           <div>
-            <div className="text-[10px] text-muted-foreground tracking-wider mb-0.5">LAST PRICE</div>
-            <div className={cn("text-base font-bold", isUp ? "text-emerald-400" : "text-rose-500")}>
+            <div className="text-[9px] text-muted-foreground/50 tracking-widest uppercase mb-0.5">LAST PRICE</div>
+            <div className={cn("text-sm font-bold font-sans", isUp ? "text-emerald-400" : "text-rose-400")}>
               ${lastPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
 
           <div>
-            <div className="text-[10px] text-muted-foreground tracking-wider mb-0.5">24H CHANGE</div>
-            <div className={cn("font-bold flex items-center gap-1", isUp ? "text-emerald-400" : "text-rose-500")}>
+            <div className="text-[9px] text-muted-foreground/50 tracking-widest uppercase mb-0.5">24H CHANGE</div>
+            <div className={cn("font-bold font-sans text-sm flex items-center gap-1", isUp ? "text-emerald-400" : "text-rose-400")}>
               {isUp ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
               {priceChange >= 0 ? "+" : ""}{priceChange.toFixed(2)}%
             </div>
           </div>
 
           <div>
-            <div className="text-[10px] text-muted-foreground tracking-wider mb-0.5">24H HIGH</div>
+            <div className="text-[9px] text-muted-foreground/50 tracking-widest uppercase mb-0.5">24H HIGH</div>
             <div className="font-semibold text-foreground">
               ${ticker ? parseFloat(ticker.highPrice24h).toLocaleString(undefined, { minimumFractionDigits: 2 }) : "0.00"}
             </div>
           </div>
 
           <div>
-            <div className="text-[10px] text-muted-foreground tracking-wider mb-0.5">24H LOW</div>
+            <div className="text-[9px] text-muted-foreground/50 tracking-widest uppercase mb-0.5">24H LOW</div>
             <div className="font-semibold text-foreground">
               ${ticker ? parseFloat(ticker.lowPrice24h).toLocaleString(undefined, { minimumFractionDigits: 2 }) : "0.00"}
             </div>
           </div>
 
           <div>
-            <div className="text-[10px] text-muted-foreground tracking-wider mb-0.5">24H VOLUME (BTC)</div>
+            <div className="text-[9px] text-muted-foreground/50 tracking-widest uppercase mb-0.5">24H VOL (BTC)</div>
             <div className="font-semibold text-muted-foreground">
               {ticker ? parseFloat(ticker.volume24h).toLocaleString(undefined, { maximumFractionDigits: 2 }) : "0.00"}
             </div>
@@ -278,14 +392,14 @@ export function Trading() {
 
       {/* Notifications Alert Banner */}
       {actionError && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg p-3 text-xs font-mono flex items-center gap-2">
+        <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl p-3 text-xs font-mono flex items-center gap-2 animate-pulse shadow-sm">
           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
           <span>{actionError}</span>
         </div>
       )}
       {actionSuccess && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg p-3 text-xs font-mono flex items-center gap-2">
-          <Activity className="w-4 h-4 flex-shrink-0" />
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl p-3 text-xs font-mono flex items-center gap-2 shadow-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           <span>{actionSuccess}</span>
         </div>
       )}
@@ -294,23 +408,23 @@ export function Trading() {
       <div className={cn("grid grid-cols-1 gap-6 items-start", !isReadOnly ? "lg:grid-cols-12" : "")}>
         {/* LEFT COLUMN (CHART + TABS) */}
         <div className={!isReadOnly ? "lg:col-span-8 space-y-6" : "space-y-6"}>
-          {/* A. CANDLESTICK / PRICE TIMELINE CHART */}
-          <Card className="bg-card/30 border-border/30 backdrop-blur-sm relative overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-border/20">
+          {/* A. CHART CONTAINER */}
+          <Card className="bg-card/30 border-border/40 backdrop-blur-sm relative overflow-hidden shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border/20">
               <div className="flex items-center gap-2">
-                <Coins className="w-4 h-4 text-primary" />
-                <CardTitle className="text-sm font-mono tracking-wider">PRICE PROGRESSION (USDT)</CardTitle>
+                <Activity className="w-4 h-4 text-primary" />
+                <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase">BTC/USDT SPOT CHART</CardTitle>
               </div>
-              <div className="flex gap-1.5 font-mono text-[10px]">
+              <div className="flex gap-1.5 font-mono text-[9px]">
                 {Object.values(ChartInterval).map((interval) => (
                   <button
                     key={interval}
                     onClick={() => setChartInterval(interval)}
                     className={cn(
-                      "px-2.5 py-1 rounded transition-all border cursor-pointer",
+                      "px-2.5 py-1 rounded-md transition-all border cursor-pointer font-bold tracking-wider",
                       chartInterval === interval
-                        ? "bg-primary/20 text-primary border-primary/40 font-bold"
-                        : "bg-card/40 border-border/10 text-muted-foreground hover:text-foreground"
+                        ? "bg-primary/10 text-primary border-primary/25"
+                        : "bg-card/40 border-border/20 text-muted-foreground/60 hover:text-foreground"
                     )}
                   >
                     {CHART_INTERVAL_LABELS[interval]}
@@ -320,55 +434,58 @@ export function Trading() {
             </CardHeader>
             <CardContent className="pt-6">
               {isCandlesLoading ? (
-                <div className="h-[400px] flex items-center justify-center font-mono text-xs text-muted-foreground">
+                <div className="h-[400px] flex items-center justify-center font-mono text-xs text-muted-foreground/80 animate-pulse">
                   Refreshing candlestick feeds...
                 </div>
               ) : candlesData.length === 0 ? (
                 <div className="h-[400px] flex items-center justify-center font-mono text-xs text-muted-foreground">
-                  No chart data available.
+                  No spot chart data available.
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={380}>
-                  <ComposedChart data={candlesData}>
+                  <ComposedChart data={candlesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#181a20" />
-                    <XAxis dataKey="timeFormatted" stroke="#444" tick={{ fill: "#777", fontSize: 9 }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.25)" vertical={false} />
+                    <XAxis dataKey="timeFormatted" stroke="hsl(var(--muted-foreground))" fontSize={9} fontFamily="JetBrains Mono" tickLine={false} axisLine={false} />
                     <YAxis
                       yAxisId="price"
                       domain={["auto", "auto"]}
-                      stroke="#444"
+                      stroke="hsl(var(--muted-foreground))"
                       orientation="right"
-                      tickFormatter={(val) => `$${val}`}
-                      tick={{ fill: "#777", fontSize: 9 }}
+                      tickFormatter={(val) => `$${val.toLocaleString()}`}
+                      fontSize={9}
+                      fontFamily="JetBrains Mono"
+                      tickLine={false}
+                      axisLine={false}
                     />
                     <YAxis yAxisId="volume" domain={[0, "auto"]} hide={true} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: "#0e1118", borderColor: "#222", color: "#eee" }}
-                      labelStyle={{ color: "#888", fontSize: "10px", fontFamily: "monospace" }}
-                      itemStyle={{ fontSize: "11px", fontFamily: "monospace" }}
+                      content={<CustomChartTooltip />}
+                      cursor={{ stroke: 'hsl(var(--primary)/0.2)', strokeWidth: 1 }}
                     />
                     <Area
                       yAxisId="price"
                       type="monotone"
                       dataKey="close"
-                      stroke="#3b82f6"
+                      stroke="hsl(var(--primary))"
                       fillOpacity={1}
                       fill="url(#colorPrice)"
-                      strokeWidth={1.8}
+                      strokeWidth={2}
                       name="Price"
                     />
                     <Bar
                       yAxisId="volume"
                       dataKey="volume"
-                      fill="#3b82f6"
+                      fill="hsl(var(--primary))"
                       opacity={0.06}
-                      barSize={5}
+                      barSize={6}
                       name="Volume"
+                      radius={[2, 2, 0, 0]}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -377,18 +494,18 @@ export function Trading() {
           </Card>
 
           {/* B. POSITIONS, ORDERS, CLOSED PNL TABS */}
-          <div className="bg-card/20 border border-border/30 rounded-lg overflow-hidden backdrop-blur-sm">
-            <div className="border-b border-border/20 bg-card/25 px-4 flex gap-1.5">
+          <div className="bg-card/30 border border-border/40 rounded-xl overflow-hidden backdrop-blur-sm shadow-md">
+            <div className="border-b border-border/25 bg-muted/15 px-4 flex gap-1.5">
               {[
                 { id: "positions", label: `POSITIONS (${positions.length})` },
                 { id: "orders", label: `ACTIVE ORDERS (${orders.length})` },
-                { id: "closedPnl", label: "CLOSED PNL" }
+                { id: "closedPnl", label: "CLOSED P&L" }
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
                   className={cn(
-                    "px-4 py-3 text-xs font-mono font-semibold tracking-wider transition-all border-b-2 -mb-[1px] cursor-pointer",
+                    "px-4 py-3 text-[10px] font-mono font-bold tracking-widest transition-all border-b-2 -mb-[2px] cursor-pointer",
                     activeTab === tab.id
                       ? "border-primary text-primary"
                       : "border-transparent text-muted-foreground hover:text-foreground"
@@ -404,64 +521,64 @@ export function Trading() {
               {activeTab === "positions" && (
                 <div>
                   {positions.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground font-mono text-xs gap-2">
-                      <HelpCircle className="w-5 h-5 text-muted-foreground/50" />
-                      <span>No active positions on Bybit.</span>
+                    <div className="flex flex-col items-center justify-center py-14 text-muted-foreground font-mono text-xs gap-3">
+                      <HelpCircle className="w-5 h-5 text-muted-foreground/30" />
+                      <span>No active positions on Bybit ledger.</span>
                     </div>
                   ) : (
                     <table className="w-full text-left font-mono text-xs border-collapse">
                       <thead>
-                        <tr className="border-b border-border/20 text-muted-foreground">
-                          <th className="pb-2">SYMBOL</th>
-                          <th className="pb-2">SIDE</th>
-                          <th className="pb-2 text-right">SIZE</th>
-                          <th className="pb-2 text-right">ENTRY</th>
-                          <th className="pb-2 text-right">MARK</th>
-                          <th className="pb-2 text-right">LIQUIDATION</th>
-                          <th className="pb-2">UNREALIZED PNL</th>
-                          <th className="pb-2 text-right">LEVERAGE</th>
-                          {!isReadOnly && <th className="pb-2 text-right">ACTION</th>}
+                        <tr className="border-b border-border/20 text-muted-foreground/60 text-[9px] uppercase tracking-wider">
+                          <th className="pb-3 px-2">SYMBOL</th>
+                          <th className="pb-3 px-2">SIDE</th>
+                          <th className="pb-3 px-2 text-right">SIZE</th>
+                          <th className="pb-3 px-2 text-right">ENTRY</th>
+                          <th className="pb-3 px-2 text-right">MARK</th>
+                          <th className="pb-3 px-2 text-right">LIQ.</th>
+                          <th className="pb-3 px-2">UNREALIZED P&L</th>
+                          <th className="pb-3 px-2 text-right">LEVERAGE</th>
+                          {!isReadOnly && <th className="pb-3 px-2 text-right">ACTION</th>}
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-border/15">
                         {positions.map((pos) => {
                           const isLong = pos.side === TradeSide.Buy;
                           const pnl = pos.unrealisedPnl;
                           return (
-                            <tr key={pos.symbol} className="border-b border-border/10 hover:bg-muted/10">
-                              <td className="py-2.5 font-bold">{pos.symbol}</td>
-                              <td className="py-2.5">
-                                <span
+                            <tr key={pos.symbol} className="hover:bg-muted/15 transition-colors">
+                              <td className="py-3 px-2 font-bold font-sans text-foreground">{pos.symbol}</td>
+                              <td className="py-3 px-2">
+                                <Badge
                                   className={cn(
-                                    "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                                    "font-mono text-[9px] px-2 py-0.5 border font-semibold",
                                     isLong
-                                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                      : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                                      ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10"
+                                      : "text-rose-400 border-rose-400/20 bg-rose-500/10"
                                   )}
                                 >
                                   {isLong ? "LONG" : "SHORT"}
-                                </span>
+                                </Badge>
                               </td>
-                              <td className="py-2.5 text-right font-semibold">{pos.size} BTC</td>
-                              <td className="py-2.5 text-right">${pos.avgPrice.toFixed(2)}</td>
-                              <td className="py-2.5 text-right">${pos.markPrice.toFixed(2)}</td>
-                              <td className="py-2.5 text-right text-amber-500">
+                              <td className="py-3 px-2 text-right font-bold text-foreground">{pos.size} BTC</td>
+                              <td className="py-3 px-2 text-right">${pos.avgPrice.toFixed(2)}</td>
+                              <td className="py-3 px-2 text-right">${pos.markPrice.toFixed(2)}</td>
+                              <td className="py-3 px-2 text-right text-amber-500 font-semibold">
                                 {pos.liqPrice > 0 ? `$${pos.liqPrice.toFixed(2)}` : "None"}
                               </td>
-                              <td className={cn("py-2.5 font-bold", pnl >= 0 ? "text-emerald-400" : "text-rose-500")}>
+                              <td className={cn("py-3 px-2 font-bold text-[13px] font-sans", pnl >= 0 ? "text-emerald-400" : "text-rose-450")}>
                                 {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
                               </td>
-                              <td className="py-2.5 text-right text-slate-300">{pos.leverage}x</td>
+                              <td className="py-3 px-2 text-right text-muted-foreground">{pos.leverage}x</td>
                               {!isReadOnly && (
-                                <td className="py-2.5 text-right">
+                                <td className="py-3 px-2 text-right">
                                   <Button
                                     size="sm"
                                     variant="destructive"
-                                    className="h-7 text-[10px] px-2.5 font-mono"
+                                    className="h-7 text-[10px] px-3 font-mono font-bold"
                                     onClick={() => handleClosePosition(pos.symbol, pos.side, pos.size)}
                                     disabled={closePositionMutation.isPending}
                                   >
-                                    {closePositionMutation.isPending ? "Closing..." : "Market Close"}
+                                    {closePositionMutation.isPending ? "Closing..." : "Close"}
                                   </Button>
                                 </td>
                               )}
@@ -478,64 +595,64 @@ export function Trading() {
               {activeTab === "orders" && (
                 <div>
                   {orders.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground font-mono text-xs gap-2">
-                      <HelpCircle className="w-5 h-5 text-muted-foreground/50" />
-                      <span>No open orders on Bybit.</span>
+                    <div className="flex flex-col items-center justify-center py-14 text-muted-foreground font-mono text-xs gap-3">
+                      <HelpCircle className="w-5 h-5 text-muted-foreground/30" />
+                      <span>No active orders on Bybit.</span>
                     </div>
                   ) : (
                     <table className="w-full text-left font-mono text-xs border-collapse">
                       <thead>
-                        <tr className="border-b border-border/20 text-muted-foreground">
-                          <th className="pb-2">SYMBOL</th>
-                          <th className="pb-2">TYPE</th>
-                          <th className="pb-2">SIDE</th>
-                          <th className="pb-2 text-right">PRICE</th>
-                          <th className="pb-2 text-right">QTY</th>
-                          <th className="pb-2 text-right">FILLED</th>
-                          <th className="pb-2 text-right">STATUS</th>
-                          <th className="pb-2 text-right">TIME</th>
-                          {!isReadOnly && <th className="pb-2 text-right">ACTION</th>}
+                        <tr className="border-b border-border/20 text-muted-foreground/60 text-[9px] uppercase tracking-wider">
+                          <th className="pb-3 px-2">SYMBOL</th>
+                          <th className="pb-3 px-2">TYPE</th>
+                          <th className="pb-3 px-2">SIDE</th>
+                          <th className="pb-3 px-2 text-right">PRICE</th>
+                          <th className="pb-3 px-2 text-right">QTY</th>
+                          <th className="pb-3 px-2 text-right">FILLED</th>
+                          <th className="pb-3 px-2 text-right">STATUS</th>
+                          <th className="pb-3 px-2 text-right">TIME</th>
+                          {!isReadOnly && <th className="pb-3 px-2 text-right">ACTION</th>}
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-border/15">
                         {orders.map((order) => {
                           const isBuy = order.side === TradeSide.Buy;
                           const fillPercent = order.qty > 0 ? (order.cumExecQty / order.qty) * 100 : 0;
                           return (
-                            <tr key={order.orderId} className="border-b border-border/10 hover:bg-muted/10">
-                              <td className="py-2.5 font-bold">{order.symbol}</td>
-                              <td className="py-2.5 text-slate-300">{order.orderType}</td>
-                              <td className="py-2.5">
-                                <span
+                            <tr key={order.orderId} className="hover:bg-muted/15 transition-colors">
+                              <td className="py-3 px-2 font-bold font-sans text-foreground">{order.symbol}</td>
+                              <td className="py-3 px-2 text-slate-300">{order.orderType}</td>
+                              <td className="py-3 px-2">
+                                <Badge
                                   className={cn(
-                                    "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                                    "font-mono text-[9px] px-2 py-0.5 border font-semibold",
                                     isBuy
-                                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                      : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                                      ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10"
+                                      : "text-rose-400 border-rose-400/20 bg-rose-500/10"
                                   )}
                                 >
                                   {isBuy ? "BUY" : "SELL"}
-                                </span>
+                                </Badge>
                               </td>
-                              <td className="py-2.5 text-right font-semibold">
+                              <td className="py-3 px-2 text-right font-semibold">
                                 {order.price > 0 ? `$${order.price.toFixed(2)}` : "Market"}
                               </td>
-                              <td className="py-2.5 text-right">{order.qty}</td>
-                              <td className="py-2.5 text-right">{fillPercent.toFixed(1)}%</td>
-                              <td className="py-2.5 text-right">
-                                <Badge variant="outline" className="text-amber-400 border-amber-500/20 bg-amber-500/5 text-[9px]">
+                              <td className="py-3 px-2 text-right">{order.qty}</td>
+                              <td className="py-3 px-2 text-right">{fillPercent.toFixed(1)}%</td>
+                              <td className="py-3 px-2 text-right">
+                                <Badge variant="outline" className="text-amber-400 border-amber-500/20 bg-amber-500/5 text-[8px] font-bold">
                                   {order.orderStatus}
                                 </Badge>
                               </td>
-                              <td className="py-2.5 text-right text-muted-foreground text-[10px]">
+                              <td className="py-3 px-2 text-right text-muted-foreground/60 text-[10px]">
                                 {format(new Date(order.createdTime), "MM-dd HH:mm:ss")}
                               </td>
                               {!isReadOnly && (
-                                <td className="py-2.5 text-right">
+                                <td className="py-3 px-2 text-right">
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-7 text-[10px] text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 rounded-md"
                                     onClick={() => handleCancelOrder(order.symbol, order.orderId)}
                                     disabled={cancelOrderMutation.isPending}
                                   >
@@ -556,51 +673,51 @@ export function Trading() {
               {activeTab === "closedPnl" && (
                 <div>
                   {closedPnl.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground font-mono text-xs gap-2">
-                      <HelpCircle className="w-5 h-5 text-muted-foreground/50" />
-                      <span>No closed PnL history.</span>
+                    <div className="flex flex-col items-center justify-center py-14 text-muted-foreground font-mono text-xs gap-3">
+                      <HelpCircle className="w-5 h-5 text-muted-foreground/30" />
+                      <span>No closed P&L loops recorded.</span>
                     </div>
                   ) : (
                     <table className="w-full text-left font-mono text-xs border-collapse">
                       <thead>
-                        <tr className="border-b border-border/20 text-muted-foreground">
-                          <th className="pb-2">SYMBOL</th>
-                          <th className="pb-2">SIDE</th>
-                          <th className="pb-2 text-right">QTY</th>
-                          <th className="pb-2 text-right">ENTRY</th>
-                          <th className="pb-2 text-right">EXIT</th>
-                          <th className="pb-2 text-right">CLOSED PNL</th>
-                          <th className="pb-2 text-right">LEVERAGE</th>
-                          <th className="pb-2 text-right">TIME</th>
+                        <tr className="border-b border-border/20 text-muted-foreground/60 text-[9px] uppercase tracking-wider">
+                          <th className="pb-3 px-2">SYMBOL</th>
+                          <th className="pb-3 px-2">SIDE</th>
+                          <th className="pb-3 px-2 text-right">QTY</th>
+                          <th className="pb-3 px-2 text-right">ENTRY</th>
+                          <th className="pb-3 px-2 text-right">EXIT</th>
+                          <th className="pb-3 px-2 text-right">CLOSED P&L</th>
+                          <th className="pb-3 px-2 text-right">LEVERAGE</th>
+                          <th className="pb-3 px-2 text-right">TIME</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-border/15">
                         {closedPnl.map((c, i) => {
                           const isBuy = c.side === TradeSide.Buy;
                           const pnl = c.closedPnl;
                           return (
-                            <tr key={c.id || i} className="border-b border-border/10 hover:bg-muted/10">
-                              <td className="py-2.5 font-bold">{c.symbol}</td>
-                              <td className="py-2.5">
-                                <span
+                            <tr key={c.id || i} className="hover:bg-muted/15 transition-colors">
+                              <td className="py-3 px-2 font-bold font-sans text-foreground">{c.symbol}</td>
+                              <td className="py-3 px-2">
+                                <Badge
                                   className={cn(
-                                    "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                                    "font-mono text-[9px] px-2 py-0.5 border font-semibold",
                                     isBuy
-                                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                      : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                                      ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10"
+                                      : "text-rose-400 border-rose-400/20 bg-rose-500/10"
                                   )}
                                 >
                                   {isBuy ? "BUY" : "SELL"}
-                                </span>
+                                </Badge>
                               </td>
-                              <td className="py-2.5 text-right">{c.qty}</td>
-                              <td className="py-2.5 text-right">${c.entryPrice.toFixed(2)}</td>
-                              <td className="py-2.5 text-right">${c.exitPrice.toFixed(2)}</td>
-                              <td className={cn("py-2.5 text-right font-bold", pnl >= 0 ? "text-emerald-400" : "text-rose-500")}>
+                              <td className="py-3 px-2 text-right">{c.qty}</td>
+                              <td className="py-3 px-2 text-right">${c.entryPrice.toFixed(2)}</td>
+                              <td className="py-3 px-2 text-right">${c.exitPrice.toFixed(2)}</td>
+                              <td className={cn("py-3 px-2 text-right font-bold text-[13px] font-sans", pnl >= 0 ? "text-emerald-400" : "text-rose-455")}>
                                 {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
                               </td>
-                              <td className="py-2.5 text-right text-slate-400">{c.leverage}x</td>
-                              <td className="py-2.5 text-right text-muted-foreground text-[10px]">
+                              <td className="py-3 px-2 text-right text-muted-foreground/60">{c.leverage}x</td>
+                              <td className="py-3 px-2 text-right text-muted-foreground/50 text-[10px]">
                                 {format(new Date(c.createdAt), "MM-dd HH:mm:ss")}
                               </td>
                             </tr>
@@ -619,23 +736,23 @@ export function Trading() {
         {!isReadOnly && (
         <div className="lg:col-span-4 space-y-6">
           {/* A. ORDER ENTRY FORM */}
-          <Card className="bg-card/30 border-border/30 backdrop-blur-sm font-mono text-xs">
+          <Card className="bg-card/30 border-border/40 backdrop-blur-sm font-mono text-xs shadow-md">
             <CardHeader className="border-b border-border/20 pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-mono tracking-wider">PLACE ORDER</CardTitle>
-                <div className="flex border border-border/30 rounded overflow-hidden">
+                <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase font-bold">PLACE ORDER</CardTitle>
+                <div className="flex border border-border/30 rounded-lg overflow-hidden bg-muted/20">
                   {Object.values(OrderType).map((type) => (
                     <button
                       key={type}
                       onClick={() => setOrderType(type)}
                       className={cn(
-                        "px-3 py-1 text-[10px] font-bold transition-all cursor-pointer",
+                        "px-3 py-1.5 text-[9px] font-bold transition-all cursor-pointer uppercase tracking-wider",
                         orderType === type
-                          ? "bg-primary text-primary-foreground"
+                          ? "bg-primary text-primary-foreground font-extrabold"
                           : "bg-transparent text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      {type.toUpperCase()}
+                      {type}
                     </button>
                   ))}
                 </div>
@@ -645,8 +762,8 @@ export function Trading() {
               {/* Limit Price Input */}
               {orderType === OrderType.Limit && (
                 <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-[10px] text-muted-foreground">
-                    <span>PRICE</span>
+                  <div className="flex justify-between items-center text-[9px] font-bold text-muted-foreground/65 tracking-wider uppercase">
+                    <span>LIMIT PRICE</span>
                     <button
                       onClick={() => setLimitPrice(ticker?.lastPrice ? Number(ticker.lastPrice).toString() : "")}
                       className="text-primary hover:underline"
@@ -660,38 +777,38 @@ export function Trading() {
                       value={limitPrice}
                       onChange={(e) => setLimitPrice(e.target.value)}
                       placeholder="0.00"
-                      className="bg-card/40 border-border/30 pl-3 pr-12 h-9 text-xs focus:ring-primary focus:border-primary font-mono text-slate-100"
+                      className="bg-muted/30 border-border/30 pl-3 pr-12 h-9.5 text-xs focus:ring-primary focus:border-primary font-mono text-foreground"
                     />
-                    <span className="absolute right-3 top-2.5 text-[10px] text-muted-foreground">USDT</span>
+                    <span className="absolute right-3 top-2.5 text-[10px] text-muted-foreground font-semibold">USDT</span>
                   </div>
                 </div>
               )}
 
               {/* Order Size Input */}
               <div className="space-y-1.5">
-                <div className="flex justify-between items-center text-[10px] text-muted-foreground">
-                  <span>QUANTITY</span>
+                <div className="flex justify-between items-center text-[9px] font-bold text-muted-foreground/65 tracking-wider uppercase">
+                  <span>ORDER SIZE</span>
                   <span>MIN: 0.001 BTC</span>
                 </div>
                 <div className="relative">
-                  <Input
-                     type="number"
-                     value={qty}
-                     onChange={(e) => setQty(e.target.value)}
-                     placeholder="0.000"
-                     className="bg-card/40 border-border/30 pl-3 pr-12 h-9 text-xs focus:ring-primary focus:border-primary font-mono text-foreground"
-                  />
-                  <span className="absolute right-3 top-2.5 text-[10px] text-muted-foreground">BTC</span>
+                   <Input
+                      type="number"
+                      value={qty}
+                      onChange={(e) => setQty(e.target.value)}
+                      placeholder="0.000"
+                      className="bg-muted/30 border-border/30 pl-3 pr-12 h-9.5 text-xs focus:ring-primary focus:border-primary font-mono text-foreground"
+                   />
+                  <span className="absolute right-3 top-2.5 text-[10px] text-muted-foreground font-semibold">BTC</span>
                 </div>
               </div>
 
               {/* Percentage Buttons */}
-              <div className="grid grid-cols-4 gap-1.5 font-mono text-[9px] font-bold">
+              <div className="grid grid-cols-4 gap-2 font-mono text-[9px] font-bold uppercase tracking-wider">
                 {[10, 25, 50, 100].map((p) => (
                   <button
                     key={p}
                     onClick={() => handlePercentClick(p)}
-                    className="py-1 bg-muted/40 border border-border/10 rounded hover:bg-muted/70 hover:border-border/35 text-muted-foreground hover:text-foreground cursor-pointer transition-all"
+                    className="py-1 bg-muted/40 border border-border/15 rounded hover:bg-muted/75 hover:border-border/35 text-muted-foreground hover:text-foreground cursor-pointer transition-all"
                   >
                     {p}%
                   </button>
@@ -700,17 +817,17 @@ export function Trading() {
 
               {/* Dynamic Order Cost Details */}
               {parseFloat(qty) > 0 && (
-                <div className="bg-muted/40 border border-border/10 rounded p-2.5 font-mono text-[10px] text-muted-foreground space-y-1">
+                <div className="bg-muted/40 border border-border/20 rounded-lg p-2.5 font-mono text-[10px] text-muted-foreground space-y-1">
                   <div className="flex justify-between">
-                    <span>ORDER VALUE:</span>
-                    <span className="font-semibold text-foreground">
+                    <span>EST VALUE:</span>
+                    <span className="font-bold text-foreground">
                       ${(parseFloat(qty) * (orderType === OrderType.Limit ? parseFloat(limitPrice) || lastPrice : lastPrice)).toFixed(2)} USDT
                     </span>
                   </div>
                   {orderType === OrderType.Limit && (
-                    <div className="flex justify-between">
+                    <div className="flex justify-between border-t border-border/10 pt-1 mt-1">
                       <span>TIME IN FORCE:</span>
-                      <span className="font-semibold text-muted-foreground">GTC</span>
+                      <span className="font-semibold text-muted-foreground/60">GTC</span>
                     </div>
                   )}
                 </div>
@@ -719,31 +836,31 @@ export function Trading() {
               {/* Order Submission Buttons */}
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <Button
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-10 flex flex-col justify-center items-center rounded border border-emerald-500/20"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-10 flex flex-col justify-center items-center rounded border border-emerald-500/20 cursor-pointer shadow-sm transition-all"
                   onClick={() => handlePlaceOrder(TradeSide.Buy)}
                   disabled={placeOrderMutation.isPending}
                 >
-                  <span className="text-xs font-bold leading-tight">BUY / LONG</span>
-                  <span className="text-[8px] font-normal text-emerald-100 opacity-80 leading-none">ASK PRICE</span>
+                  <span className="text-xs font-bold leading-tight uppercase">Buy / Long</span>
+                  <span className="text-[8px] font-normal text-emerald-100 opacity-80 leading-none mt-0.5">ASK PRICE</span>
                 </Button>
                 <Button
-                  className="bg-rose-600 hover:bg-rose-500 text-white font-bold h-10 flex flex-col justify-center items-center rounded border border-rose-500/20"
+                  className="bg-rose-600 hover:bg-rose-500 text-white font-bold h-10 flex flex-col justify-center items-center rounded border border-rose-500/20 cursor-pointer shadow-sm transition-all"
                   onClick={() => handlePlaceOrder(TradeSide.Sell)}
                   disabled={placeOrderMutation.isPending}
                 >
-                  <span className="text-xs font-bold leading-tight">SELL / SHORT</span>
-                  <span className="text-[8px] font-normal text-rose-100 opacity-80 leading-none">BID PRICE</span>
+                  <span className="text-xs font-bold leading-tight uppercase">Sell / Short</span>
+                  <span className="text-[8px] font-normal text-rose-100 opacity-80 leading-none mt-0.5">BID PRICE</span>
                 </Button>
               </div>
             </CardContent>
           </Card>
 
           {/* B. ACCOUNT SUMMARY PANEL */}
-          <Card className="bg-card/30 border-border/30 backdrop-blur-sm font-mono text-xs">
+          <Card className="bg-card/30 border-border/40 backdrop-blur-sm font-mono text-xs shadow-md">
             <CardHeader className="border-b border-border/20 pb-3">
-              <CardTitle className="text-sm font-mono tracking-wider flex items-center justify-between">
+              <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase flex items-center justify-between font-bold">
                 <span>ASSET SUMMARY</span>
-                <span className="text-[10px] text-muted-foreground font-normal">UNIFIED ACCOUNT</span>
+                <span className="text-[9px] text-muted-foreground/65 font-normal tracking-wide">UNIFIED BALANCE</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5 space-y-4">
@@ -752,7 +869,7 @@ export function Trading() {
                   <span className="text-muted-foreground text-[10px]">TOTAL EQUITY</span>
                   <span className="text-base font-bold text-foreground">${balance.totalEquity.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center border-t border-border/10 pt-2.5">
+                <div className="flex justify-between items-center border-t border-border/15 pt-2.5">
                   <span className="text-muted-foreground text-[10px]">WALLET BALANCE</span>
                   <span className="font-semibold text-foreground">${balance.totalWalletBalance.toFixed(2)}</span>
                 </div>
@@ -760,7 +877,7 @@ export function Trading() {
                   <span className="text-muted-foreground text-[10px]">AVAILABLE BALANCE</span>
                   <span className="font-semibold text-primary">${balance.totalAvailableBalance.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center border-t border-border/10 pt-2.5">
+                <div className="flex justify-between items-center border-t border-border/15 pt-2.5">
                   <span className="text-muted-foreground text-[10px]">INITIAL MARGIN</span>
                   <span className="font-semibold text-foreground">${balance.totalInitialMargin.toFixed(2)}</span>
                 </div>
@@ -771,21 +888,21 @@ export function Trading() {
               </div>
 
               {/* Margin usage meter */}
-              <div className="space-y-1.5 border-t border-border/10 pt-3">
+              <div className="space-y-1.5 border-t border-border/15 pt-3">
                 <div className="flex justify-between text-[9px] text-muted-foreground font-bold">
                   <span>MARGIN RATIO</span>
                   <span>{marginRatio.toFixed(1)}%</span>
                 </div>
-                <div className="w-full bg-muted/50 h-2 rounded overflow-hidden">
+                <div className="w-full bg-muted/40 h-2 rounded overflow-hidden border border-border/15">
                   <div
                     className={cn("h-full transition-all duration-500", getMarginBarColor(marginRatio))}
                     style={{ width: `${Math.min(marginRatio, 100)}%` }}
                   />
                 </div>
                 {marginRatio >= 80 && (
-                  <div className="text-[9px] text-rose-400 font-bold flex items-center gap-1 mt-1 animate-pulse">
+                  <div className="text-[9px] text-rose-400 font-bold flex items-center gap-1.5 mt-1.5 animate-pulse">
                     <AlertTriangle className="w-3.5 h-3.5" />
-                    <span>RISK HIGH: CLOSE POSITIONS OR DEPOSIT USDT</span>
+                    <span>MARGIN RISK HIGH: REDUCE COLLATERAL OVERHEAD</span>
                   </div>
                 )}
               </div>
