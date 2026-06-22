@@ -267,7 +267,7 @@ export function Overview() {
           </div>
           <div className="mt-4">
             <div className="text-[28px] font-bold text-foreground tabular-nums leading-none tracking-tight">
-              ${totalMargin.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${Number(totalMargin).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             <p className="text-[10px] text-[#64748B] font-sans mt-2">
               Total margin allocated
