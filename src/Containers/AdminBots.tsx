@@ -160,7 +160,7 @@ export function AdminBots() {
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Active Slots</p>
+                <p className="text-[10px] text-foreground uppercase tracking-wider font-extrabold">Active Slots</p>
                 <p className="text-2xl font-bold mt-1.5 text-emerald-450 font-sans tracking-tight">{aggregate?.totalActiveSlots ?? 0}</p>
               </div>
               <Activity className="w-8 h-8 text-emerald-450 opacity-20" />
@@ -171,7 +171,7 @@ export function AdminBots() {
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Aggregate P&L</p>
+                <p className="text-[10px] text-foreground uppercase tracking-wider font-extrabold">Aggregate P&L</p>
                 <p className={cn("text-2xl font-bold mt-1.5 font-sans tracking-tight", (aggregate?.combinedUnrealisedPnl ?? 0) >= 0 ? "text-emerald-455" : "text-rose-455")}>
                   ${aggregate?.combinedUnrealisedPnl?.toFixed(2) ?? "0.00"}
                 </p>
@@ -184,7 +184,7 @@ export function AdminBots() {
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Stalled Bots</p>
+                <p className="text-[10px] text-foreground uppercase tracking-wider font-extrabold">Stalled Bots</p>
                 <p className="text-2xl font-bold mt-1.5 text-rose-500 font-sans tracking-tight">{aggregate?.stalledCount ?? 0}</p>
               </div>
               <AlertTriangle className="w-8 h-8 text-rose-500 opacity-20 animate-pulse" />
@@ -195,7 +195,7 @@ export function AdminBots() {
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Active Regimes</p>
+                <p className="text-[10px] text-foreground uppercase tracking-wider font-extrabold">Active Regimes</p>
                 <p className="text-sm font-bold mt-2.5 font-sans text-foreground">
                   {aggregate?.regimeSplit?.scouting ?? 0} <span className="text-[10px] font-mono font-normal text-muted-foreground/60">Scout</span> · {aggregate?.regimeSplit?.farming ?? 0} <span className="text-[10px] font-mono font-normal text-muted-foreground/60">Farm</span>
                 </p>

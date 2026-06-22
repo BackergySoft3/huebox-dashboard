@@ -261,7 +261,7 @@ export function MyBot() {
           return (
             <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md flex flex-col justify-between">
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-widest text-foreground uppercase font-extrabold">
                   <Bot className="w-4 h-4 text-primary" />
                   PORTFOLIO HEALTH
                 </CardTitle>
@@ -293,7 +293,7 @@ export function MyBot() {
         {/* Market Analysis Card */}
         <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md flex flex-col justify-between">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-widest text-muted-foreground uppercase">
+            <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-widest text-foreground uppercase font-extrabold">
               <GitMerge className="w-4 h-4 text-primary" />
               MARKET ANALYSIS
             </CardTitle>
@@ -315,7 +315,7 @@ export function MyBot() {
         {/* AI Insights Card */}
         <Card className="bg-gradient-to-br from-card to-card/65 border-primary/20 shadow-sm backdrop-blur-sm flex flex-col justify-between">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-widest text-muted-foreground uppercase">
+            <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-widest text-foreground uppercase font-extrabold">
               <Brain className="w-4 h-4 text-primary animate-pulse" />
               AI INSIGHTS
             </CardTitle>

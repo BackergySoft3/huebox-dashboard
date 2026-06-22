@@ -239,7 +239,7 @@ export function Overview() {
         {/* Card 1: LIVE ROI */}
         <Card className="bg-card border border-border/40 p-5 rounded-xl flex flex-col justify-between hover:shadow-[0_0_15px_rgba(0,212,255,0.15)] hover:border-primary/30 transition-all duration-200 ease-in-out relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono tracking-widest text-[#64748B] uppercase font-bold">LIVE ROI</span>
+            <span className="text-[11px] font-mono tracking-widest text-foreground uppercase font-extrabold">LIVE ROI</span>
             {liveRoi >= 0 ? (
               <TrendingUp className="w-4 h-4 text-emerald-400" />
             ) : (
@@ -248,7 +248,7 @@ export function Overview() {
           </div>
           <div className="mt-4">
             <div className={cn(
-              "text-[28px] font-bold tabular-nums leading-none tracking-tight",
+              "text-[28px] font-bold font-heading tabular-nums leading-none tracking-tight",
               liveRoi >= 0 ? "text-emerald-400" : "text-rose-400"
             )}>
               {liveRoi >= 0 ? "+" : ""}{liveRoi.toFixed(2)}%
@@ -262,11 +262,11 @@ export function Overview() {
         {/* Card 2: MARGIN USED */}
         <Card className="bg-card border border-border/40 p-5 rounded-xl flex flex-col justify-between hover:shadow-[0_0_15px_rgba(0,212,255,0.15)] hover:border-primary/30 transition-all duration-200 ease-in-out relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono tracking-widest text-[#64748B] uppercase font-bold">MARGIN USED</span>
+            <span className="text-[11px] font-mono tracking-widest text-foreground uppercase font-extrabold">MARGIN USED</span>
             <CircleDollarSign className="w-4 h-4 text-[#64748B]" />
           </div>
           <div className="mt-4">
-            <div className="text-[28px] font-bold text-foreground tabular-nums leading-none tracking-tight">
+            <div className="text-[28px] font-bold font-heading text-foreground tabular-nums leading-none tracking-tight">
               ${Number(totalMargin).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             <p className="text-[10px] text-[#64748B] font-sans mt-2">
@@ -278,11 +278,11 @@ export function Overview() {
         {/* Card 3: OPEN GRIDS */}
         <Card className="bg-card border border-border/40 p-5 rounded-xl flex flex-col justify-between hover:shadow-[0_0_15px_rgba(0,212,255,0.15)] hover:border-primary/30 transition-all duration-200 ease-in-out relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono tracking-widest text-[#64748B] uppercase font-bold">OPEN GRIDS</span>
+            <span className="text-[11px] font-mono tracking-widest text-foreground uppercase font-extrabold">OPEN GRIDS</span>
             <Layers className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="mt-4">
-            <div className="text-[28px] font-bold text-cyan-400 tabular-nums leading-none tracking-tight">
+            <div className="text-[28px] font-bold font-heading text-cyan-400 tabular-nums leading-none tracking-tight">
               {botStatus?.active_grids ?? 0}
             </div>
             <p className="text-[10px] text-[#64748B] font-sans mt-2">
@@ -301,7 +301,7 @@ export function Overview() {
           <Card className="bg-card border-border/40 hover:shadow-[0_0_15px_rgba(0,212,255,0.15)] hover:border-primary/30 transition-all duration-200 ease-in-out flex-1 flex flex-col justify-between h-full">
             <CardHeader className="pb-4">
               <div>
-                <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase">Portfolio Growth (24H)</CardTitle>
+                <CardTitle className="text-xs font-mono tracking-widest text-foreground uppercase font-extrabold">Portfolio Growth (24H)</CardTitle>
                 <CardDescription className="text-[10px] text-[#64748B]">Real-time P&L changes across strategy closures</CardDescription>
               </div>
             </CardHeader>

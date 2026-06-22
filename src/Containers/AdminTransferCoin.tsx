@@ -190,7 +190,7 @@ export function AdminTransferCoin() {
           ) : (
             <div className="grid grid-cols-2 gap-4 text-xs font-mono">
               <div className="bg-muted/20 border border-border/30 rounded-xl p-4 relative group hover:border-primary/20 transition-all duration-300">
-                <span className="text-[9px] uppercase text-muted-foreground/60 block font-bold tracking-wider">Funding Wallet (USDT)</span>
+                <span className="text-[9px] uppercase text-foreground block font-extrabold tracking-wider">Funding Wallet (USDT)</span>
                 <div className="flex items-baseline gap-1 mt-1.5">
                   <span className="text-2xl font-bold font-sans text-foreground">${Number(fundingUSDT).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                   <span className="text-[10px] text-primary font-bold">USDT</span>
@@ -199,7 +199,7 @@ export function AdminTransferCoin() {
               </div>
 
               <div className="bg-muted/20 border border-border/30 rounded-xl p-4 relative group hover:border-cyan-500/20 transition-all duration-300">
-                <span className="text-[9px] uppercase text-muted-foreground/60 block font-bold tracking-wider">Unified Wallet (USDT)</span>
+                <span className="text-[9px] uppercase text-foreground block font-extrabold tracking-wider">Unified Wallet (USDT)</span>
                 <div className="flex items-baseline gap-1 mt-1.5">
                   <span className="text-2xl font-bold font-sans text-cyan-400">${Number(unifiedUSDT).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                   <span className="text-[10px] text-cyan-400 font-bold">USDT</span>

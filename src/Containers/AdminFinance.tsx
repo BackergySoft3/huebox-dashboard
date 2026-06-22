@@ -60,7 +60,7 @@ export function AdminFinance() {
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+                  <p className="text-[10px] text-foreground uppercase tracking-wider font-extrabold">{label}</p>
                   <p className={cn("text-2xl font-bold mt-1.5 font-sans tracking-tight text-foreground", color)}>
                     {value !== "—" ? `${prefix}${typeof value === "number" ? value.toLocaleString("en-US", { maximumFractionDigits: 2 }) : value}` : "—"}
                   </p>

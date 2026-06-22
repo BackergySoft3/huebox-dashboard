@@ -7,6 +7,10 @@
 
 /* ─── Design Tokens ─────────────────────────────────────────────── */
 @theme {
+  --font-sans: "Poppins", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Mona Sans Variable", "Mona Sans", "Poppins", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));

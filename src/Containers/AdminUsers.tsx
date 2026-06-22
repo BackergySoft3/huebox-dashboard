@@ -147,7 +147,7 @@ export function AdminUsers() {
       {/* Table */}
       <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
         <CardHeader className="pb-3 border-b border-border/20">
-          <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase flex items-center gap-2 font-bold">
+          <CardTitle className="text-xs font-mono tracking-widest text-foreground uppercase flex items-center gap-2 font-extrabold">
             <UsersIcon className="w-4 h-4 text-primary" />
             REGISTERED OPERATORS LISTING
           </CardTitle>
