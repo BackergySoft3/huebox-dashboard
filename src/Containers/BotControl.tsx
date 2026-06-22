@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useBotStatus } from "../Hooks/useBotStatus";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../Services/http.service";
@@ -24,7 +24,8 @@ import {
   Layers,
   Wallet,
   ChevronRight,
-  ChevronDown
+  ChevronLeft,
+  Bell,
 } from "lucide-react";
 import { ConfirmModal } from "../Components/Organisms/ConfirmModal";
 import { Badge } from "../Components/Atoms/badge";
@@ -45,6 +46,7 @@ const PROFILES = [
     accentClass: "text-primary border-primary/20",
     glowClass: "shadow-[0_4px_20px_-2px_rgba(0,212,255,0.1)] border-primary/40",
     locked: false,
+    availableDate: null,
   },
   {
     key: "conservative",
@@ -54,6 +56,7 @@ const PROFILES = [
     accentClass: "text-emerald-400 border-emerald-400/20",
     glowClass: "",
     locked: true,
+    availableDate: "Q3 2026",
   },
   {
     key: "aggressive",
@@ -63,6 +66,7 @@ const PROFILES = [
     accentClass: "text-amber-400 border-amber-400/20",
     glowClass: "",
     locked: true,
+    availableDate: "Q4 2026",
   },
 ] as const;
 
@@ -79,19 +83,32 @@ const PROFILE_METADATA: Record<string, {
   aggressive: { expectedReturn: "18%–30%", riskLevel: "High", horizon: "1–6 months", minDeposit: "$250", confidence: "79%", recommended: false },
 };
 
+const WIZARD_STEPS = [
+  { label: "Choose Strategy", short: "Strategy" },
+  { label: "Invest Amount", short: "Amount" },
+  { label: "Risk Management", short: "Risk" },
+  { label: "Confirmation", short: "Confirm" },
+];
+
 export function BotControl() {
   const queryClient = useQueryClient();
   const { data: status } = useBotStatus();
 
-  // Setup flow state
+  // C-02: step is the single source of truth for wizard progression
   const [step, setStep] = useState<SetupStep>("profile");
-  const [profileSelected, setProfileSelected] = useState(false);
+  // C-02: no auto-select; user must explicitly choose
+  const [selectedProfile, setSelectedProfile] = useState<string>("balanced");
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [allocatedAmount, setAllocatedAmount] = useState<number | null>(null);
   const [stopCondition, setStopCondition] = useState<StopCondition | null>(null);
-  const [isStep1Collapsed, setIsStep1Collapsed] = useState(false);
-  const [isStep2Collapsed, setIsStep2Collapsed] = useState(false);
+  const [waitlistedProfiles, setWaitlistedProfiles] = useState<Record<string, boolean>>({});
 
-  // Confirm modal state
+  const handleNotifyMe = (e: React.MouseEvent, key: string) => {
+    e.stopPropagation();
+    setWaitlistedProfiles((prev) => ({ ...prev, [key]: true }));
+  };
+
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
     type: "pause" | "resume" | "deposit" | null;
@@ -105,15 +122,6 @@ export function BotControl() {
     description: "",
   });
 
-  // Auto-select balanced on mount
-  useEffect(() => {
-    api
-      .post("/api/bot/select", { personality: "balanced" })
-      .then(() => setProfileSelected(true))
-      .catch(() => setProfileSelected(true));
-  }, []);
-
-  // Mutations
   const actionMutation = useMutation({
     mutationFn: (action: "pause" | "resume") => api.post(`/api/bot/${action}`),
     onSuccess: () => {
@@ -167,15 +175,37 @@ export function BotControl() {
     }
   };
 
-  const loading = actionMutation.isPending || simulateMutation.isPending;
-  const isRunning = status?.status === "running";
-  const availableBalance: number = status?.bybitAccount?.balance ?? 0;
+  // C-02: Explicit user-initiated profile selection
+  const handleProfileContinue = async () => {
+    setProfileLoading(true);
+    setProfileError(null);
+    try {
+      await api.post("/api/bot/select", { personality: selectedProfile });
+      setStep("allocation");
+    } catch (err: any) {
+      setProfileError(err.response?.data?.message || "Failed to select strategy. Please try again.");
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
-  // Setup step progression handlers
+  // M-02: Back navigation handlers
+  const handleBackToProfile = () => {
+    setStep("profile");
+  };
+
+  const handleBackToAllocation = () => {
+    setStep("allocation");
+    setStopCondition(null);
+  };
+
+  const handleBackToStopCondition = () => {
+    setStep("stop-condition");
+    setStopCondition(null);
+  };
+
   const handleAllocationConfirm = (amount: number) => {
     setAllocatedAmount(amount);
-    setIsStep1Collapsed(true);
-    setIsStep2Collapsed(true);
     setStep("stop-condition");
   };
 
@@ -188,7 +218,15 @@ export function BotControl() {
     queryClient.invalidateQueries({ queryKey: ["bot-status"] });
   };
 
-  const currentStepNum = step === "profile" ? 1 : step === "allocation" ? 2 : step === "stop-condition" ? 3 : 4;
+  const loading = actionMutation.isPending || simulateMutation.isPending;
+  const isRunning = status?.status === "running";
+  const availableBalance: number = status?.bybitAccount?.balance ?? 0;
+
+  const currentStepNum =
+    step === "profile" ? 1
+    : step === "allocation" ? 2
+    : step === "stop-condition" ? 3
+    : 4;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -196,16 +234,16 @@ export function BotControl() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight font-sans text-foreground">Investment Strategies</h1>
-          <p className="text-muted-foreground mt-1 font-mono text-[11px] uppercase tracking-wider">
+          <p className="text-muted-foreground mt-1 font-mono text-xs uppercase tracking-wider">
             Configure risk settings and activate AI-powered market makers.
           </p>
         </div>
       </div>
 
-      {/* Horizontal Step Tracker Header */}
+      {/* Horizontal Step Tracker */}
       {!isRunning && (
         <div className="bg-card/20 border border-border/40 rounded-xl p-4 flex items-center justify-between gap-4 max-w-4xl mx-auto shadow-sm backdrop-blur-sm">
-          {["Choose Strategy", "Invest Amount", "Risk Management", "Confirmation"].map((label, idx) => {
+          {WIZARD_STEPS.map(({ label, short }, idx) => {
             const stepNum = idx + 1;
             const isCompleted = stepNum < currentStepNum;
             const isCurrent = stepNum === currentStepNum;
@@ -222,16 +260,26 @@ export function BotControl() {
                   )}>
                     {isCompleted ? <Check className="w-3.5 h-3.5" /> : stepNum}
                   </div>
+                  {/* L-06: Show short label on mobile, full label on desktop */}
                   <span className={cn(
-                    "text-[10px] font-mono font-bold uppercase tracking-wider hidden md:inline",
-                    isCurrent ? "text-primary" : "text-muted-foreground/60"
+                    "text-[10px] font-mono font-bold uppercase tracking-wider",
+                    isCurrent ? "text-primary" : "text-muted-foreground/60",
+                    // Show short label on mobile, full on md+
+                    "inline sm:hidden"
+                  )}>
+                    {short}
+                  </span>
+                  <span className={cn(
+                    "text-[10px] font-mono font-bold uppercase tracking-wider",
+                    isCurrent ? "text-primary" : "text-muted-foreground/60",
+                    "hidden sm:inline"
                   )}>
                     {label}
                   </span>
                 </div>
                 {idx < 3 && (
                   <div className={cn(
-                    "flex-1 h-0.5 rounded hidden md:block",
+                    "flex-1 h-0.5 rounded hidden sm:block",
                     stepNum < currentStepNum ? "bg-emerald-500/30" : "bg-border/30"
                   )} />
                 )}
@@ -241,242 +289,304 @@ export function BotControl() {
         </div>
       )}
 
-      {/* STEP 1: Profile Selection */}
-      <div className="space-y-4">
-        {!isRunning && (
-          <div className="flex items-center justify-between">
+      {/* ── SETUP FLOW (only when bot is NOT running) ── */}
+      {!isRunning && (
+        <>
+          {/* STEP 1: Profile Selection */}
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-primary" />
               <h2 className="font-mono text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 1. Choose Strategy Persona
               </h2>
             </div>
-            {allocatedAmount !== null && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsStep1Collapsed(!isStep1Collapsed)}
-                className="w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-              >
-                {isStep1Collapsed ? (
-                  <ChevronRight className="w-4.5 h-4.5" />
-                ) : (
-                  <ChevronDown className="w-4.5 h-4.5" />
+
+            {step === "profile" ? (
+              <>
+                <div className="grid gap-6 md:grid-cols-3">
+                  {PROFILES.map((profile) => {
+                    const Icon = profile.icon;
+                    const isSelected = selectedProfile === profile.key;
+                    const meta = PROFILE_METADATA[profile.key];
+
+                    const riskClass =
+                      meta.riskLevel === "Low"
+                        ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                        : meta.riskLevel === "Medium"
+                        ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
+                        : "text-rose-400 bg-rose-500/10 border-rose-500/20";
+
+                    return (
+                      <div
+                        key={profile.key}
+                        role={profile.locked ? undefined : "button"}
+                        tabIndex={profile.locked ? undefined : 0}
+                        aria-pressed={profile.locked ? undefined : isSelected}
+                        onClick={() => !profile.locked && setSelectedProfile(profile.key)}
+                        onKeyDown={(e) => {
+                          if (!profile.locked && (e.key === "Enter" || e.key === " ")) {
+                            e.preventDefault();
+                            setSelectedProfile(profile.key);
+                          }
+                        }}
+                        title={profile.locked ? `Coming ${profile.availableDate}` : undefined}
+                        className={cn(
+                          "relative rounded-xl border bg-gradient-to-b from-card to-card/60 backdrop-blur-sm transition-all duration-300 overflow-hidden",
+                          profile.locked
+                            ? "opacity-50 cursor-not-allowed select-none"
+                            : isSelected
+                            ? profile.glowClass + " cursor-pointer ring-2 ring-primary/30"
+                            : "border-border/40 hover:border-border/80 hover:shadow-sm cursor-pointer"
+                        )}
+                      >
+                        {/* Selected badge */}
+                        {isSelected && !profile.locked && (
+                          <div className="absolute top-4 right-4 flex items-center gap-1">
+                            <span className="relative flex h-2 w-2 mr-1">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                            </span>
+                            <Badge className="font-mono text-[9px] px-2 py-0 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/10 font-bold uppercase tracking-wider">
+                              Selected
+                            </Badge>
+                          </div>
+                        )}
+
+                        {/* H-06: Locked badge with ETA tooltip */}
+                        {profile.locked && (
+                          <div
+                            className="absolute top-4 right-4 flex items-center gap-1 text-muted-foreground/60"
+                            title={`Coming ${profile.availableDate} — join the waitlist below`}
+                          >
+                            <Lock className="w-3 h-3" />
+                            <Badge className="font-mono text-[9px] px-2 py-0 bg-muted/35 text-muted-foreground border border-border/40 hover:bg-muted/30 font-bold uppercase tracking-wider">
+                              {profile.availableDate}
+                            </Badge>
+                          </div>
+                        )}
+
+                        <div className="p-6 space-y-4">
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "w-10 h-10 rounded-xl border flex items-center justify-center bg-current/5 transition-transform",
+                              profile.accentClass
+                            )}>
+                              <Icon className="w-5 h-5 text-current" />
+                            </div>
+                            <div>
+                              <h3 className="font-sans text-sm font-bold text-foreground leading-tight">{profile.label}</h3>
+                              <p className="text-xs text-muted-foreground/75 font-mono mt-0.5 leading-none">{profile.tagline}</p>
+                            </div>
+                          </div>
+
+                          <div className="border-t border-border/20 pt-4 grid grid-cols-2 gap-4 text-xs">
+                            <div>
+                              <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest block">Expected Return</span>
+                              <span className="text-xs font-mono font-bold text-foreground mt-0.5 block">{meta.expectedReturn}</span>
+                            </div>
+                            <div>
+                              <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest block">Risk Tier</span>
+                              <span className={cn("text-[11px] font-mono font-bold mt-0.5 px-2 py-0.5 rounded-full inline-block border text-center uppercase tracking-wider", riskClass)}>
+                                {meta.riskLevel}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest block">Min Alloc.</span>
+                              <span className="text-xs font-mono font-bold text-foreground mt-0.5 block">{meta.minDeposit}</span>
+                            </div>
+                            <div>
+                              <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest block">Est. Horizon</span>
+                              <span className="text-xs font-mono font-bold text-foreground mt-0.5 block">{meta.horizon}</span>
+                            </div>
+                          </div>
+
+                          <div className="border-t border-border/20 pt-3 flex items-center justify-between text-xs font-mono text-muted-foreground">
+                            <span>Backtest Confidence</span>
+                            <span className="font-semibold text-primary">{meta.confidence}</span>
+                          </div>
+
+                          {/* H-06: Waitlist CTA for locked profiles */}
+                          {profile.locked && (
+                            <div className="border-t border-border/20 pt-3">
+                              <button
+                                type="button"
+                                disabled={waitlistedProfiles[profile.key]}
+                                className={cn(
+                                  "w-full flex items-center justify-center gap-1.5 text-xs font-mono rounded-lg py-2 transition-all",
+                                  waitlistedProfiles[profile.key]
+                                    ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 cursor-default"
+                                    : "text-muted-foreground hover:text-primary border border-border/30 hover:border-primary/30"
+                                )}
+                                onClick={(e) => handleNotifyMe(e, profile.key)}
+                                title={waitlistedProfiles[profile.key] ? "You are on the waitlist!" : "Notify me when this strategy is available"}
+                              >
+                                {waitlistedProfiles[profile.key] ? (
+                                  <>
+                                    <Check className="w-3.5 h-3.5" />
+                                    Added to waitlist
+                                  </>
+                                ) : (
+                                  <>
+                                    <Bell className="w-3.5 h-3.5" />
+                                    Notify me when available
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {profileError && (
+                  <p className="text-sm text-destructive flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    {profileError}
+                  </p>
                 )}
-              </Button>
-            )}
-          </div>
-        )}
 
-        {allocatedAmount !== null && isStep1Collapsed ? (
-          <div className="bg-card border border-border/40 rounded-xl p-4 flex items-center justify-between max-w-4xl backdrop-blur-sm shadow-sm animate-in fade-in duration-300">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
-                <ShieldCheck className="w-4.5 h-4.5 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-sans text-xs font-bold text-foreground">Balanced Growth</h3>
-                <p className="text-[10px] text-muted-foreground font-mono">Steady growth, managed risk</p>
-              </div>
-            </div>
-            <div className="flex gap-6 font-mono text-[10px] text-muted-foreground mr-2">
-              <div>
-                <span className="block uppercase text-[8px] tracking-wider text-muted-foreground/60">Expected Return</span>
-                <span className="font-bold text-foreground mt-0.5 block">12%–18%</span>
-              </div>
-              <div>
-                <span className="block uppercase text-[8px] tracking-wider text-muted-foreground/60">Risk Tier</span>
-                <span className="font-bold text-amber-400 mt-0.5 block uppercase tracking-wider">Medium</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-3">
-            {PROFILES.map((profile) => {
-              const Icon = profile.icon;
-              const isActive = profile.key === "balanced";
-              const meta = PROFILE_METADATA[profile.key];
-              
-              // Risk colors mapping
-              const riskClass = 
-                meta.riskLevel === "Low" 
-                  ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" 
-                  : meta.riskLevel === "Medium"
-                  ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
-                  : "text-rose-400 bg-rose-500/10 border-rose-500/20";
-
-              return (
-                <div
-                  key={profile.key}
-                  style={{ opacity: profile.locked ? 0.45 : 1 }}
-                  className={cn(
-                    "relative rounded-xl border bg-gradient-to-b from-card to-card/60 backdrop-blur-sm transition-all duration-300 overflow-hidden",
-                    isActive
-                      ? profile.glowClass
-                      : "border-border/40 hover:border-border/80 hover:shadow-sm",
-                    profile.locked ? "pointer-events-none select-none" : ""
-                  )}
-                >
-                  {/* Active selection badge */}
-                  {isActive && (
-                    <div className="absolute top-4 right-4 flex items-center gap-1">
-                      <span className="relative flex h-2 w-2 mr-1">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                      </span>
-                      <Badge className="font-mono text-[9px] px-2 py-0 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/10 font-bold uppercase tracking-wider">
-                        Selected
-                      </Badge>
-                    </div>
-                  )}
-
-                  {/* Lock coming soon badge */}
-                  {profile.locked && (
-                    <div className="absolute top-4 right-4 flex items-center gap-1 text-muted-foreground/60">
-                      <Lock className="w-3 h-3" />
-                      <Badge className="font-mono text-[9px] px-2 py-0 bg-muted/35 text-muted-foreground border border-border/40 hover:bg-muted/30 font-bold uppercase tracking-wider">
-                        Locked
-                      </Badge>
-                    </div>
-                  )}
-
-                  <div className="p-6 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-10 h-10 rounded-xl border flex items-center justify-center bg-current/5 transition-transform group-hover:scale-105",
-                        profile.accentClass
-                      )}>
-                        <Icon className="w-5 h-5 text-current" />
-                      </div>
-                      <div>
-                        <h3 className="font-sans text-sm font-bold text-foreground leading-tight">{profile.label}</h3>
-                        <p className="text-[10px] text-muted-foreground/75 font-mono mt-0.5 leading-none">{profile.tagline}</p>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-border/20 pt-4 grid grid-cols-2 gap-4 text-xs">
-                      <div>
-                        <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest block">Expected Return</span>
-                        <span className="text-[11px] font-mono font-bold text-foreground mt-0.5 block">{meta.expectedReturn}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest block">Risk Tier</span>
-                        <span className={cn("text-[9px] font-mono font-bold mt-0.5 px-2 py-0.5 rounded-full inline-block border text-center uppercase tracking-wider", riskClass)}>
-                          {meta.riskLevel}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest block">Min Alloc.</span>
-                        <span className="text-[11px] font-mono font-bold text-foreground mt-0.5 block">{meta.minDeposit}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest block">Est. Horizon</span>
-                        <span className="text-[11px] font-mono font-bold text-foreground mt-0.5 block">{meta.horizon}</span>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-border/20 pt-3 flex items-center justify-between text-[10px] font-mono text-muted-foreground">
-                      <span>Backtest Confidence</span>
-                      <span className="font-semibold text-primary">{meta.confidence}</span>
-                    </div>
+                {/* C-02: Explicit Continue button — no auto-select on mount */}
+                <div className="flex justify-end max-w-4xl">
+                  <Button
+                    onClick={handleProfileContinue}
+                    disabled={!selectedProfile || profileLoading}
+                    className="font-mono text-xs h-10 px-6 gap-2 bg-primary hover:bg-primary/90"
+                  >
+                    {profileLoading ? "Applying…" : `Continue with ${PROFILE_METADATA[selectedProfile]?.expectedReturn ?? ""} Strategy`}
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </>
+            ) : (
+              /* Collapsed profile summary */
+              <div className="bg-card border border-border/40 rounded-xl p-4 flex items-center justify-between max-w-4xl backdrop-blur-sm shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
+                    <ShieldCheck className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-sans text-xs font-bold text-foreground">Balanced Growth</h3>
+                    <p className="text-[10px] text-muted-foreground font-mono">Steady growth, managed risk</p>
                   </div>
                 </div>
-              );
-            })}
+                <div className="flex items-center gap-6 font-mono text-[10px] text-muted-foreground mr-2">
+                  <div>
+                    <span className="block uppercase text-[9px] tracking-wider text-muted-foreground/60">Expected Return</span>
+                    <span className="font-bold text-foreground mt-0.5 block">12%–18%</span>
+                  </div>
+                  <div>
+                    <span className="block uppercase text-[9px] tracking-wider text-muted-foreground/60">Risk Tier</span>
+                    <span className="font-bold text-amber-400 mt-0.5 block uppercase tracking-wider">Medium</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* STEP 2: Wallet Allocation */}
-      {profileSelected && (
-        <div className="space-y-4">
-          {!isRunning && (
-            <div className="flex items-center justify-between">
+          {/* STEP 2: Wallet Allocation */}
+          {step !== "profile" && (
+            <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                 <h2 className="font-mono text-xs font-bold text-muted-foreground uppercase tracking-wider">
                   2. Investment Capital Allocation
                 </h2>
               </div>
-              {allocatedAmount !== null && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsStep2Collapsed(!isStep2Collapsed)}
-                  className="w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-                >
-                  {isStep2Collapsed ? (
-                    <ChevronRight className="w-4.5 h-4.5" />
-                  ) : (
-                    <ChevronDown className="w-4.5 h-4.5" />
-                  )}
-                </Button>
-              )}
-            </div>
-          )}
 
-          {allocatedAmount !== null && isStep2Collapsed ? (
-            <div className="bg-card border border-border/40 rounded-xl p-4 flex items-center justify-between max-w-4xl backdrop-blur-sm shadow-sm animate-in fade-in duration-300">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                  <Wallet className="w-4.5 h-4.5 text-emerald-400" />
+              {step === "allocation" ? (
+                <>
+                  <BotAllocation
+                    availableBalance={availableBalance}
+                    defaultAmount={allocatedAmount}
+                    onConfirm={handleAllocationConfirm}
+                  />
+                  {/* M-02: Back button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBackToProfile}
+                    className="text-muted-foreground hover:text-foreground font-mono text-xs gap-1.5"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    Back to Strategy
+                  </Button>
+                </>
+              ) : allocatedAmount !== null ? (
+                /* Collapsed allocation summary */
+                <div className="bg-card border border-border/40 rounded-xl p-4 flex items-center justify-between max-w-4xl backdrop-blur-sm shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                      <Wallet className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-sans text-xs font-bold text-foreground">Wallet Capital Allocated</h3>
+                      <p className="text-[10px] text-muted-foreground font-mono">Confirmed for strategy deployment</p>
+                    </div>
+                  </div>
+                  <div className="font-mono text-xs font-bold text-emerald-400 mr-2">
+                    ${allocatedAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                    <span className="text-[10px] text-muted-foreground font-normal">USDT</span>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-sans text-xs font-bold text-foreground">Wallet Capital Allocated</h3>
-                  <p className="text-[10px] text-muted-foreground font-mono">Confirmed for strategy deployment</p>
-                </div>
-              </div>
-              <div className="font-mono text-xs font-bold text-emerald-400 mr-2">
-                ${allocatedAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[10px] text-muted-foreground font-normal">USDT</span>
-              </div>
-            </div>
-          ) : (
-            <BotAllocation
-              availableBalance={availableBalance}
-              defaultAmount={allocatedAmount}
-              onConfirm={handleAllocationConfirm}
-            />
-          )}
-        </div>
-      )}
-
-      {/* STEP 3: Stop Condition */}
-      {allocatedAmount !== null && (
-        <div className="space-y-4">
-          {!isRunning && (
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-              <h2 className="font-mono text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                3. Risk Stop Condition
-              </h2>
+              ) : null}
             </div>
           )}
 
-          {stopCondition === null && (
-            <BotStopCondition onConfirm={handleStopConditionConfirm} />
+          {/* STEP 3: Stop Condition */}
+          {step === "stop-condition" && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <h2 className="font-mono text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  3. Risk Stop Condition
+                </h2>
+              </div>
+              <BotStopCondition onConfirm={handleStopConditionConfirm} />
+              {/* M-02: Back button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToAllocation}
+                className="text-muted-foreground hover:text-foreground font-mono text-xs gap-1.5"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                Back to Allocation
+              </Button>
+            </div>
           )}
-        </div>
+
+          {/* STEP 4: Confirmation */}
+          {step === "confirmation" && stopCondition !== null && allocatedAmount !== null && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <h2 className="font-mono text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  4. Confirm Activation Parameters
+                </h2>
+              </div>
+              <BotConfirmation
+                allocatedAmount={allocatedAmount}
+                stopCondition={stopCondition}
+                onStarted={handleBotStarted}
+              />
+              {/* M-02: Back button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToStopCondition}
+                className="text-muted-foreground hover:text-foreground font-mono text-xs gap-1.5"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                Back to Risk Settings
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
-      {/* STEP 4: Confirmation */}
-      {stopCondition !== null && allocatedAmount !== null && !isRunning && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            <h2 className="font-mono text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              4. Confirm Activation parameters
-            </h2>
-          </div>
-
-          <BotConfirmation
-            allocatedAmount={allocatedAmount}
-            stopCondition={stopCondition}
-            onStarted={handleBotStarted}
-          />
-        </div>
-      )}
-
-      {/* LIVE STRATEGY CONTROL DASHBOARD */}
+      {/* ── LIVE STRATEGY CONTROL DASHBOARD ── */}
       {isRunning && (
         <div className="space-y-6">
           <div className="flex items-center gap-2 pb-1 border-b border-border/20">
@@ -497,7 +607,7 @@ export function BotControl() {
                   <Brain className="w-4 h-4 text-primary" /> Core Engine Controls
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3.5 font-mono text-[11px]">
+              <CardContent className="space-y-3.5 font-mono text-xs">
                 <div className="flex justify-between items-center border-b border-border/15 pb-2">
                   <span className="text-muted-foreground">Status</span>
                   <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase text-[9px] py-0.5 px-2 font-bold">
@@ -557,7 +667,7 @@ export function BotControl() {
               </CardFooter>
             </Card>
 
-            {/* Active Allocations/Positions Table List */}
+            {/* Active Allocations/Positions Table */}
             <Card className="bg-card/30 border-border/40 backdrop-blur-sm md:col-span-2 shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-wider text-foreground uppercase font-bold">
@@ -573,7 +683,7 @@ export function BotControl() {
                         <div className="flex justify-between items-center pb-2 border-b border-border/15">
                           <span className="font-bold text-sm font-sans text-foreground">{grid.symbol}</span>
                           <div className="flex items-center gap-1.5">
-                            <Badge className={cn("font-mono text-[9px] px-2 py-0.5 border font-semibold", grid.direction === 'LONG' ? 'text-emerald-400 border-emerald-400/20 bg-emerald-500/10' : 'text-rose-400 border-rose-400/20 bg-rose-500/10')}>
+                            <Badge className={cn("font-mono text-[9px] px-2 py-0.5 border font-semibold", grid.direction === "LONG" ? "text-emerald-400 border-emerald-400/20 bg-emerald-500/10" : "text-rose-400 border-rose-400/20 bg-rose-500/10")}>
                               {grid.direction}
                             </Badge>
                             <Badge variant="outline" className="font-mono text-[9px] text-muted-foreground border-border/30 px-1.5">
@@ -584,11 +694,11 @@ export function BotControl() {
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[10px] font-mono text-muted-foreground mt-3">
                           <div>
                             <span className="text-[9px] text-muted-foreground/50 uppercase block">Entry Price</span>
-                            <span className="text-foreground font-bold text-[11px] block mt-0.5">${grid.entryPrice?.toFixed(4) || "0.0000"}</span>
+                            <span className="text-foreground font-bold text-xs block mt-0.5">${grid.entryPrice?.toFixed(4) || "0.0000"}</span>
                           </div>
                           <div className="text-right">
-                            <span className="text-[9px] text-muted-foreground/50 uppercase block">Collateral Deployed</span>
-                            <span className="text-foreground font-bold text-[11px] block mt-0.5">${grid.margin?.toFixed(2) || "0.00"}</span>
+                            <span className="text-[9px] text-muted-foreground/50 uppercase block">Collateral</span>
+                            <span className="text-foreground font-bold text-xs block mt-0.5">${grid.margin?.toFixed(2) || "0.00"}</span>
                           </div>
                         </div>
                       </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../State/auth";
 import { api } from "../Services/http.service";
 import { authApi } from "../Services/authApi";
@@ -6,14 +6,24 @@ import { Button } from "../Components/Atoms/button";
 import { Input } from "../Components/Atoms/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../Components/Atoms/card";
 import { useNavigate } from "react-router-dom";
-import { Activity } from "lucide-react";
+import { Activity, Check, CheckCircle } from "lucide-react";
 import ReactFlagsSelect from "react-flags-select";
 import { Currency } from "../Enums/Currency.enum";
+import { cn } from "../Helpers/utils";
+import { Select } from "../Components/Atoms/select";
+
+const STEPS = [
+  { id: "email", label: "Verify Email", short: "Email" },
+  { id: "otp", label: "Enter OTP", short: "OTP" },
+  { id: "kyc", label: "Complete Profile", short: "Profile" },
+] as const;
+
+type Step = typeof STEPS[number]["id"];
 
 export function Login() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState<"email" | "otp" | "kyc">("email");
+  const [step, setStep] = useState<Step>("email");
   const [kycForm, setKycForm] = useState({
     firstName: "",
     lastName: "",
@@ -25,19 +35,31 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [devOtp, setDevOtp] = useState<string | null>(null);
+  // H-01: OTP resend cooldown
+  const [resendCooldown, setResendCooldown] = useState(0);
+  // M-05: Show brief success state between OTP and KYC
+  const [otpVerified, setOtpVerified] = useState(false);
+
   const setAuth = useAuthStore((state) => state.setAuth);
   const navigate = useNavigate();
 
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const currentStepIndex = STEPS.findIndex((s) => s.id === step);
+
+  // H-01: Countdown timer for OTP resend
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
+  const doSendOtp = async () => {
     setLoading(true);
     setError("");
     setDevOtp(null);
     try {
       await api.post("/api/auth/otp/send", { email });
-      setStep("otp");
+      setResendCooldown(60);
 
-      // Dev-only: auto-fetch OTP for display
       if (import.meta.env.DEV) {
         try {
           const res = await api.get("/api/auth/otp/dev-peek", {
@@ -45,7 +67,7 @@ export function Login() {
           });
           if (res.data?.otp) setDevOtp(res.data.otp);
         } catch {
-          // Silently ignore — email still works
+          // Silently ignore
         }
       }
     } catch (err: any) {
@@ -53,6 +75,18 @@ export function Login() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await doSendOtp();
+    setStep("otp");
+  };
+
+  // H-01: Resend OTP handler
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || loading) return;
+    await doSendOtp();
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -77,7 +111,12 @@ export function Login() {
         });
 
         if (userData?.kycStatus === "pending") {
-          setStep("kyc");
+          // M-05: Brief success flash before showing KYC
+          setOtpVerified(true);
+          setTimeout(() => {
+            setOtpVerified(false);
+            setStep("kyc");
+          }, 1200);
         } else {
           navigate("/");
         }
@@ -93,10 +132,21 @@ export function Login() {
 
   const handleKycSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // H-02: Phone format validation
+    const cleanPhone = kycForm.phone.replace(/[\s\-()]/g, "");
+    if (!/^\+[1-9]\d{4,14}$/.test(cleanPhone)) {
+      setError("Invalid phone number format. Must start with '+' and include your country code (e.g., +1 555 000 0000).");
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
-      await authApi.prepareAccount(kycForm);
+      await authApi.prepareAccount({
+        ...kycForm,
+        phone: cleanPhone
+      });
       const currentUser = useAuthStore.getState().user;
       if (currentUser) {
         useAuthStore.getState().setAuth(
@@ -120,42 +170,97 @@ export function Login() {
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-accent/20 blur-[120px] rounded-full pointer-events-none" />
 
       <Card className="w-full max-w-md relative z-10 border-border/50 bg-card/60 backdrop-blur-xl">
-        <CardHeader className="space-y-3 items-center text-center">
+        <CardHeader className="space-y-4 items-center text-center">
           <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-2 shadow-lg shadow-primary/20">
             <Activity className="w-6 h-6" />
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">Huebox Engine</CardTitle>
+
+          {/* H-03: Step progress indicator */}
+          <div className="w-full flex items-center justify-between gap-2 pt-1">
+            {STEPS.map((s, idx) => {
+              const isCompleted = idx < currentStepIndex;
+              const isCurrent = idx === currentStepIndex;
+              return (
+                <div key={s.id} className="flex items-center gap-2 flex-1 last:flex-none">
+                  <div className="flex flex-col items-center gap-1 shrink-0">
+                    <div className={cn(
+                      "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300",
+                      isCompleted
+                        ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-400"
+                        : isCurrent
+                        ? "bg-primary/15 border-primary text-primary shadow-[0_0_8px_rgba(0,122,255,0.3)]"
+                        : "bg-muted/30 border-border/50 text-muted-foreground/50"
+                    )}>
+                      {isCompleted ? <Check className="w-3.5 h-3.5" /> : idx + 1}
+                    </div>
+                    <span className={cn(
+                      "text-[10px] font-sans font-semibold whitespace-nowrap",
+                      isCurrent ? "text-primary" : isCompleted ? "text-emerald-400" : "text-muted-foreground/40"
+                    )}>
+                      {s.short}
+                    </span>
+                  </div>
+                  {idx < STEPS.length - 1 && (
+                    <div className={cn(
+                      "flex-1 h-0.5 rounded mb-4",
+                      isCompleted ? "bg-emerald-500/40" : "bg-border/40"
+                    )} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
           <CardDescription>
-            {step === "email" 
-              ? "Enter your email to receive an OTP" 
-              : step === "otp" 
-                ? "Enter the 6-digit OTP sent to your email" 
-                : "Complete your profile to continue"}
+            {step === "email"
+              ? "Enter your email to receive a one-time passcode"
+              : step === "otp"
+              ? `Enter the 6-digit code sent to ${email}`
+              : "Complete your profile to activate your account"}
           </CardDescription>
         </CardHeader>
+
         <CardContent>
           {error && (
             <div className="mb-4 p-3 bg-destructive/10 text-destructive text-sm rounded-md border border-destructive/20">
               {error}
             </div>
           )}
-          {step === "email" ? (
+
+          {/* M-05: OTP verified success flash */}
+          {otpVerified && (
+            <div className="mb-4 p-3 bg-emerald-500/10 text-emerald-400 text-sm rounded-md border border-emerald-500/20 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 shrink-0" />
+              Identity verified. Setting up your profile…
+            </div>
+          )}
+
+          {step === "email" && (
             <form onSubmit={handleSendOtp} className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
+                {/* H-02: Proper label */}
+                <label htmlFor="login-email" className="text-xs font-semibold text-muted-foreground">
+                  Email address
+                </label>
                 <Input
+                  id="login-email"
                   type="email"
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoComplete="email"
                   className="bg-background/50 text-foreground"
                 />
               </div>
               <Button type="submit" className="w-full font-semibold" disabled={loading}>
-                {loading ? "Sending..." : "Send OTP"}
+                {loading ? "Sending…" : "Send One-Time Code"}
               </Button>
             </form>
-          ) : step === "otp" ? (
+          )}
+
+          {step === "otp" && !otpVerified && (
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               {/* DEV MODE: Auto-fetched OTP banner */}
               {import.meta.env.DEV && devOtp && (
@@ -178,94 +283,161 @@ export function Login() {
                 </div>
               )}
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
+                {/* H-02: Proper label */}
+                <label htmlFor="login-otp" className="text-xs font-semibold text-muted-foreground">
+                  One-time passcode
+                </label>
                 <Input
+                  id="login-otp"
                   type="text"
                   placeholder="000000"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                   required
+                  autoComplete="one-time-code"
+                  inputMode="numeric"
                   className="bg-background/50 text-center tracking-widest text-lg font-mono text-foreground"
                   maxLength={6}
                 />
               </div>
+
               <Button type="submit" className="w-full font-semibold" disabled={loading}>
-                {loading ? "Verifying..." : "Login"}
+                {loading ? "Verifying…" : "Verify & Login"}
               </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => { setStep("email"); setDevOtp(null); }}
-              >
-                Back
-              </Button>
+
+              {/* H-01: Resend OTP with cooldown */}
+              <div className="flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => { setStep("email"); setDevOtp(null); }}
+                >
+                  ← Back
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-xs text-muted-foreground hover:text-primary disabled:opacity-40"
+                  onClick={handleResendOtp}
+                  disabled={resendCooldown > 0 || loading}
+                >
+                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
+                </Button>
+              </div>
             </form>
-          ) : (
+          )}
+
+          {step === "kyc" && !otpVerified && (
             <form onSubmit={handleKycSubmit} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  type="text"
-                  placeholder="First Name"
-                  value={kycForm.firstName}
-                  onChange={(e) => setKycForm({ ...kycForm, firstName: e.target.value })}
-                  required
-                  className="bg-background/50 text-foreground"
-                />
-                <Input
-                  type="text"
-                  placeholder="Last Name"
-                  value={kycForm.lastName}
-                  onChange={(e) => setKycForm({ ...kycForm, lastName: e.target.value })}
-                  required
-                  className="bg-background/50 text-foreground"
-                />
+              {/* M-05: Context message above KYC form */}
+              <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-xs text-muted-foreground font-sans leading-relaxed">
+                Your email has been verified. Please complete the fields below to activate your account.
               </div>
+
+              {/* H-02: Labels for all KYC fields */}
               <div className="grid grid-cols-2 gap-3">
-                <ReactFlagsSelect
-                  selected={kycForm.country}
-                  onSelect={(code) => setKycForm({ ...kycForm, country: code })}
-                  searchable
-                  placeholder="Select Country..."
-                  className="react-flags-custom w-full text-foreground"
-                  selectButtonClassName="!w-full !h-10 !bg-background/50 !rounded-md !border !border-input !px-3 !py-2 !text-sm focus:!ring-2 focus:!ring-ring focus:!outline-none"
-                />
-                <Input
-                  type="text"
-                  placeholder="Phone Number"
-                  value={kycForm.phone}
-                  onChange={(e) => setKycForm({ ...kycForm, phone: e.target.value })}
-                  required
-                  className="bg-background/50 text-foreground"
-                />
+                <div className="space-y-1">
+                  <label htmlFor="kyc-first-name" className="text-xs font-semibold text-muted-foreground">
+                    First name <span className="text-destructive">*</span>
+                  </label>
+                  <Input
+                    id="kyc-first-name"
+                    type="text"
+                    placeholder="Jane"
+                    value={kycForm.firstName}
+                    onChange={(e) => setKycForm({ ...kycForm, firstName: e.target.value })}
+                    required
+                    autoComplete="given-name"
+                    className="bg-background/50 text-foreground"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="kyc-last-name" className="text-xs font-semibold text-muted-foreground">
+                    Last name <span className="text-destructive">*</span>
+                  </label>
+                  <Input
+                    id="kyc-last-name"
+                    type="text"
+                    placeholder="Smith"
+                    value={kycForm.lastName}
+                    onChange={(e) => setKycForm({ ...kycForm, lastName: e.target.value })}
+                    required
+                    autoComplete="family-name"
+                    className="bg-background/50 text-foreground"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <select
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-muted-foreground">
+                    Country <span className="text-destructive">*</span>
+                  </label>
+                  <ReactFlagsSelect
+                    selected={kycForm.country}
+                    onSelect={(code) => setKycForm({ ...kycForm, country: code })}
+                    searchable
+                    placeholder="Select Country…"
+                    className="react-flags-custom w-full text-foreground"
+                    selectButtonClassName="!w-full !h-10 !bg-background/50 !rounded-md !border !border-input !px-3 !py-2 !text-sm focus:!ring-2 focus:!ring-ring focus:!outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="kyc-phone" className="text-xs font-semibold text-muted-foreground">
+                    Phone number <span className="text-destructive">*</span>
+                  </label>
+                  <Input
+                    id="kyc-phone"
+                    type="tel"
+                    placeholder="+1 555 000 0000"
+                    value={kycForm.phone}
+                    onChange={(e) => setKycForm({ ...kycForm, phone: e.target.value })}
+                    required
+                    autoComplete="tel"
+                    className="bg-background/50 text-foreground"
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">Format hint: +1 555 000 0000</p>
+                </div>
+              </div>
+
+              {/* M-08: Currency select with consistent label + styling */}
+              <div className="space-y-1">
+                <label htmlFor="kyc-currency" className="text-xs font-semibold text-muted-foreground">
+                  Preferred currency
+                </label>
+                <Select
+                  id="kyc-currency"
                   value={kycForm.currency}
                   onChange={(e) => setKycForm({ ...kycForm, currency: e.target.value as Currency })}
                   required
-                  className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-foreground"
                 >
                   {Object.entries(Currency).map(([key, val]) => (
                     <option key={val} value={val}>{key}</option>
                   ))}
-                </select>
+                </Select>
               </div>
-              <div className="space-y-2">
+
+              <div className="space-y-1">
+                <label htmlFor="kyc-referral" className="text-xs font-semibold text-muted-foreground">
+                  Referral code <span className="text-muted-foreground/50">(optional)</span>
+                </label>
                 <Input
+                  id="kyc-referral"
                   type="text"
-                  placeholder="Referral Code (Optional)"
+                  placeholder="e.g. FRIEND2024"
                   value={kycForm.referralCode}
                   onChange={(e) => setKycForm({ ...kycForm, referralCode: e.target.value })}
                   className="bg-background/50 text-foreground"
                 />
               </div>
+
               <Button type="submit" className="w-full font-semibold mt-2" disabled={loading}>
-                {loading ? "Submitting..." : "Complete Setup"}
+                {loading ? "Submitting…" : "Complete Setup"}
               </Button>
             </form>
           )}
-
         </CardContent>
       </Card>
     </div>
