@@ -12,7 +12,6 @@ import {
   Users,
   Settings,
   LogOut,
-  Activity,
   ArrowLeftRight,
   ListTree,
   Wallet,
@@ -25,7 +24,6 @@ import {
   SlidersHorizontal,
   BarChart3,
   Sun,
-  Monitor,
   Moon,
 } from "lucide-react";
 import { Button } from "../../Components/Atoms/button";
@@ -35,6 +33,10 @@ import { ConfirmModal } from "../../Components/Organisms/ConfirmModal";
 import type { NavItem } from "../../Interfaces/components";
 
 const DEVELOPER_ACCOUNT = "client@huebox.dev.com";
+
+const HueBoxLogo = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-activity w-6 h-6 shrink-0 text-[#42E2D5]" aria-hidden="true"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg>
+);
 
 export function Sidebar() {
   const logout = useAuthStore((state) => state.logout);
@@ -143,25 +145,14 @@ export function Sidebar() {
     });
   };
 
-  const themeButtonClass = (t: string) =>
-    cn(
-      "p-1.5 rounded-md transition-all",
-      theme === t
-        ? "bg-primary/20 text-primary"
-        : "text-muted-foreground hover:text-foreground"
-    );
+
 
   return (
     <aside className="w-[260px] fixed inset-y-0 left-0 bg-sidebar border-r border-border flex flex-col z-50 shadow-md">
       {/* Brand Header */}
       <div className="h-16 border-b border-border/60 flex items-center px-6 gap-3">
-        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 shadow-[0_0_12px_rgba(0,122,255,0.15)]">
-          <Activity className="w-4 h-4 text-primary" />
-        </div>
-        <div className="flex flex-col">
-          <span className="font-bold tracking-wide text-sm font-sans text-foreground leading-none">HUEBOX</span>
-          <span className="text-[8px] text-muted-foreground/50 tracking-wider font-semibold uppercase mt-1">Asset Intelligence</span>
-        </div>
+        <HueBoxLogo />
+        <span className="font-bold tracking-wide text-lg font-sans text-foreground leading-none">HUEBOX</span>
       </div>
 
       <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
@@ -209,30 +200,32 @@ export function Sidebar() {
           </div>
         )}
 
-        {/* Compact theme toggle in sidebar footer */}
-        <div className="flex items-center justify-between px-1 pt-1">
-          <span className="text-[10px] font-mono text-muted-foreground/60">Theme</span>
-          <div className="flex items-center gap-0.5 bg-muted/40 rounded-md p-0.5 border border-border/40">
+        {/* Premium theme toggle pill matching the design image */}
+        <div className="px-1 pt-2">
+          <div className="relative flex items-center justify-between p-1 bg-muted/40 dark:bg-[#191919] rounded-full border border-border/40 w-full font-sans">
             <button
               onClick={() => setTheme("light")}
-              className={themeButtonClass("light")}
-              title="Light mode"
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-1.5 px-3 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer",
+                theme === "light"
+                  ? "bg-white text-[#191919] shadow-sm font-bold"
+                  : "text-muted-foreground/80 hover:text-foreground"
+              )}
             >
-              <Sun className="w-3 h-3" />
-            </button>
-            <button
-              onClick={() => setTheme("system")}
-              className={themeButtonClass("system")}
-              title="System default"
-            >
-              <Monitor className="w-3 h-3" />
+              <Sun className="w-3.5 h-3.5" />
+              Light
             </button>
             <button
               onClick={() => setTheme("dark")}
-              className={themeButtonClass("dark")}
-              title="Dark mode"
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-1.5 px-3 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer",
+                theme === "dark"
+                  ? "bg-primary text-white shadow-sm font-bold"
+                  : "text-muted-foreground/80 hover:text-foreground"
+              )}
             >
-              <Moon className="w-3 h-3" />
+              <Moon className="w-3.5 h-3.5" />
+              Dark
             </button>
           </div>
         </div>

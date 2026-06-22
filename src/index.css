@@ -1,4 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://cdn.jsdelivr.net/npm/@fontsource-variable/mona-sans/index.css");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 
 /* ─── Dark Mode: class-based via Tailwind v4 ─────────────────────── */
@@ -44,81 +45,81 @@
 /* ─── Color Palette: Dark Terminal / Modern FinTech ─────────────── */
 @layer base {
   :root {
-    /* Premium dark navy background */
-    --background: 233 23% 10%; /* #13141F */
-    --foreground: 210 20% 96%; /* #F1F3F9 */
+    /* Premium black background matching design */
+    --background: 0 0% 0%; /* #000000 */
+    --foreground: 0 0% 100%; /* #FFFFFF */
 
     /* Dedicated Sidebar Color */
-    --sidebar: 229 26% 11%; /* #141622 */
-    --sidebar-foreground: 231 16% 62%; /* #8F96B2 */
+    --sidebar: 0 0% 0%; /* #000000 */
+    --sidebar-foreground: 215 16% 70%; /* Muted slate #8F96B2 */
 
-    /* Card: slightly lighter navy surface */
-    --card: 232 28% 18%; /* #20233C */
-    --card-foreground: 210 20% 96%;
+    /* Card: dark gray surface */
+    --card: 0 0% 10%; /* #191919 */
+    --card-foreground: 0 0% 100%;
 
-    --popover: 232 28% 18%;
-    --popover-foreground: 210 20% 96%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 100%;
 
-    /* Primary: vibrant premium royal blue */
-    --primary: 211 100% 50%; /* #0079FF */
+    /* Primary: vibrant premium blue #1F659D */
+    --primary: 207 67% 37%; /* #1F659D */
     --primary-foreground: 0 0% 100%;
 
     /* Secondary: modern deep slate/blue-grey */
-    --secondary: 232 22% 13%; /* #1B1D2B */
-    --secondary-foreground: 210 20% 98%;
+    --secondary: 0 0% 10%; /* #191919 */
+    --secondary-foreground: 0 0% 100%;
 
     /* Muted: panels and separators */
-    --muted: 233 22% 13%; /* #1B1D2B */
-    --muted-foreground: 231 16% 62%; /* #8F96B2 */
+    --muted: 0 0% 10%; /* #191919 */
+    --muted-foreground: 215 16% 70%;
 
     /* Accent: hover and active highlights */
-    --accent: 232 27% 20%; /* #262940 */
-    --accent-foreground: 210 20% 96%;
+    --accent: 0 0% 15%; /* #262626 */
+    --accent-foreground: 0 0% 100%;
 
     /* Destructive: clear vivid red/pink-red */
     --destructive: 348 100% 67%; /* #FF5A79 */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 233 22% 19%; /* #262940 */
-    --input: 233 22% 19%;
-    --ring: 211 100% 50%;
+    --border: 0 0% 15%; /* #262626 */
+    --input: 0 0% 15%;
+    --ring: 207 67% 37%;
 
     --radius: 1rem; /* Premium 16px radius */
   }
 
   /* ─── Light Mode Overrides ────────────────────────────────────── */
   :root:not(.dark) {
-    --background: 220 33% 97%; /* #F4F6FA */
-    --foreground: 230 25% 15%; /* #1C1E2D */
+    --background: 220 15% 97%; /* Soft grey-white background #F5F6F8 */
+    --foreground: 222 47% 11%; /* Slate black #0F172A */
 
-    --sidebar: 0 0% 100%; /* #FFFFFF */
-    --sidebar-foreground: 217 13% 55%; /* #8A92A6 */
+    --sidebar: 0 0% 100%; /* Pure white #FFFFFF */
+    --sidebar-foreground: 215.4 16.3% 46.9%; /* Muted slate #64748B */
 
-    --card: 0 0% 100%; /* #FFFFFF */
-    --card-foreground: 230 25% 15%;
+    --card: 0 0% 100%; /* Pure white #FFFFFF */
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 230 25% 15%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Primary: same vibrant royal blue */
-    --primary: 211 100% 50%;
+    /* Primary: brand blue #1F659D */
+    --primary: 207 67% 37%; /* #1F659D */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%; /* #F1F3F7 */
-    --secondary-foreground: 230 25% 15%;
+    --secondary: 210 40% 96.1%; /* Soft grey-blue hover/secondary #F1F5F9 */
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 220 14% 96%; /* #F1F3F7 */
-    --muted-foreground: 217 13% 55%; /* #8A92A6 */
+    --muted: 210 40% 96.1%; /* #F1F5F9 */
+    --muted-foreground: 215.4 16.3% 46.9%; /* #64748B */
 
-    --accent: 220 14% 90%;
-    --accent-foreground: 230 25% 15%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222 47% 11%;
 
     --destructive: 348 90% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 220 20% 92%; /* #EFF1F6 */
-    --input: 220 20% 92%;
-    --ring: 211 100% 50%;
+    --border: 214.3 31.8% 91.4%; /* Thin light border #E2E8F0 */
+    --input: 214.3 31.8% 91.4%;
+    --ring: 207 67% 37%;
   }
 }
 
@@ -137,13 +138,13 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-family: "Poppins", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
     background-color: hsl(var(--background));
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-family: "Mona Sans Variable", "Mona Sans", "Poppins", sans-serif;
     font-weight: 700;
     letter-spacing: -0.02em;
   }
@@ -176,13 +177,17 @@
     background: hsl(214 18% 78%);
   }
   :root:not(.dark) ::-webkit-scrollbar-thumb:hover {
-    background: hsl(180 55% 42%);
+    background: hsl(var(--primary) / 0.85);
   }
 
   /* Selection highlight */
   ::selection {
     background: hsl(180 60% 55% / 0.25);
     color: hsl(180 60% 90%);
+  }
+  :root:not(.dark) ::selection {
+    background: hsl(var(--primary) / 0.15);
+    color: hsl(var(--primary));
   }
 }
 
