@@ -448,7 +448,17 @@ export function BotControl() {
                 )}
 
                 {/* C-02: Explicit Continue button — no auto-select on mount */}
-                <div className="flex justify-end max-w-4xl">
+                <div className="flex justify-end max-w-4xl gap-3">
+                  {status?.status === "paused" && (
+                    <Button
+                      onClick={() => handleActionClick("resume")}
+                      disabled={loading}
+                      className="font-mono text-xs h-10 px-6 gap-2 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold transition-all duration-300 shadow-[0_0_12px_rgba(16,185,129,0.1)]"
+                    >
+                      <Play className="w-3.5 h-3.5" />
+                      Resume Strategy
+                    </Button>
+                  )}
                   <Button
                     onClick={handleProfileContinue}
                     disabled={!selectedProfile || profileLoading}
