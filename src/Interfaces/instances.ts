@@ -1,6 +1,5 @@
-// FIX: F1 — Personality Enum Case (PascalCase)
-// FIX: F9 — Make roi, unrealizedPnl, activeGrids Required
-export type InstancePersonality = "Moderate" | "Balanced" | "Aggressive";
+// Backend @IsEnum validator enforces lowercase: moderate | balanced | aggressive
+export type InstancePersonality = "moderate" | "balanced" | "aggressive";
 export type InstanceStatus = "running" | "stopped" | "paused" | "stalled";
 
 export interface BotInstance {

@@ -1,4 +1,4 @@
-// FIX: F8 — Remove Legacy Pause/Resume in MyBot.tsx
+// FIX 7 — Remove Legacy Pause/Resume in MyBot.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
@@ -105,10 +105,12 @@ export function MyBot() {
 
   const isLoading = statusLoading || perfLoading;
 
-  // C-01: Real grid positions & Pause/Resume state
+
+  // NOTE: /api/bot/status is the LEGACY single-instance endpoint. In multi-instance mode,
+  // Redis keys are namespaced as bot:state:userId:instanceId — the base key (no instanceId)
+  // no longer exists so this endpoint always returns "stalled". Do NOT use status.status
+  // for the aggregate running state — derive it from /api/bot/instances instead.
   const grids: any[] = status?.grids ?? [];
-  const botRunningStatus = status?.status ?? "stalled";
-  const isRunning = botRunningStatus === "running";
 
   useEffect(() => {
     if (window.location.hash === "#active-bots") {
@@ -136,8 +138,25 @@ export function MyBot() {
 
   const activeInstances = instances.filter((i) => i.status === "running" || i.status === "paused");
   const isCapReached = activeInstances.length >= MAX_ACTIVE_INSTANCES;
-  const availableBalance: number = status?.bybitAccount?.balance ?? 0;
-  // ──────────────────────────────────────────────────────────────────────────
+
+  // Derive aggregate status from instances — the source of truth in multi-instance mode
+  const botRunningStatus: string = instances.some((i) => i.status === "running")
+    ? "running"
+    : instances.some((i) => i.status === "paused")
+    ? "paused"
+    : instances.some((i) => i.status === "stalled")
+    ? "stalled"
+    : instances.length > 0
+    ? "stopped"
+    : "stalled";
+  const isRunning = botRunningStatus === "running";
+
+  // Sum sub-account balances across running instances; fall back to legacy status
+  const availableBalance: number =
+    instances.reduce((acc, i) => acc + (i.walletBalanceUsdt ?? 0), 0) ||
+    status?.bybitAccount?.balance ||
+    0;
+  // ────────────────────────────────────────────────────────────────────────
 
   // Determine Bot Status Label and Color
   const botState = botRunningStatus.toUpperCase();

@@ -1,7 +1,7 @@
-// FIX: F1 — Personality Enum Case (PascalCase)
-// FIX: F2 — stopInstance() Must Return fundsReturned
-// FIX: F7 — Stop Button Has Confirmation Dialog
-// FIX: B1 — Per-Instance Stats Display & heartbeat check
+// FIX 1c — Personality Enum Case (PascalCase) keys
+// FIX 2 — stopInstance surfaces message
+// FIX 6 — Stop Button Confirmation Dialog and reset confirmingStop on error
+// B1 — Per-Instance Stats Display & heartbeat check (show only for non-stopped statuses)
 import { useState } from "react";
 import { Badge } from "../Atoms/badge";
 import { Button } from "../Atoms/button";
@@ -23,29 +23,12 @@ import {
 import type { BotInstance } from "../../Interfaces/instances";
 import { useInstancesStore } from "../../State/instances";
 
-// ─── Personality config ────────────────────────────────────────────────────
+// Backend @IsEnum enforces lowercase: moderate | balanced | aggressive
+// Display labels (label field) are Title Case for UI presentation only.
 const PERSONALITY_CONFIG: Record<
   string,
   { label: string; dotClass: string; badgeClass: string; borderClass: string }
 > = {
-  Moderate: {
-    label: "Moderate",
-    dotClass: "bg-sky-400",
-    badgeClass: "bg-sky-500/10 text-sky-400 border-sky-500/20",
-    borderClass: "border-sky-500/20",
-  },
-  Balanced: {
-    label: "Balanced",
-    dotClass: "bg-amber-400",
-    badgeClass: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    borderClass: "border-amber-500/20",
-  },
-  Aggressive: {
-    label: "Aggressive",
-    dotClass: "bg-rose-400",
-    badgeClass: "bg-rose-500/10 text-rose-400 border-rose-500/20",
-    borderClass: "border-rose-500/20",
-  },
   moderate: {
     label: "Moderate",
     dotClass: "bg-sky-400",
@@ -106,8 +89,8 @@ export function InstanceCard({ instance }: InstanceCardProps) {
 
   const personality =
     PERSONALITY_CONFIG[instance.personality] ??
-    (instance.personality && PERSONALITY_CONFIG[String(instance.personality).toLowerCase()]) ??
-    PERSONALITY_CONFIG.Balanced;
+    PERSONALITY_CONFIG[String(instance.personality).toLowerCase()] ??
+    PERSONALITY_CONFIG.balanced;
 
   const statusCfg = STATUS_CONFIG[instance.status] ?? STATUS_CONFIG.stopped;
 
@@ -130,12 +113,20 @@ export function InstanceCard({ instance }: InstanceCardProps) {
     setActionLoading(action);
     setActionError(null);
     try {
-      const returned = await fn(instance.instanceId);
+      const message = await fn(instance.instanceId);
+      // FIX 2 — Show message string returned from stopInstance
       if (action === "stop") {
-        setStopSuccessMsg(`${returned.toFixed(2)} USDT returned to your wallet.`);
+        setStopSuccessMsg(message);
+        setTimeout(() => {
+          setStopSuccessMsg(null);
+        }, 4000);
       }
     } catch (err: any) {
       setActionError(err?.response?.data?.message || `Failed to ${action}.`);
+      // FIX 6 — Reset confirmingStop to false in the handleAction catch block
+      if (action === "stop") {
+        setConfirmingStop(false);
+      }
     } finally {
       setActionLoading(null);
     }
@@ -237,48 +228,53 @@ export function InstanceCard({ instance }: InstanceCardProps) {
           </span>
         </div>
 
-        {/* Live ROI */}
-        <div className="flex items-center justify-between border-b border-border/15 pb-2">
-          <span className="text-muted-foreground flex items-center gap-1">
-            {roi >= 0 ? (
-              <TrendingUp className="w-3 h-3 text-emerald-400" />
-            ) : (
-              <TrendingDown className="w-3 h-3 text-rose-400" />
-            )}{" "}
-            Live ROI
-          </span>
-          <span
-            className={cn(
-              "font-bold tabular-nums",
-              roi >= 0 ? "text-emerald-400" : "text-rose-400"
-            )}
-          >
-            {roi >= 0 ? "+" : ""}
-            {roi.toFixed(2)}%
-          </span>
-        </div>
+        {/* B1 — Conditionally render stats for non-stopped instances */}
+        {instance.status !== "stopped" && (
+          <>
+            {/* Live ROI */}
+            <div className="flex items-center justify-between border-b border-border/15 pb-2">
+              <span className="text-muted-foreground flex items-center gap-1">
+                {roi >= 0 ? (
+                  <TrendingUp className="w-3 h-3 text-emerald-400" />
+                ) : (
+                  <TrendingDown className="w-3 h-3 text-rose-400" />
+                )}{" "}
+                Live ROI
+              </span>
+              <span
+                className={cn(
+                  "font-bold tabular-nums",
+                  roi >= 0 ? "text-emerald-400" : "text-rose-400"
+                )}
+              >
+                {roi >= 0 ? "+" : ""}
+                {roi.toFixed(2)}%
+              </span>
+            </div>
 
-        {/* Unrealized PnL */}
-        <div className="flex items-center justify-between border-b border-border/15 pb-2">
-          <span className="text-muted-foreground">Unrealized PnL</span>
-          <span
-            className={cn(
-              "font-bold tabular-nums",
-              unrealizedPnl >= 0 ? "text-emerald-400" : "text-rose-400"
-            )}
-          >
-            {unrealizedPnl >= 0 ? "+" : ""}
-            ${Math.abs(unrealizedPnl).toFixed(2)}
-          </span>
-        </div>
+            {/* Unrealized PnL */}
+            <div className="flex items-center justify-between border-b border-border/15 pb-2">
+              <span className="text-muted-foreground">Unrealized PnL</span>
+              <span
+                className={cn(
+                  "font-bold tabular-nums",
+                  unrealizedPnl >= 0 ? "text-emerald-400" : "text-rose-400"
+                )}
+              >
+                {unrealizedPnl >= 0 ? "+" : ""}
+                ${Math.abs(unrealizedPnl).toFixed(2)}
+              </span>
+            </div>
 
-        {/* Active Grids */}
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Layers className="w-3 h-3 text-cyan-400" /> Active Grids
-          </span>
-          <span className="font-bold text-cyan-400">{activeGrids}</span>
-        </div>
+            {/* Active Grids */}
+            <div className="flex items-center justify-between border-b border-border/15 pb-2">
+              <span className="text-muted-foreground flex items-center gap-1">
+                <Layers className="w-3 h-3 text-cyan-400" /> Active Grids
+              </span>
+              <span className="font-bold text-cyan-400">{activeGrids}</span>
+            </div>
+          </>
+        )}
 
         {/* Status badge */}
         <div className="pt-1">
@@ -305,10 +301,11 @@ export function InstanceCard({ instance }: InstanceCardProps) {
       {/* ─── Action Buttons ──────────────────────────────────────────────── */}
       {isActive && (
         <CardFooter className="flex flex-col gap-2 pt-0">
+          {/* FIX 6 — Stop button confirmation dialog */}
           {confirmingStop ? (
             <div className="w-full flex flex-col gap-2 p-2 border border-rose-500/25 bg-rose-500/5 rounded-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
               <span className="text-[10px] font-mono text-rose-400 font-bold text-center">
-                Stop bot & return all funds?
+                Return funds and stop?
               </span>
               <div className="flex gap-2">
                 <Button
@@ -321,7 +318,7 @@ export function InstanceCard({ instance }: InstanceCardProps) {
                   }}
                   id={`confirm-stop-btn-${instance.instanceId}`}
                 >
-                  Confirm Stop
+                  Confirm
                 </Button>
                 <Button
                   size="sm"

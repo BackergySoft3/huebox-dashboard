@@ -1,4 +1,4 @@
-// FIX: F6 — Missing "log" WebSocket Event Listener
+// FIX 5/6 — WebSocket Subscribe/Unsubscribe Events and Listener Routing
 import { io, Socket } from "socket.io-client";
 import { useBotStore } from "../../State/bot";
 import { useLogsStore } from "../../State/logs";
@@ -35,21 +35,12 @@ export const initSocket = (token: string) => {
   });
 
   socket.on("python:log", (data) => {
+    // B2 Step 3 — Temporary diagnostic console.log
+    console.log("[python:log received]", data);
     useLogsStore.getState().addPythonLog({
       timestamp: data.timestamp || new Date().toISOString(),
       message: data.raw || data.message || JSON.stringify(data),
       level: data.level || "info",
-    });
-  });
-
-  // Per-instance strategy logs event listener (F6)
-  socket.on("log", (data: { timestamp?: string; message: string; level?: string }) => {
-    // Temporary console log to confirm log events are arriving (B2 Step 4)
-    console.log("[instance log event]", data);
-    useLogsStore.getState().addPythonLog({
-      timestamp: data.timestamp ?? new Date().toISOString(),
-      message: data.message ?? JSON.stringify(data),
-      level: (data.level as "info" | "warn" | "error") ?? "info",
     });
   });
 

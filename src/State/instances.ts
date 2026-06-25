@@ -1,5 +1,5 @@
-// FIX: F2 — stopInstance() Must Return fundsReturned
-// FIX: F3 — Optimistic Update Snapshot Rollback
+// FIX 2 — stopInstance Should Surface the Response Message
+// FIX 3 — Optimistic Update Snapshot Rollback
 import { create } from "zustand";
 import { api } from "../Services/http.service";
 import type { BotInstance, StartInstancePayload, InstanceStatus } from "../Interfaces/instances";
@@ -15,7 +15,7 @@ interface InstancesState {
   startInstance: (payload: StartInstancePayload) => Promise<void>;
   pauseInstance: (instanceId: string) => Promise<void>;
   resumeInstance: (instanceId: string) => Promise<void>;
-  stopInstance: (instanceId: string) => Promise<number>;
+  stopInstance: (instanceId: string) => Promise<string>;
 
   // Optimistic update helper
   _optimisticUpdate: (instanceId: string, status: InstanceStatus) => BotInstance[];
@@ -28,14 +28,14 @@ export const useInstancesStore = create<InstancesState>((set, get) => ({
 
   setInstances: (instances) => set({ instances }),
 
-  _optimisticUpdate: (instanceId, status) => {
-    const previousInstances = get().instances;
+  _optimisticUpdate: (instanceId, newStatus) => {
+    const snapshot = get().instances;
     set((state) => ({
       instances: state.instances.map((inst) =>
-        inst.instanceId === instanceId ? { ...inst, status } : inst
+        inst.instanceId === instanceId ? { ...inst, status: newStatus } : inst
       ),
     }));
-    return previousInstances;
+    return snapshot;
   },
 
   fetchInstances: async () => {
@@ -83,9 +83,9 @@ export const useInstancesStore = create<InstancesState>((set, get) => ({
     const snapshot = get()._optimisticUpdate(instanceId, "stopped");
     try {
       const res = await api.post(`/api/bot/instances/${instanceId}/stop`);
-      const fundsReturned: number = res.data?.fundsReturned ?? 0;
+      const message: string = res.data?.message ?? "Instance stopped.";
       await get().fetchInstances();
-      return fundsReturned;
+      return message;
     } catch (err) {
       set({ instances: snapshot });
       await get().fetchInstances();

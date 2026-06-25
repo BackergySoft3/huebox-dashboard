@@ -1,6 +1,6 @@
-// FIX: F4 — LiveLogs Reads Wrong Response Shape
-// FIX: F5 — WebSocket Subscribe/Unsubscribe Wrong Payload
-// FIX: B2 — Live Logs Panel Integration (Default Selection & Lifecycle)
+// FIX 4 — LiveLogs Reads Wrong Response Shape
+// FIX 5 — WebSocket Subscribe/Unsubscribe Events Are Wrong
+// B2 — Live Logs Panel Integration (Default Selection & Lifecycle)
 import { useState, useEffect } from "react";
 import { useLogStream } from "../Hooks/useLogStream";
 import { useBotStore } from "../State/bot";
@@ -33,7 +33,7 @@ export function LiveLogs() {
     fetchInstances();
   }, [fetchInstances]);
 
-  // Set default selected instance once loaded
+  // B2 Step 1 — Default selection fallback logic with null guard
   useEffect(() => {
     if (instances.length > 0 && !selectedInstanceId) {
       const defaultInstance = instances.find((i) => i.status === "running") ?? instances[0];
@@ -41,14 +41,14 @@ export function LiveLogs() {
     }
   }, [instances, selectedInstanceId]);
 
-  // Handle instance logs switching and socket subscription
+  // B2 Step 1 — Handle instance logs switching and socket subscription
   useEffect(() => {
     if (!selectedInstanceId || !user?.id) return;
 
-    // Clear logs buffer
+    // Clear logs buffer on switch
     clearLogs();
 
-    // Fetch initial logs for the instance (Fix F4)
+    // Fetch initial logs for the instance (Fix 4)
     api.get(`/api/bot/system/logs?lines=250&instanceId=${selectedInstanceId}`)
       .then((res) => {
         const logs: string[] = res.data?.logs ?? [];
@@ -67,11 +67,13 @@ export function LiveLogs() {
       })
       .catch((err) => console.warn("Failed to load initial logs for instance:", err));
 
-    // Subscribe to WS channel (Fix F5)
-    socket?.emit("subscribe", { instanceId: selectedInstanceId });
+    // JOIN room (Fix 5)
+    socket?.emit("joinRoom", { instanceId: selectedInstanceId });
 
     return () => {
-      socket?.emit("unsubscribe", { instanceId: selectedInstanceId });
+      // LEAVE room (Fix 5)
+      const channel = `logs:${user.id}:${selectedInstanceId}`;
+      socket?.emit("unsubscribe", { channel });
     };
   }, [selectedInstanceId, user?.id, clearLogs]);
 
@@ -126,6 +128,7 @@ export function LiveLogs() {
               ) : (
                 instances.map((inst) => (
                   <option key={inst.instanceId} value={inst.instanceId} className="bg-card text-foreground">
+                    {/* B2 Step 4 — Option format: Balanced (…4f8a2c) */}
                     {inst.personality} ({inst.subAccountId ? `…${inst.subAccountId.slice(-6)}` : "No SubAccount"})
                   </option>
                 ))

@@ -64,10 +64,20 @@ export function Overview() {
   const { instances, isLoading: instancesLoading, fetchInstances } = useInstancesStore();
   const isLoading = instancesLoading;
 
+  // Derive aggregate status from instances
+  const botRunningStatus = instances.some((i) => i.status === "running")
+    ? "running"
+    : instances.some((i) => i.status === "paused")
+    ? "paused"
+    : instances.some((i) => i.status === "stalled")
+    ? "stalled"
+    : instances.length > 0
+    ? "stopped"
+    : "stalled";
+  const isRunning = botRunningStatus === "running";
+
   // Dummy variables for retro-compatibility compilation (hidden/unused blocks)
   const grids: any[] = [];
-  const isRunning = false;
-  const botRunningStatus = "stopped" as string;
   const confirmState = { isOpen: false, action: null as string | null };
   const setConfirmState = (_val?: any) => {};
   const actionMutation = { isPending: false, mutateAsync: async (_action: string) => {} };

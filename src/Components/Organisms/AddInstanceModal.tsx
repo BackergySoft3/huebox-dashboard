@@ -1,4 +1,4 @@
-// FIX: F1 — Personality Enum Case (PascalCase)
+// FIX 1b — Personality Enum Case (PascalCase)
 import { useState, useEffect } from "react";
 import { Button } from "../Atoms/button";
 import { cn } from "../../Helpers/utils";
@@ -19,25 +19,29 @@ interface AddInstanceModalProps {
   availableBalance: number;
 }
 
-const PERSONALITIES: InstancePersonality[] = ["Moderate", "Balanced", "Aggressive"];
+// Backend @IsEnum enforces lowercase values
+const PERSONALITIES: InstancePersonality[] = ["moderate", "balanced", "aggressive"];
 
 const PERSONALITY_META: Record<
   InstancePersonality,
-  { description: string; badgeClass: string; riskLabel: string; riskClass: string }
+  { label: string; description: string; badgeClass: string; riskLabel: string; riskClass: string }
 > = {
-  Moderate: {
+  moderate: {
+    label: "Moderate",
     description: "Steady returns with conservative position sizing.",
     badgeClass: "bg-sky-500/10 text-sky-400 border-sky-500/30",
     riskLabel: "Low Risk",
     riskClass: "text-sky-400",
   },
-  Balanced: {
+  balanced: {
+    label: "Balanced",
     description: "Balanced risk-reward across diversified pairs.",
     badgeClass: "bg-amber-500/10 text-amber-400 border-amber-500/30",
     riskLabel: "Medium Risk",
     riskClass: "text-amber-400",
   },
-  Aggressive: {
+  aggressive: {
+    label: "Aggressive",
     description: "High-frequency grids for maximum return potential.",
     badgeClass: "bg-rose-500/10 text-rose-400 border-rose-500/30",
     riskLabel: "High Risk",
@@ -47,7 +51,7 @@ const PERSONALITY_META: Record<
 
 export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInstanceModalProps) {
   const { startInstance, instances } = useInstancesStore();
-  const [personality, setPersonality] = useState<InstancePersonality>("Balanced");
+  const [personality, setPersonality] = useState<InstancePersonality>("balanced");
   const [allocationInput, setAllocationInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +60,7 @@ export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInsta
   // Reset on open
   useEffect(() => {
     if (isOpen) {
-      setPersonality("Balanced");
+      setPersonality("balanced");
       setAllocationInput("");
       setError(null);
       setLoading(false);
@@ -71,14 +75,18 @@ export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInsta
   const runningInstances = instances.filter((i) => i.status === "running");
   const hasSamePersonality = runningInstances.some((i) => i.personality === personality);
 
-  // Validation
-  const isAmountValid = allocation > 0 && allocation <= availableBalance;
+  // Validation — minimum is 100 USDT (mirrors backend @IsMin(100) constraint)
+  const isAmountValid = allocation >= 100 && allocation <= availableBalance;
   const canSubmit = isAmountValid && !loading;
 
   const handleSubmit = async () => {
     setError(null);
     if (allocation <= 0) {
       setError("Allocation amount must be greater than 0.");
+      return;
+    }
+    if (allocation < 100) {
+      setError("Minimum allocation is 100 USDT.");
       return;
     }
     if (allocation > availableBalance) {
@@ -194,9 +202,9 @@ export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInsta
                         <div
                           className={cn(
                             "mt-0.5 w-2 h-2 rounded-full shrink-0",
-                            p === "Moderate"
+                            p === "moderate"
                               ? "bg-sky-400"
-                              : p === "Balanced"
+                              : p === "balanced"
                               ? "bg-amber-400"
                               : "bg-rose-400"
                           )}
@@ -267,16 +275,28 @@ export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInsta
                 MAX
               </button>
             </div>
-            {/* Validation hint */}
+            {/* Below minimum warning */}
+            {allocation > 0 && allocation < 100 && (
+              <p className="text-[11px] text-amber-400 font-mono flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" />
+                Minimum allocation is 100 USDT.
+              </p>
+            )}
             {allocation > availableBalance && allocation > 0 && (
               <p className="text-[11px] text-rose-400 font-mono flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
                 Exceeds available balance.
               </p>
             )}
-            {allocation > 0 && allocation <= availableBalance && (
+            {allocation >= 100 && allocation <= availableBalance && (
               <p className="text-[11px] text-emerald-400 font-mono">
                 ✓ {((allocation / availableBalance) * 100).toFixed(1)}% of wallet allocated.
+              </p>
+            )}
+            {/* Static minimum hint — always visible */}
+            {allocation === 0 && (
+              <p className="text-[11px] text-muted-foreground/60 font-mono">
+                Min. Allocation: 100 USDT
               </p>
             )}
           </div>
