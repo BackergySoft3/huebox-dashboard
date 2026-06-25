@@ -1,19 +1,22 @@
+// FIX: F8 — Remove Legacy Pause/Resume in MyBot.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useBotStatus } from "../Hooks/useBotStatus";
 import { useBotStore } from "../State/bot";
 import { usePerformance } from "../Hooks/usePerformance";
+import { useInstancesStore } from "../State/instances";
+import { InstanceCard } from "../Components/Organisms/InstanceCard";
+import { AddInstanceModal } from "../Components/Organisms/AddInstanceModal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../Components/Atoms/card";
 import { Badge } from "../Components/Atoms/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { format } from "date-fns";
-import { Trophy, TrendingUp, TrendingDown, Target, Wallet2, Brain, GitMerge, Bot, Calendar, Play, Pause, ChevronRight } from "lucide-react";
+import { Trophy, TrendingUp, Target, Wallet2, Brain, GitMerge, Bot, Calendar, ChevronRight, Plus, Layers } from "lucide-react";
 import { cn } from "../Helpers/utils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../Services/http.service";
-import { ConfirmModal } from "../Components/Organisms/ConfirmModal";
 import { Button } from "../Components/Atoms/button";
+
+const MAX_ACTIVE_INSTANCES = 5;
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
@@ -43,8 +46,6 @@ const CustomFeeTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-
-
 // M-07: Skeleton card for loading states
 function MetricCardSkeleton() {
   return (
@@ -62,9 +63,8 @@ function MetricCardSkeleton() {
 }
 
 export function MyBot() {
-  const queryClient = useQueryClient();
   const { data: status, isLoading: statusLoading } = useBotStatus();
-  const { history, fees, summary, isLoading: perfLoading } = usePerformance();
+  const { history, fees, isLoading: perfLoading } = usePerformance();
   const cycleCounter = useBotStore((state) => state.cycleCounter);
 
   const cycleStats = status?.cycleStats || { 
@@ -110,19 +110,6 @@ export function MyBot() {
   const botRunningStatus = status?.status ?? "stalled";
   const isRunning = botRunningStatus === "running";
 
-  const [confirmState, setConfirmState] = useState<{
-    isOpen: boolean;
-    action: "pause" | "resume" | null;
-  }>({ isOpen: false, action: null });
-
-  const actionMutation = useMutation({
-    mutationFn: (action: "pause" | "resume") => api.post(`/api/bot/${action}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bot-status"] });
-      setConfirmState({ isOpen: false, action: null });
-    },
-  });
-
   useEffect(() => {
     if (window.location.hash === "#active-bots") {
       const el = document.getElementById("active-bots");
@@ -134,6 +121,23 @@ export function MyBot() {
       }
     }
   }, []);
+
+  // ── Multi-instance state & polling ─────────────────────────────────────────
+  const { instances, isLoading: instancesLoading, error: instancesError, fetchInstances } = useInstancesStore();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    fetchInstances();
+    pollingRef.current = setInterval(() => fetchInstances(), 10_000);
+    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const activeInstances = instances.filter((i) => i.status === "running" || i.status === "paused");
+  const isCapReached = activeInstances.length >= MAX_ACTIVE_INSTANCES;
+  const availableBalance: number = status?.bybitAccount?.balance ?? 0;
+  // ──────────────────────────────────────────────────────────────────────────
 
   // Determine Bot Status Label and Color
   const botState = botRunningStatus.toUpperCase();
@@ -163,6 +167,66 @@ export function MyBot() {
         </div>
       </div>
 
+      {/* Bot Instances Management Section */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/20">
+          <div className="flex items-center gap-2">
+            <Layers className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-bold tracking-tight text-foreground font-sans">
+              Bot Instances
+            </h2>
+            <Badge variant="outline" className="font-mono text-xs">
+              {activeInstances.length} / {MAX_ACTIVE_INSTANCES}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            {isCapReached && (
+              <span className="text-xs text-amber-400 font-mono" title="Maximum of 5 active instances reached">
+                Maximum of 5 active instances reached
+              </span>
+            )}
+            <Button
+              id="add-instance-btn"
+              onClick={() => setShowAddModal(true)}
+              disabled={isCapReached}
+              title={isCapReached ? "Maximum of 5 active instances reached" : "Launch a new bot instance"}
+              className="font-mono text-xs h-9 px-4 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md"
+            >
+              <Plus className="w-4 h-4" /> Add Instance
+            </Button>
+          </div>
+        </div>
+
+        {instancesLoading && instances.length === 0 ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-48 rounded-xl border border-border/40 bg-card/25 animate-pulse" />
+            ))}
+          </div>
+        ) : instancesError ? (
+          <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-mono">
+            {instancesError}
+          </div>
+        ) : instances.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-border/60 rounded-2xl bg-card/10">
+            <Bot className="w-10 h-10 text-muted-foreground/30 mb-2" />
+            <p className="text-muted-foreground text-sm font-sans font-medium">No active bots. Start your first instance to begin trading.</p>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {instances.map((inst) => (
+              <InstanceCard key={inst.instanceId} instance={inst} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <AddInstanceModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        availableBalance={availableBalance}
+      />
+
       {/* Top Section: Portfolio Health, Market Analysis, AI Insights */}
       <div className="grid gap-6 md:grid-cols-3">
         {isLoading ? (
@@ -175,11 +239,13 @@ export function MyBot() {
           <>
             {/* Portfolio Health Card */}
             {(() => {
+              const liveRoi = status?.summary?.liveRoiPct ?? status?.live_roi ?? 0;
+              const winRateOverall = status?.summary?.winRateOverallPct ?? 0;
               const healthScore = Math.min(100, Math.round(
                 (status?.status === "running" ? 40 : status?.status === "paused" ? 20 : 0) +
-                (status?.live_roi && status.live_roi > 0 ? 30 : 0) +
+                (liveRoi > 0 ? 30 : 0) +
                 ((status?.bybitAccount?.balance ?? 0) > 100 ? 20 : 0) +
-                (summary?.winRate && Number(summary.winRate) > 50 ? 10 : 0)
+                (winRateOverall > 50 ? 10 : 0)
               ));
               const scoreColor = healthScore >= 70 ? "text-emerald-400" : healthScore >= 40 ? "text-amber-400" : "text-rose-400";
               return (
@@ -203,11 +269,23 @@ export function MyBot() {
                         />
                       </div>
                     </div>
-                    <div className="flex justify-between items-center pt-2.5 border-t border-border/15">
-                      <span className="text-muted-foreground font-medium">Session Status</span>
-                      <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px] uppercase font-bold", botStateColor)}>
-                        {botState}
-                      </Badge>
+                    <div className="pt-2 space-y-1.5 border-t border-border/15">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground font-medium">Session Status</span>
+                        <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px] uppercase font-bold", botStateColor)}>
+                          {botState}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground font-medium">Live ROI</span>
+                        <span className={`font-bold text-xs ${liveRoi >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                          {liveRoi >= 0 ? "+" : ""}{Number(liveRoi).toFixed(2)}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground font-medium">Win Rate</span>
+                        <span className="font-bold text-xs text-foreground">{Number(winRateOverall).toFixed(0)}%</span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -246,8 +324,8 @@ export function MyBot() {
               </CardHeader>
               <CardContent className="space-y-3 font-mono text-xs text-slate-300 flex-1 flex flex-col justify-between">
                 <p className="text-xs text-muted-foreground/90 leading-relaxed">
-                  {summary?.winRate
-                    ? `Active win rate stands at ${Number(summary.winRate).toFixed(1)}%. ${Number(summary.winRate) > 60 ? "Strategy performance registers above benchmark." : "Grid matrix operates within standard tolerances."}`
+                  {status?.summary?.winRateOverallPct
+                    ? `Overall win rate at ${Number(status.summary.winRateOverallPct).toFixed(0)}% across ${status.summary.totalPositionsCreated ?? 0} trades. Today: ${Number(status?.summary?.winRateTodayPct ?? 0).toFixed(0)}%.`
                     : "Performance vectors will initialize after the first closed grid loop."}
                 </p>
                 <div className="border-t border-border/15 pt-2.5 space-y-2">
@@ -257,8 +335,12 @@ export function MyBot() {
                       {llmRec.action}
                     </Badge>
                   </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Confidence</span>
+                    <span className="font-bold text-xs text-foreground">{Math.round((llmRec.confidence ?? 0) * 100)}%</span>
+                  </div>
                   <div className="bg-muted/40 p-2.5 rounded-lg border border-border/30 text-muted-foreground italic text-[10px] leading-relaxed">
-                    "{llmRec.reasoning}"
+                    &ldquo;{llmRec.reasoning}&rdquo;
                   </div>
                 </div>
               </CardContent>
@@ -267,9 +349,7 @@ export function MyBot() {
         )}
       </div>
 
-
-
-      {/* Middle Section: Performance KPIs */}
+      {/* Middle Section: Live Summary KPIs from status.summary */}
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -280,55 +360,91 @@ export function MyBot() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 font-mono text-xs">
-          <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">WIN RATE</CardTitle>
-              <Target className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-sans tracking-tight text-foreground">
-                {summary?.winRate ? `${Number(summary.winRate).toFixed(1)}%` : "0.0%"}
+        <>
+          {/* Row 1: 4 primary KPIs */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 font-mono text-xs">
+            {/* Unrealized PnL */}
+            <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">UNREALIZED PNL</CardTitle>
+                <Wallet2 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold font-sans tracking-tight ${
+                  (status?.summary?.unrealizedPnlUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                }`}>
+                  {(status?.summary?.unrealizedPnlUsdt ?? 0) >= 0 ? "+" : ""}${Number(status?.summary?.unrealizedPnlUsdt ?? 0).toFixed(2)}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">Live open positions</p>
+              </CardContent>
+            </Card>
+
+            {/* Total PnL */}
+            <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">TOTAL PNL</CardTitle>
+                <TrendingUp className="h-4 w-4 text-emerald-400" />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold font-sans tracking-tight ${
+                  (status?.summary?.totalPnlUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                }`}>
+                  {(status?.summary?.totalPnlUsdt ?? 0) >= 0 ? "+" : ""}${Number(status?.summary?.totalPnlUsdt ?? 0).toFixed(2)}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">Realized + Unrealized</p>
+              </CardContent>
+            </Card>
+
+            {/* Live ROI */}
+            <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">LIVE ROI</CardTitle>
+                <Target className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold font-sans tracking-tight ${
+                  (status?.summary?.liveRoiPct ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                }`}>
+                  {(status?.summary?.liveRoiPct ?? 0) >= 0 ? "+" : ""}{Number(status?.summary?.liveRoiPct ?? 0).toFixed(2)}%
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">On allocated capital</p>
+              </CardContent>
+            </Card>
+
+            {/* Today's Profit */}
+            <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">TODAY'S PROFIT</CardTitle>
+                <Trophy className="h-4 w-4 text-amber-400" />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold font-sans tracking-tight ${
+                  (status?.summary?.profitTodayUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                }`}>
+                  {(status?.summary?.profitTodayUsdt ?? 0) >= 0 ? "+" : ""}${Number(status?.summary?.profitTodayUsdt ?? 0).toFixed(2)}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">24h: +${Number(status?.summary?.profit24hUsdt ?? 0).toFixed(2)}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Row 2: secondary stats strip */}
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6 font-mono text-xs">
+            {[
+              { label: "WIN RATE (TODAY)", value: `${Number(status?.summary?.winRateTodayPct ?? 0).toFixed(0)}%`, color: "text-emerald-400" },
+              { label: "WIN RATE (ALL TIME)", value: `${Number(status?.summary?.winRateOverallPct ?? 0).toFixed(0)}%`, color: "text-emerald-400" },
+              { label: "OPEN ORDERS", value: String(status?.summary?.openOrdersCount ?? 0), color: "text-foreground" },
+              { label: "ACTIVE POSITIONS", value: String(status?.summary?.activePositionsCount ?? 0), color: "text-cyan-400" },
+              { label: "TOTAL TRADES", value: String(status?.summary?.totalPositionsCreated ?? 0), color: "text-foreground" },
+              { label: "ALLOCATED", value: `$${Number(status?.summary?.allocatedAmountUsdt ?? status?.allocatedAmountUsdt ?? 0).toFixed(0)}`, color: "text-foreground" },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="bg-card/20 border border-border/30 rounded-lg px-3 py-2.5 flex flex-col gap-1">
+                <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">{label}</span>
+                <span className={`text-base font-bold font-sans ${color}`}>{value}</span>
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">AVG PNL / TRADE</CardTitle>
-              <Wallet2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold font-sans tracking-tight ${summary && Number(summary.avgPnl ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                {summary?.avgPnl ? `$${Number(summary.avgPnl).toFixed(2)}` : "$0.00"}
-              </div>
-            </CardContent>
-          </Card>
-   
-          <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">BEST TRADE</CardTitle>
-              <TrendingUp className="h-4 w-4 text-emerald-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-sans tracking-tight text-emerald-400">
-                {summary?.bestTrade ? `+$${Number(summary.bestTrade).toFixed(2)}` : "$0.00"}
-              </div>
-            </CardContent>
-          </Card>
-   
-          <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">WORST TRADE</CardTitle>
-              <TrendingDown className="h-4 w-4 text-rose-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-sans tracking-tight text-rose-400">
-                {summary?.worstTrade ? `-$${Number(Math.abs(summary.worstTrade)).toFixed(2)}` : "$0.00"}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Historical charts */}
@@ -491,56 +607,32 @@ export function MyBot() {
         )}
 
         {/* Strategy-level controls in card footer */}
-        {(isRunning || botRunningStatus === "paused") && (
-          <div className="p-3.5 mt-4 border-t border-border/15 flex items-center justify-between bg-card/25 rounded-b-xl gap-2">
-            <div className="flex items-center gap-2">
-              <Badge
-                className={cn(
-                  "font-mono text-xs px-2 py-0.5 border font-semibold uppercase",
-                  isRunning
-                    ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10"
-                    : "text-amber-400 border-amber-500/20 bg-amber-500/10"
-                )}
-              >
-                {botRunningStatus}
-              </Badge>
-              <span className="text-muted-foreground text-xs font-mono">Strategy status</span>
-            </div>
-            <div className="flex gap-2">
-              {isRunning && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs font-mono px-3 gap-1.5 text-amber-400 border-amber-500/20 hover:bg-amber-500/10"
-                  onClick={() => setConfirmState({ isOpen: true, action: "pause" })}
-                  disabled={actionMutation.isPending}
-                >
-                  <Pause className="w-3 h-3" />
-                  Pause
-                </Button>
+        <div className="p-3.5 mt-4 border-t border-border/15 flex items-center justify-between bg-card/25 rounded-b-xl gap-2">
+          <div className="flex items-center gap-2">
+            <Badge
+              className={cn(
+                "font-mono text-xs px-2 py-0.5 border font-semibold uppercase",
+                isRunning
+                  ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10"
+                  : botRunningStatus === "paused"
+                  ? "text-amber-400 border-amber-500/20 bg-amber-500/10"
+                  : "text-rose-400 border-rose-500/20 bg-rose-500/10"
               )}
-              {botRunningStatus === "paused" && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs font-mono px-3 gap-1.5 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/10"
-                  onClick={() => setConfirmState({ isOpen: true, action: "resume" })}
-                  disabled={actionMutation.isPending}
-                >
-                  <Play className="w-3 h-3" />
-                  Resume
-                </Button>
-              )}
-              <Link
-                to="/control"
-                className="text-xs font-mono font-bold text-primary hover:text-primary/80 flex items-center gap-1 group transition-colors"
-              >
-                Full Control
-                <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </div>
+            >
+              {botRunningStatus}
+            </Badge>
+            <span className="text-muted-foreground text-xs font-mono">Strategy status</span>
           </div>
-        )}
+          <div>
+            <Link
+              to="/control"
+              className="text-xs font-mono font-bold text-primary hover:text-primary/80 flex items-center gap-1 group transition-colors"
+            >
+              Full Control
+              <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* Trade History Table */}
@@ -614,25 +706,6 @@ export function MyBot() {
           )}
         </CardContent>
       </Card>
-
-      {/* MyBot Pause/Resume confirm modal */}
-      {confirmState.isOpen && confirmState.action && (
-        <ConfirmModal
-          title={confirmState.action === "pause" ? "Pause Strategy" : "Resume Strategy"}
-          description={
-            confirmState.action === "pause"
-              ? "This will pause your AI strategy. Open positions will remain open and unmanaged until you resume."
-              : "This will resume your active investment strategy and allow the AI engine to manage positions."
-          }
-          confirmLabel={confirmState.action === "pause" ? "Pause" : "Resume"}
-          danger={confirmState.action === "pause"}
-          onConfirm={async () => {
-            await actionMutation.mutateAsync(confirmState.action!);
-          }}
-          onCancel={() => setConfirmState({ isOpen: false, action: null })}
-        />
-      )}
     </div>
   );
 }
-

@@ -1,15 +1,22 @@
+// FIX: F4 — LiveLogs Reads Wrong Response Shape
+// FIX: F5 — WebSocket Subscribe/Unsubscribe Wrong Payload
+// FIX: B2 — Live Logs Panel Integration (Default Selection & Lifecycle)
 import { useState, useEffect } from "react";
 import { useLogStream } from "../Hooks/useLogStream";
 import { useBotStore } from "../State/bot";
 import { api } from "../Services/http.service";
 import { useLogsStore } from "../State/logs";
+import { useInstancesStore } from "../State/instances";
+import { useAuthStore } from "../State/auth";
+import { socket } from "../Services/SignalRService/connection";
 import { nestLogApi } from "../Services/nestLogApi";
 import { LogPanel } from "../Components/Organisms/LogPanel";
 import { Card, CardHeader, CardTitle, CardContent } from "../Components/Atoms/card";
 import { Button } from "../Components/Atoms/button";
 import { Input } from "../Components/Atoms/input";
 import { Badge } from "../Components/Atoms/badge";
-import { Terminal, Download, Trash2, Search, PauseCircle, PlayCircle, SplitSquareHorizontal } from "lucide-react";
+import { Select } from "../Components/Atoms/select";
+import { Terminal, Download, Trash2, Search, PauseCircle, PlayCircle, SplitSquareHorizontal, Bot } from "lucide-react";
 
 export function LiveLogs() {
   const { logBuffer, clearLogs, exportLogs } = useLogStream();
@@ -17,29 +24,59 @@ export function LiveLogs() {
   const [search, setSearch] = useState("");
   const [autoScroll, setAutoScroll] = useState(true);
 
-  useEffect(() => {
-    if (useLogsStore.getState().logBuffer.python.length === 0) {
-      api.get("/api/bot/system/logs?lines=250")
-        .then((res) => {
-          if (res.data?.success && res.data.output) {
-            const lines = res.data.output.split("\n");
-            const newLogs = lines
-              .filter((line: string) => line.trim())
-              .map((line: string) => {
-                const lower = line.toLowerCase();
-                const level = lower.includes("error") ? "error" : lower.includes("warn") ? "warn" : "info";
-                return {
-                  timestamp: new Date().toISOString(),
-                  message: line,
-                  level: level as "info" | "warn" | "error",
-                };
-              });
-            useLogsStore.getState().addPythonLogsBatch(newLogs);
-          }
-        })
-        .catch((err) => console.warn("Failed to load initial logs:", err));
-    }
+  // ── Multi-instance logs logic ──────────────────────────────────────────────
+  const user = useAuthStore((state) => state.user);
+  const { instances, fetchInstances } = useInstancesStore();
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
 
+  useEffect(() => {
+    fetchInstances();
+  }, [fetchInstances]);
+
+  // Set default selected instance once loaded
+  useEffect(() => {
+    if (instances.length > 0 && !selectedInstanceId) {
+      const defaultInstance = instances.find((i) => i.status === "running") ?? instances[0];
+      setSelectedInstanceId(defaultInstance.instanceId);
+    }
+  }, [instances, selectedInstanceId]);
+
+  // Handle instance logs switching and socket subscription
+  useEffect(() => {
+    if (!selectedInstanceId || !user?.id) return;
+
+    // Clear logs buffer
+    clearLogs();
+
+    // Fetch initial logs for the instance (Fix F4)
+    api.get(`/api/bot/system/logs?lines=250&instanceId=${selectedInstanceId}`)
+      .then((res) => {
+        const logs: string[] = res.data?.logs ?? [];
+        const newLogs = logs
+          .filter((line: string) => line.trim().length > 0)
+          .map((line: string) => {
+            const lower = line.toLowerCase();
+            const level = lower.includes("error") ? "error" : lower.includes("warn") ? "warn" : "info";
+            return {
+              timestamp: new Date().toISOString(),
+              message: line,
+              level: level as "info" | "warn" | "error",
+            };
+          });
+        useLogsStore.getState().addPythonLogsBatch(newLogs);
+      })
+      .catch((err) => console.warn("Failed to load initial logs for instance:", err));
+
+    // Subscribe to WS channel (Fix F5)
+    socket?.emit("subscribe", { instanceId: selectedInstanceId });
+
+    return () => {
+      socket?.emit("unsubscribe", { instanceId: selectedInstanceId });
+    };
+  }, [selectedInstanceId, user?.id, clearLogs]);
+
+  // Load NestJS logs on mount if empty
+  useEffect(() => {
     if (useLogsStore.getState().logBuffer.nestjs.length === 0) {
       nestLogApi.getNestjsLogs(250)
         .then((res) => {
@@ -76,6 +113,26 @@ export function LiveLogs() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap font-mono text-xs">
+          {/* Instance Selector */}
+          <div className="flex items-center gap-1 bg-background/35 border border-border/40 rounded-md px-2 py-0.5">
+            <Bot className="w-3.5 h-3.5 text-primary shrink-0" />
+            <Select
+              className="h-8 py-0 px-1.5 text-xs w-48 bg-transparent border-0 focus-visible:ring-0 text-foreground"
+              value={selectedInstanceId || ""}
+              onChange={(e) => setSelectedInstanceId(e.target.value || null)}
+            >
+              {instances.length === 0 ? (
+                <option value="" className="bg-card text-foreground">No Active Instances</option>
+              ) : (
+                instances.map((inst) => (
+                  <option key={inst.instanceId} value={inst.instanceId} className="bg-card text-foreground">
+                    {inst.personality} ({inst.subAccountId ? `…${inst.subAccountId.slice(-6)}` : "No SubAccount"})
+                  </option>
+                ))
+              )}
+            </Select>
+          </div>
+
           <div className="relative w-48">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
