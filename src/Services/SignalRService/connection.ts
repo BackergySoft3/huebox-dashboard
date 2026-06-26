@@ -1,4 +1,5 @@
-﻿import { io, Socket } from "socket.io-client";
+// FIX 5/6 — WebSocket Subscribe/Unsubscribe Events and Listener Routing
+import { io, Socket } from "socket.io-client";
 import { useBotStore } from "../../State/bot";
 import { useLogsStore } from "../../State/logs";
 
@@ -34,6 +35,8 @@ export const initSocket = (token: string) => {
   });
 
   socket.on("python:log", (data) => {
+    // B2 Step 3 — Temporary diagnostic console.log
+    console.log("[python:log received]", data);
     useLogsStore.getState().addPythonLog({
       timestamp: data.timestamp || new Date().toISOString(),
       message: data.raw || data.message || JSON.stringify(data),

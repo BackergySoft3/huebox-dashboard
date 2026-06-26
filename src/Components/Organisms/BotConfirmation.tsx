@@ -78,7 +78,7 @@ export function BotConfirmation({ allocatedAmount, stopCondition, onStarted }: B
 
   const stopLabel =
     stopCondition.type === "profit"
-      ? `Stop at +$${stopCondition.targetProfitUsdt!.toLocaleString()} profit`
+      ? `Stop at +$${(stopCondition.targetProfitUsdt ?? 0).toLocaleString()} profit`
       : stopCondition.type === "duration"
       ? `Stop after ${stopCondition.durationDays} days`
       : "None — manual stop";

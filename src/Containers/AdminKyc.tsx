@@ -269,7 +269,7 @@ export function AdminKyc() {
           confirmLabel="Reject KYC"
           danger
           onCancel={() => setModal(null)}
-          onConfirm={async (reason) => { await reject.mutateAsync(reason!); }}
+          onConfirm={async (reason) => { await reject.mutateAsync(reason || "No reason provided"); }}
         />
       )}
       {modal === "pending" && (
