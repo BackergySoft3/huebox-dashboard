@@ -96,7 +96,8 @@ export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInsta
       await startInstance({ personality, allocatedAmount: allocation });
       onClose();
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to start new instance.");
+      const apiMessage = err?.response?.data?.error?.message || err?.response?.data?.message;
+      setError(apiMessage || "Failed to start new instance.");
     } finally {
       setLoading(false);
     }
