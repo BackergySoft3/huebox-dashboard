@@ -97,17 +97,21 @@ export function ConfirmModal({
   if (!mounted) return null;
 
   return createPortal(
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
-      aria-modal="true"
-      role="dialog"
-      aria-labelledby={titleId}
-    >
-      <div
-        ref={modalRef}
-        className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 space-y-4"
+    <div className="fixed inset-0 z-[200] flex md:pl-[260px]">
+      <div 
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm md:left-[260px]" 
+        onClick={onCancel}
+      />
+      <div 
+        className="relative w-full h-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto pointer-events-none"
       >
+        <div
+          ref={modalRef}
+          className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md mx-auto p-6 space-y-4 pointer-events-auto"
+          aria-modal="true"
+          role="dialog"
+          aria-labelledby={titleId}
+        >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             {danger && <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />}
@@ -176,6 +180,7 @@ export function ConfirmModal({
             {loading ? "Processing..." : confirmLabel}
           </Button>
         </div>
+      </div>
       </div>
     </div>,
     document.body

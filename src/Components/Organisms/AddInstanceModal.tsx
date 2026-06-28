@@ -1,5 +1,6 @@
 // FIX 1b — Personality Enum Case (PascalCase)
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "../Atoms/button";
 import { cn } from "../../Helpers/utils";
 import { useInstancesStore } from "../../State/instances";
@@ -105,18 +106,20 @@ export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInsta
 
 
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
+  const modalContent = (
+    <div className="fixed inset-0 z-[100] flex md:pl-[260px]">
+      {/* Backdrop (clickable) */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm md:left-[260px]" 
+        onClick={onClose} 
+        aria-hidden="true" 
       />
 
-      {/* Modal */}
-      <div
-        className="relative z-10 w-full max-w-md mx-4 bg-card border border-border/60 rounded-2xl shadow-2xl flex flex-col gap-0 overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+      {/* Modal Container */}
+      <div className="relative w-full h-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto pointer-events-none">
+        {/* Modal Window */}
+        <div
+          className="relative z-10 w-full max-w-md bg-card border border-border/60 rounded-2xl shadow-2xl flex flex-col gap-0 my-auto animate-in fade-in zoom-in-95 duration-200 pointer-events-auto"
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-instance-modal-title"
@@ -177,7 +180,7 @@ export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInsta
                       if (!isComingSoon) setPersonality(p);
                     }}
                     className={cn(
-                      "relative flex flex-col items-start p-3.5 rounded-xl border transition-all text-left h-full overflow-hidden group",
+                      "relative flex flex-col items-start p-3.5 rounded-xl border transition-all text-left group",
                       isSelected
                         ? cn("shadow-md border-primary/50", pmeta.badgeClass)
                         : "bg-card/40 border-border/50 hover:bg-muted/30",
@@ -351,6 +354,9 @@ export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInsta
           </Button>
         </div>
       </div>
+      </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
