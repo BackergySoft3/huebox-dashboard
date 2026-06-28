@@ -6,17 +6,13 @@ import { useBotStatus } from "../Hooks/useBotStatus";
 import { useBotStore } from "../State/bot";
 import { usePerformance } from "../Hooks/usePerformance";
 import { useInstancesStore } from "../State/instances";
-import { InstanceCard } from "../Components/Organisms/InstanceCard";
 import { AddInstanceModal } from "../Components/Organisms/AddInstanceModal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../Components/Atoms/card";
 import { Badge } from "../Components/Atoms/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { format } from "date-fns";
-import { Trophy, TrendingUp, Target, Wallet2, Brain, GitMerge, Bot, Calendar, ChevronRight, Plus, Layers } from "lucide-react";
+import { Trophy, TrendingUp, Target, Wallet2, Brain, GitMerge, Bot, Calendar, ChevronRight } from "lucide-react";
 import { cn } from "../Helpers/utils";
-import { Button } from "../Components/Atoms/button";
-
-const MAX_ACTIVE_INSTANCES = 5;
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
@@ -125,7 +121,7 @@ export function MyBot() {
   }, []);
 
   // ── Multi-instance state & polling ─────────────────────────────────────────
-  const { instances, isLoading: instancesLoading, error: instancesError, fetchInstances } = useInstancesStore();
+  const { instances, fetchInstances } = useInstancesStore();
   const [showAddModal, setShowAddModal] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -136,8 +132,6 @@ export function MyBot() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const activeInstances = instances.filter((i) => i.status === "running" || i.status === "paused");
-  const isCapReached = activeInstances.length >= MAX_ACTIVE_INSTANCES;
 
   // Derive aggregate status from instances — the source of truth in multi-instance mode
   const botRunningStatus: string = instances.some((i) => i.status === "running")

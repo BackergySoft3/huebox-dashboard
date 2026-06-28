@@ -102,7 +102,7 @@ export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInsta
     }
   };
 
-  const meta = PERSONALITY_META[personality];
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
