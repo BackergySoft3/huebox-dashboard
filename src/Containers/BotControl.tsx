@@ -167,6 +167,7 @@ export function BotControl() {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         availableBalance={availableBalance}
+        masterUid={status?.bybitAccount?.uid}
       />
 
       {/* ─── SINGLE INSTANCE RETRO COMPATIBILITY BLOCK (HIDDEN) ─── */}

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../Atoms/card";
 import { Button } from "../Atoms/button";
 import { Rocket, ShieldCheck, DollarSign, Clock, Ban, Loader2, AlertTriangle } from "lucide-react";
 import type { StopCondition } from "./BotStopCondition";
-import { api } from "../../Services/http.service";
+import { botApi } from "../../Services/botApi";
 
 interface BotConfirmationProps {
   allocatedAmount: number;
@@ -37,7 +37,7 @@ export function BotConfirmation({ allocatedAmount, stopCondition, onStarted }: B
     setLoading(true);
     setError(null);
     try {
-      await api.post("/api/bot/configure", {
+      await botApi.configure({
         allocatedAmountUsdt: allocatedAmount,
         stopCondition: {
           type: stopCondition.type,
@@ -47,13 +47,13 @@ export function BotConfirmation({ allocatedAmount, stopCondition, onStarted }: B
       });
 
       // Start the engine process explicitly
-      await api.post("/api/bot/start");
+      await botApi.start();
 
       // Poll every 2 seconds (up to 10 times) until the engine heartbeat registers
       for (let i = 0; i < 10; i++) {
         await new Promise((res) => setTimeout(res, 2000));
         try {
-          const { data } = await api.get("/api/bot/status");
+          const data = await botApi.getStatus();
           if (data?.status === "running") {
             break;
           }

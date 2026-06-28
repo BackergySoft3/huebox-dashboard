@@ -6,16 +6,17 @@ import { BotStatus } from "../Enums/BotStatus.enum";
 import { Personality } from "../Enums/Personality.enum";
 import { Card, CardContent, CardHeader, CardTitle } from "../Components/Atoms/card";
 import { Badge } from "../Components/Atoms/badge";
-import { Bot, Cpu, AlertTriangle, RefreshCw, Activity, Square, Pause, Play, Edit, Megaphone, Trash2, Search } from "lucide-react";
+import { Bot, Cpu, AlertTriangle, RefreshCw, Activity, Square, Pause, Play, Edit, Megaphone, Trash2, Search, Loader2 } from "lucide-react";
 import { Button } from "../Components/Atoms/button";
 import { ConfirmModal } from "../Components/Organisms/ConfirmModal";
 import { cn } from "../Helpers/utils";
 
-const STATUS_COLORS: Record<BotStatus, string> = {
+const STATUS_COLORS: Record<BotStatus | 'starting', string> = {
   [BotStatus.Running]: "text-emerald-400 border-emerald-500/20 bg-emerald-500/10",
   [BotStatus.Paused]:  "text-amber-400 border-amber-500/20 bg-amber-500/10",
   [BotStatus.Stalled]: "text-rose-455 border-rose-500/20 bg-rose-500/10",
   [BotStatus.Stopped]: "text-muted-foreground/60 border-border/30 bg-muted/5",
+  starting: "text-sky-400 border-sky-500/20 bg-sky-500/5",
 };
 
 export function AdminBots() {
@@ -334,7 +335,8 @@ export function AdminBots() {
                             </span>
                           </td>
                         <td className="py-3.5 px-4">
-                          <Badge variant="outline" className={cn("text-[9px] font-bold uppercase border px-2 py-0.5", STATUS_COLORS[bot.status as BotStatus] ?? "")}>
+                          <Badge variant="outline" className={cn("text-[9px] font-bold uppercase border px-2 py-0.5", STATUS_COLORS[bot.status as keyof typeof STATUS_COLORS] ?? "")}>
+                            {bot.status === 'starting' && <Loader2 className="w-2.5 h-2.5 mr-1.5 inline animate-spin" />}
                             {bot.status ?? "—"}
                           </Badge>
                         </td>

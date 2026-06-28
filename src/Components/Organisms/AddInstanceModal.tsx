@@ -17,6 +17,7 @@ interface AddInstanceModalProps {
   isOpen: boolean;
   onClose: () => void;
   availableBalance: number;
+  masterUid?: string;
 }
 
 // Backend @IsEnum enforces lowercase values
@@ -49,7 +50,12 @@ const PERSONALITY_META: Record<
   },
 };
 
-export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInstanceModalProps) {
+export function AddInstanceModal({
+  isOpen,
+  onClose,
+  availableBalance,
+  masterUid,
+}: AddInstanceModalProps) {
   const { startInstance, instances } = useInstancesStore();
   const [personality, setPersonality] = useState<InstancePersonality>("balanced");
   const [allocationInput, setAllocationInput] = useState("");
@@ -150,9 +156,16 @@ export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInsta
         <div className="p-5 space-y-5">
           {/* Available balance */}
           <div className="flex items-center justify-between bg-muted/20 border border-border/30 rounded-xl px-4 py-3">
-            <div className="flex items-center gap-2 text-muted-foreground font-mono text-xs">
-              <Wallet className="w-3.5 h-3.5" />
-              <span>Master Wallet Balance</span>
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2 text-muted-foreground font-mono text-xs">
+                <Wallet className="w-3.5 h-3.5" />
+                <span>Master Wallet</span>
+              </div>
+              {masterUid && (
+                <div className="text-[10px] font-mono text-muted-foreground/60 ml-[22px]">
+                  UID: <span className="font-bold text-muted-foreground/80">{masterUid}</span>
+                </div>
+              )}
             </div>
             <span className="font-bold font-mono text-sm text-foreground">
               ${availableBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

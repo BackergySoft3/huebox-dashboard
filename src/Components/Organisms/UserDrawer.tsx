@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../Services/http.service";
-import { X, Laptop, ExternalLink } from "lucide-react";
+
+import { X, Laptop, ExternalLink, Loader2 } from "lucide-react";
 import { Badge } from "../Atoms/badge";
 import { Button } from "../Atoms/button";
 import { ConfirmModal } from "./ConfirmModal";
@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../State/auth";
 import { UserStatus } from "../../Enums/UserStatus.enum";
 import { adminBotsApi } from "../../Services/adminBotsApi";
+import { adminUsersApi } from "../../Services/adminUsersApi";
 import type { Action, UserDrawerProps } from "../../Interfaces/components";
 
 const STATUS_COLORS: Record<UserStatus, string> = {
@@ -51,18 +52,18 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["admin-user", userId],
-    queryFn: () => api.get(`/api/auth/user/${userId}`).then((r) => r.data),
+    queryFn: () => adminUsersApi.getUser(userId),
   });
 
   const { data: sessions } = useQuery({
     queryKey: ["admin-user-sessions", userId],
-    queryFn: () => api.get(`/api/admin/users/${userId}/sessions`).then((r) => r.data),
+    queryFn: () => adminUsersApi.getSessions(userId),
     enabled: activeTab === "sessions",
   });
 
   const { data: history } = useQuery({
     queryKey: ["admin-user-history", userId],
-    queryFn: () => api.get(`/api/admin/users/${userId}/status-history`).then((r) => r.data),
+    queryFn: () => adminUsersApi.getHistory(userId),
     enabled: activeTab === "history",
   });
 
@@ -79,11 +80,8 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
       }
       const body: any = { reason };
       if (confirmEmail) body.confirmEmail = confirmEmail;
-      if (action === "soft" || action === "hard")
-        return api.delete(`/api/admin/users/${userId}/${action}`, { data: body });
-      if (action === "restore")
-        return api.post(`/api/admin/users/${userId}/restore`, body);
-      return api.patch(`/api/admin/users/${userId}/${action}`, body);
+      
+      return adminUsersApi.updateStatus(userId, action, body);
     },
     onSuccess: (_, vars) => {
       if (vars.action === "delete-instance") {
@@ -221,7 +219,8 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
                         ID: {inst.id}
                       </p>
                     </div>
-                    <Badge variant="outline" className={`text-[10px] font-mono uppercase px-2 py-0.5 ${inst.status === 'RUNNING' ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10' : 'text-slate-400 border-slate-500/20 bg-slate-500/10'}`}>
+                    <Badge variant="outline" className={`text-[10px] font-mono uppercase px-2 py-0.5 ${String(inst.status).toUpperCase() === 'RUNNING' ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10' : String(inst.status).toUpperCase() === 'STARTING' ? 'text-sky-400 border-sky-500/20 bg-sky-500/10 animate-pulse' : 'text-slate-400 border-slate-500/20 bg-slate-500/10'}`}>
+                      {String(inst.status).toUpperCase() === 'STARTING' && <Loader2 className="w-3 h-3 mr-1.5 inline animate-spin" />}
                       {inst.status}
                     </Badge>
                   </div>

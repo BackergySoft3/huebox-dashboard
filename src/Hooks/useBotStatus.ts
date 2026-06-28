@@ -1,6 +1,6 @@
-﻿import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { api } from "../Services/http.service";
+import { botApi } from "../Services/botApi";
 import { useBotStore } from "../State/bot";
 
 export function useBotStatus() {
@@ -10,8 +10,8 @@ export function useBotStatus() {
     queryKey: ["bot-status"],
     queryFn: async () => {
       try {
-        const res = await api.get("/api/bot/status");
-        return res.data;
+        const data = await botApi.getStatus();
+        return data;
       } catch (err: any) {
         console.error("[useBotStatus] API error:", err?.response?.status, err?.response?.data || err.message);
         throw err;
