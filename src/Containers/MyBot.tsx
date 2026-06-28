@@ -67,24 +67,24 @@ export function MyBot() {
   const { history, fees, isLoading: perfLoading } = usePerformance();
   const cycleCounter = useBotStore((state) => state.cycleCounter);
 
-  const cycleStats = status?.cycleStats || { 
-    scanned: 154, 
-    hot: 12, 
-    fundingChecked: true 
+  const cycleStats = status?.cycleStats || {
+    scanned: 154,
+    hot: 12,
+    fundingChecked: true
   };
 
-  const llmRec = status?.llmRecommendation || { 
-    action: "HOLD", 
-    confidence: 0.89, 
-    reasoning: "BTC volume profile suggests consolidation before breakout." 
+  const llmRec = status?.llmRecommendation || {
+    action: "HOLD",
+    confidence: 0.89,
+    reasoning: "BTC volume profile suggests consolidation before breakout."
   };
 
   const sortedHistory = history
     ? [...history].sort((a: any, b: any) => {
-        const timeA = a?.timestamp ? new Date(a.timestamp).getTime() : 0;
-        const timeB = b?.timestamp ? new Date(b.timestamp).getTime() : 0;
-        return (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
-      })
+      const timeA = a?.timestamp ? new Date(a.timestamp).getTime() : 0;
+      const timeB = b?.timestamp ? new Date(b.timestamp).getTime() : 0;
+      return (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
+    })
     : [];
 
   const formatPerfDate = (dateStr?: string, pattern = "MMM dd, HH:mm") => {
@@ -133,7 +133,7 @@ export function MyBot() {
     fetchInstances();
     pollingRef.current = setInterval(() => fetchInstances(), 10_000);
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const activeInstances = instances.filter((i) => i.status === "running" || i.status === "paused");
@@ -143,12 +143,12 @@ export function MyBot() {
   const botRunningStatus: string = instances.some((i) => i.status === "running")
     ? "running"
     : instances.some((i) => i.status === "paused")
-    ? "paused"
-    : instances.some((i) => i.status === "stalled")
-    ? "stalled"
-    : instances.length > 0
-    ? "stopped"
-    : "stalled";
+      ? "paused"
+      : instances.some((i) => i.status === "stalled")
+        ? "stalled"
+        : instances.length > 0
+          ? "stopped"
+          : "stalled";
   const isRunning = botRunningStatus === "running";
 
   // Sum sub-account balances across running instances; fall back to legacy status
@@ -160,12 +160,12 @@ export function MyBot() {
 
   // Determine Bot Status Label and Color
   const botState = botRunningStatus.toUpperCase();
-  const botStateColor = 
-    botState === "RUNNING" 
-      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
-      : botState === "PAUSED" 
-      ? "bg-amber-500/10 text-amber-400 border-amber-500/20" 
-      : "bg-rose-500/10 text-rose-400 border-rose-500/20";
+  const botStateColor =
+    botState === "RUNNING"
+      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+      : botState === "PAUSED"
+        ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+        : "bg-rose-500/10 text-rose-400 border-rose-500/20";
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -184,60 +184,6 @@ export function MyBot() {
             </Badge>
           )}
         </div>
-      </div>
-
-      {/* Bot Instances Management Section */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/20">
-          <div className="flex items-center gap-2">
-            <Layers className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold tracking-tight text-foreground font-sans">
-              Bot Instances
-            </h2>
-            <Badge variant="outline" className="font-mono text-xs">
-              {activeInstances.length} / {MAX_ACTIVE_INSTANCES}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-2">
-            {isCapReached && (
-              <span className="text-xs text-amber-400 font-mono" title="Maximum of 5 active instances reached">
-                Maximum of 5 active instances reached
-              </span>
-            )}
-            <Button
-              id="add-instance-btn"
-              onClick={() => setShowAddModal(true)}
-              disabled={isCapReached}
-              title={isCapReached ? "Maximum of 5 active instances reached" : "Launch a new bot instance"}
-              className="font-mono text-xs h-9 px-4 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md"
-            >
-              <Plus className="w-4 h-4" /> Add Instance
-            </Button>
-          </div>
-        </div>
-
-        {instancesLoading && instances.length === 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-48 rounded-xl border border-border/40 bg-card/25 animate-pulse" />
-            ))}
-          </div>
-        ) : instancesError ? (
-          <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-mono">
-            {instancesError}
-          </div>
-        ) : instances.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-border/60 rounded-2xl bg-card/10">
-            <Bot className="w-10 h-10 text-muted-foreground/30 mb-2" />
-            <p className="text-muted-foreground text-sm font-sans font-medium">No active bots. Start your first instance to begin trading.</p>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {instances.map((inst) => (
-              <InstanceCard key={inst.instanceId} instance={inst} />
-            ))}
-          </div>
-        )}
       </div>
 
       <AddInstanceModal
@@ -389,9 +335,8 @@ export function MyBot() {
                 <Wallet2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold font-sans tracking-tight ${
-                  (status?.summary?.unrealizedPnlUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                }`}>
+                <div className={`text-2xl font-bold font-sans tracking-tight ${(status?.summary?.unrealizedPnlUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                  }`}>
                   {(status?.summary?.unrealizedPnlUsdt ?? 0) >= 0 ? "+" : ""}${Number(status?.summary?.unrealizedPnlUsdt ?? 0).toFixed(2)}
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1">Live open positions</p>
@@ -405,9 +350,8 @@ export function MyBot() {
                 <TrendingUp className="h-4 w-4 text-emerald-400" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold font-sans tracking-tight ${
-                  (status?.summary?.totalPnlUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                }`}>
+                <div className={`text-2xl font-bold font-sans tracking-tight ${(status?.summary?.totalPnlUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                  }`}>
                   {(status?.summary?.totalPnlUsdt ?? 0) >= 0 ? "+" : ""}${Number(status?.summary?.totalPnlUsdt ?? 0).toFixed(2)}
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1">Realized + Unrealized</p>
@@ -421,9 +365,8 @@ export function MyBot() {
                 <Target className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold font-sans tracking-tight ${
-                  (status?.summary?.liveRoiPct ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                }`}>
+                <div className={`text-2xl font-bold font-sans tracking-tight ${(status?.summary?.liveRoiPct ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                  }`}>
                   {(status?.summary?.liveRoiPct ?? 0) >= 0 ? "+" : ""}{Number(status?.summary?.liveRoiPct ?? 0).toFixed(2)}%
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1">On allocated capital</p>
@@ -437,9 +380,8 @@ export function MyBot() {
                 <Trophy className="h-4 w-4 text-amber-400" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold font-sans tracking-tight ${
-                  (status?.summary?.profitTodayUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                }`}>
+                <div className={`text-2xl font-bold font-sans tracking-tight ${(status?.summary?.profitTodayUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                  }`}>
                   {(status?.summary?.profitTodayUsdt ?? 0) >= 0 ? "+" : ""}${Number(status?.summary?.profitTodayUsdt ?? 0).toFixed(2)}
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1">24h: +${Number(status?.summary?.profit24hUsdt ?? 0).toFixed(2)}</p>
@@ -634,8 +576,8 @@ export function MyBot() {
                 isRunning
                   ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10"
                   : botRunningStatus === "paused"
-                  ? "text-amber-400 border-amber-500/20 bg-amber-500/10"
-                  : "text-rose-400 border-rose-500/20 bg-rose-500/10"
+                    ? "text-amber-400 border-amber-500/20 bg-amber-500/10"
+                    : "text-rose-400 border-rose-500/20 bg-rose-500/10"
               )}
             >
               {botRunningStatus}
@@ -694,12 +636,12 @@ export function MyBot() {
                       <td className="py-3 px-4 text-muted-foreground">{formatPerfDate(trade.timestamp, "MMM dd, HH:mm")}</td>
                       <td className="py-3 px-4 font-bold font-sans text-foreground">{trade.symbol || "BTCUSDT"}</td>
                       <td className="py-3 px-4">
-                        <Badge 
-                          variant="outline" 
+                        <Badge
+                          variant="outline"
                           className={cn(
                             "font-mono text-xs px-2 py-0.5 border font-semibold",
-                            trade.pnl >= 0 
-                              ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10" 
+                            trade.pnl >= 0
+                              ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10"
                               : "text-rose-400 border-rose-400/20 bg-rose-500/10"
                           )}
                         >

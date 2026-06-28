@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   Loader2,
   Wallet,
-  ChevronDown,
   Plus,
 } from "lucide-react";
 
@@ -55,7 +54,6 @@ export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInsta
   const [allocationInput, setAllocationInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
 
   // Reset on open
   useEffect(() => {
@@ -159,70 +157,82 @@ export function AddInstanceModal({ isOpen, onClose, availableBalance }: AddInsta
           </div>
 
           {/* Personality selector */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <label className="text-[11px] font-mono font-bold text-muted-foreground uppercase tracking-wider">
               Trading Personality
             </label>
-            <div className="relative">
-              <button
-                id="personality-dropdown-btn"
-                type="button"
-                className={cn(
-                  "w-full flex items-center justify-between px-3 py-2.5 rounded-xl border bg-card/50 text-sm font-bold font-mono transition-all",
-                  meta.badgeClass
-                )}
-                onClick={() => setShowDropdown(!showDropdown)}
-              >
-                <span className="capitalize">{personality}</span>
-                <ChevronDown
-                  className={cn(
-                    "w-4 h-4 transition-transform duration-200",
-                    showDropdown && "rotate-180"
-                  )}
-                />
-              </button>
-              {showDropdown && (
-                <div className="absolute top-full mt-1 left-0 right-0 z-10 bg-card border border-border/60 rounded-xl shadow-xl overflow-hidden">
-                  {PERSONALITIES.map((p) => {
-                    const pmeta = PERSONALITY_META[p];
-                    return (
-                      <button
-                        key={p}
-                        type="button"
-                        id={`personality-option-${p.toLowerCase()}`}
-                        className={cn(
-                          "w-full text-left px-4 py-3 text-xs font-mono flex items-start gap-3 hover:bg-muted/30 transition-colors",
-                          p === personality && "bg-muted/20"
-                        )}
-                        onClick={() => {
-                          setPersonality(p);
-                          setShowDropdown(false);
-                        }}
-                      >
+            <div className="grid grid-cols-3 gap-3">
+              {PERSONALITIES.map((p) => {
+                const pmeta = PERSONALITY_META[p];
+                const isComingSoon = p !== "balanced";
+                const isSelected = p === personality;
+
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    disabled={isComingSoon}
+                    onClick={() => {
+                      if (!isComingSoon) setPersonality(p);
+                    }}
+                    className={cn(
+                      "relative flex flex-col items-start p-3.5 rounded-xl border transition-all text-left h-full overflow-hidden group",
+                      isSelected
+                        ? cn("shadow-md border-primary/50", pmeta.badgeClass)
+                        : "bg-card/40 border-border/50 hover:bg-muted/30",
+                      isComingSoon && "cursor-not-allowed opacity-60 hover:bg-card/40 grayscale-[0.5]"
+                    )}
+                  >
+                    <div className="relative z-10 w-full">
+                      <div className="flex items-center justify-between w-full mb-3">
                         <div
                           className={cn(
-                            "mt-0.5 w-2 h-2 rounded-full shrink-0",
+                            "w-2.5 h-2.5 rounded-full shrink-0 shadow-sm",
                             p === "moderate"
                               ? "bg-sky-400"
                               : p === "balanced"
                               ? "bg-amber-400"
-                              : "bg-rose-400"
+                              : "bg-rose-400",
+                            isSelected && "animate-pulse"
                           )}
                         />
-                        <div>
-                          <span className="font-bold text-foreground capitalize">{p}</span>
-                          <span className={cn("ml-2 text-[10px]", pmeta.riskClass)}>
-                            {pmeta.riskLabel}
+                        {isComingSoon && (
+                          <span className="text-[9px] uppercase font-bold text-muted-foreground bg-muted/80 px-1.5 py-0.5 rounded shadow-sm border border-border/50">
+                            Soon
                           </span>
-                          <p className="text-muted-foreground/70 mt-0.5 leading-relaxed">
-                            {pmeta.description}
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                        )}
+                        {isSelected && (
+                          <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <h3
+                        className={cn(
+                          "font-bold capitalize text-sm mb-0.5",
+                          isSelected
+                            ? "text-foreground"
+                            : "text-muted-foreground group-hover:text-foreground transition-colors"
+                        )}
+                      >
+                        {p}
+                      </h3>
+                      <div
+                        className={cn(
+                          "text-[9.5px] font-mono mb-2 uppercase tracking-wide",
+                          pmeta.riskClass
+                        )}
+                      >
+                        {pmeta.riskLabel}
+                      </div>
+                      <p className="text-muted-foreground/70 text-[10px] leading-snug font-sans">
+                        {pmeta.description}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

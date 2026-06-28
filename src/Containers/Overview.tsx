@@ -77,7 +77,6 @@ export function Overview() {
   const isRunning = botRunningStatus === "running";
 
   // Dummy variables for retro-compatibility compilation (hidden/unused blocks)
-  const grids: any[] = [];
   const confirmState = { isOpen: false, action: null as string | null };
   const setConfirmState = (_val?: any) => {};
   const actionMutation = { isPending: false, mutateAsync: async (_action: string) => {} };
@@ -351,21 +350,21 @@ export function Overview() {
               <div className="flex flex-col">
                 <CardTitle className="text-xs font-mono tracking-widest flex items-center gap-2 text-foreground uppercase font-bold">
                   <Bot className="w-4 h-4 text-cyan-400" />
-                  ACTIVE POSITIONS
+                  ACTIVE BOTS
                 </CardTitle>
                 <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                  Live deployed market maker grids.
+                  Live deployed trading bots.
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 {/* C-01: Real running count from API */}
-                {grids.length > 0 && (
+                {instances.length > 0 && (
                   <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full text-emerald-400 text-[10px] font-bold tracking-wider">
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
                     </span>
-                    {grids.length} ACTIVE
+                    {instances.filter((i) => i.status === "running").length} ACTIVE
                   </div>
                 )}
                 {/* C-01: Manage via Investment Strategies page */}
@@ -390,19 +389,17 @@ export function Overview() {
                     </div>
                   ))}
                 </div>
-              ) : grids.length === 0 ? (
+              ) : instances.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center h-full">
                   <Bot className="w-12 h-12 text-muted-foreground/30 mb-3" />
-                  <p className="text-muted-foreground text-sm font-sans font-medium">No active positions</p>
+                  <p className="text-muted-foreground text-sm font-sans font-medium">No active bots</p>
                   <p className="text-muted-foreground/60 text-xs font-mono mt-1 max-w-[200px] leading-relaxed">
-                    {isRunning ? "Waiting for the engine to open positions." : "Start a strategy to deploy market makers."}
+                    Start a strategy to deploy trading bots.
                   </p>
-                  {!isRunning && (
-                    <Link to="/control" className="text-primary hover:text-primary/80 text-xs font-semibold mt-3 transition-colors flex items-center gap-1">
-                      Go to Investment Strategies
-                      <ChevronRight className="w-3 h-3" />
-                    </Link>
-                  )}
+                  <Link to="/control" className="text-primary hover:text-primary/80 text-xs font-semibold mt-3 transition-colors flex items-center gap-1">
+                    Go to Investment Strategies
+                    <ChevronRight className="w-3 h-3" />
+                  </Link>
                 </div>
               ) : (
                 /* C-01: Real grid data from API */
@@ -410,43 +407,48 @@ export function Overview() {
                   <table className="w-full text-xs text-left border-collapse font-mono min-w-[420px]" role="grid">
                     <thead>
                       <tr className="border-b border-border/20 text-muted-foreground text-[10px] tracking-[1px] uppercase bg-muted/5">
-                        <th scope="col" className="py-2.5 px-3 font-semibold">MARKET</th>
-                        <th scope="col" className="py-2.5 px-3 font-semibold">SIDE</th>
-                        <th scope="col" className="py-2.5 px-3 font-semibold">LEV</th>
-                        <th scope="col" className="py-2.5 px-3 font-semibold">ENTRY PRICE</th>
-                        <th scope="col" className="py-2.5 px-3 font-semibold text-right">COLLATERAL</th>
+                        <th scope="col" className="py-2.5 px-3 font-semibold">BOT</th>
+                        <th scope="col" className="py-2.5 px-3 font-semibold">STATUS</th>
+                        <th scope="col" className="py-2.5 px-3 font-semibold">ALLOCATED</th>
+                        <th scope="col" className="py-2.5 px-3 font-semibold">GRIDS</th>
+                        <th scope="col" className="py-2.5 px-3 font-semibold text-right">P&L</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/10">
-                      {grids.map((grid: any, idx: number) => (
+                      {instances.map((bot: any, idx: number) => (
                         <tr
-                          key={idx}
+                          key={bot.instanceId || idx}
                           className="hover:bg-muted/10 transition-colors animate-fade-in"
                           style={{ animationDelay: `${idx * 80}ms`, animationFillMode: "both" }}
                         >
                           <td className="py-3 px-3 font-bold font-sans text-foreground">
-                            <span className="text-xs">{grid.symbol}</span>
+                            <span className="text-xs capitalize">{bot.personality}</span>
                           </td>
                           <td className="py-3 px-3">
                             <Badge
                               className={cn(
-                                "font-mono text-[10px] px-2 py-0.5 border font-semibold",
-                                grid.direction === "LONG"
+                                "font-mono text-[10px] px-2 py-0.5 border font-semibold uppercase",
+                                bot.status === "running"
                                   ? "text-emerald-400 border-emerald-400/20 bg-emerald-500/10"
-                                  : "text-rose-400 border-rose-400/20 bg-rose-500/10"
+                                  : bot.status === "paused"
+                                  ? "text-amber-400 border-amber-400/20 bg-amber-500/10"
+                                  : "text-muted-foreground border-border/40 bg-muted/20"
                               )}
                             >
-                              {grid.direction}
+                              {bot.status}
                             </Badge>
                           </td>
                           <td className="py-3 px-3 text-muted-foreground font-mono text-xs">
-                            {grid.leverage}x
+                            ${bot.allocatedAmount?.toFixed(2) ?? "0.00"}
                           </td>
-                          <td className="py-3 px-3 font-mono text-xs text-foreground">
-                            ${grid.entryPrice?.toFixed(4) ?? "—"}
+                          <td className="py-3 px-3 text-muted-foreground font-mono text-xs">
+                            {bot.activeGrids ?? 0}
                           </td>
-                          <td className="py-3 px-3 font-mono text-xs text-foreground font-bold text-right">
-                            ${grid.margin?.toFixed(2) ?? "0.00"}
+                          <td className={cn(
+                            "py-3 px-3 font-mono text-xs font-bold text-right",
+                            (bot.unrealizedPnl || 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                          )}>
+                            {(bot.unrealizedPnl || 0) >= 0 ? "+" : ""}${(bot.unrealizedPnl || 0).toFixed(2)}
                           </td>
                         </tr>
                       ))}
@@ -509,7 +511,7 @@ export function Overview() {
             )}
 
             {/* No strategy running — start CTA footer */}
-            {!isRunning && botRunningStatus !== "paused" && grids.length === 0 && !isLoading && (
+            {!isRunning && botRunningStatus !== "paused" && instances.length === 0 && !isLoading && (
               <div className="p-3.5 border-t border-border/15 flex justify-end bg-card/25 rounded-b-2xl">
                 <Button asChild variant="default" size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] h-7 px-3.5 rounded-full font-bold uppercase tracking-wider font-mono shadow-[0_0_8px_rgba(0,212,255,0.3)] transition-all">
                   <Link to="/control" className="flex items-center gap-1">

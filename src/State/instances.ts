@@ -7,6 +7,7 @@ import type { BotInstance, StartInstancePayload, InstanceStatus } from "../Inter
 interface InstancesState {
   instances: BotInstance[];
   isLoading: boolean;
+  hasFetched: boolean;
   error: string | null;
 
   // Actions
@@ -24,6 +25,7 @@ interface InstancesState {
 export const useInstancesStore = create<InstancesState>((set, get) => ({
   instances: [],
   isLoading: false,
+  hasFetched: false,
   error: null,
 
   setInstances: (instances) => set({ instances }),
@@ -39,14 +41,15 @@ export const useInstancesStore = create<InstancesState>((set, get) => ({
   },
 
   fetchInstances: async () => {
-    set({ isLoading: true, error: null });
+    if (!get().hasFetched) set({ isLoading: true, error: null });
     try {
       const res = await api.get("/api/bot/instances");
-      set({ instances: Array.isArray(res.data) ? res.data : [], isLoading: false });
+      set({ instances: Array.isArray(res.data) ? res.data : [], isLoading: false, hasFetched: true });
     } catch (err: any) {
       set({
         isLoading: false,
         error: err?.response?.data?.message || "Failed to fetch bot instances.",
+        hasFetched: true
       });
     }
   },
