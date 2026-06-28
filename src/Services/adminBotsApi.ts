@@ -78,4 +78,14 @@ export const adminBotsApi = {
     const response = await api.post<BroadcastResult>("/api/admin/bots/broadcast-pause");
     return response.data;
   },
+
+  listUserInstances: async (userId: string): Promise<any[]> => {
+    const response = await api.get(`/api/admin/bots/${userId}/instances`);
+    return response.data;
+  },
+
+  deleteInstance: async (userId: string, instanceId: string): Promise<{ message: string }> => {
+    const response = await api.delete(`/api/admin/bots/${userId}/instances/${instanceId}`);
+    return response.data;
+  },
 };

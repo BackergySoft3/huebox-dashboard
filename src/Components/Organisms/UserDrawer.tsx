@@ -8,6 +8,7 @@ import { ConfirmModal } from "./ConfirmModal";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../State/auth";
 import { UserStatus } from "../../Enums/UserStatus.enum";
+import { adminBotsApi } from "../../Services/adminBotsApi";
 import type { Action, UserDrawerProps } from "../../Interfaces/components";
 
 const STATUS_COLORS: Record<UserStatus, string> = {
@@ -45,8 +46,8 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin)();
-  const [activeTab, setActiveTab] = useState<"profile" | "sessions" | "history">("profile");
-  const [modal, setModal] = useState<{ action: string; label: string; danger?: boolean; confirmText?: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<"profile" | "bots" | "sessions" | "history">("profile");
+  const [modal, setModal] = useState<{ action: string; label: string; danger?: boolean; confirmText?: string; targetInstanceId?: string } | null>(null);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["admin-user", userId],
@@ -65,8 +66,17 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
     enabled: activeTab === "history",
   });
 
-  const mutate = useMutation({
-    mutationFn: ({ action, reason, confirmEmail }: any) => {
+  const { data: instances, isLoading: instancesLoading } = useQuery({
+    queryKey: ["admin-user-bots", userId],
+    queryFn: () => adminBotsApi.listUserInstances(userId),
+    enabled: activeTab === "bots",
+  });
+
+  const mutate = useMutation<any, Error, any>({
+    mutationFn: async ({ action, reason, confirmEmail, targetInstanceId }: any) => {
+      if (action === "delete-instance") {
+        return adminBotsApi.deleteInstance(userId, targetInstanceId);
+      }
       const body: any = { reason };
       if (confirmEmail) body.confirmEmail = confirmEmail;
       if (action === "soft" || action === "hard")
@@ -75,9 +85,13 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
         return api.post(`/api/admin/users/${userId}/restore`, body);
       return api.patch(`/api/admin/users/${userId}/${action}`, body);
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin-user", userId] });
-      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    onSuccess: (_, vars) => {
+      if (vars.action === "delete-instance") {
+        qc.invalidateQueries({ queryKey: ["admin-user-bots", userId] });
+      } else {
+        qc.invalidateQueries({ queryKey: ["admin-user", userId] });
+        qc.invalidateQueries({ queryKey: ["admin-users"] });
+      }
       setModal(null);
     },
   });
@@ -119,8 +133,8 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-border px-6">
-          {(["profile", "sessions", "history"] as const).map((t) => (
+        <div className="flex border-b border-border px-6 overflow-x-auto">
+          {(["profile", "bots", "sessions", "history"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setActiveTab(t)}
@@ -190,6 +204,61 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
             </div>
           )}
 
+          {activeTab === "bots" && (
+            <div className="space-y-3">
+              {instancesLoading && <p className="text-sm text-muted-foreground animate-pulse">Loading instances...</p>}
+              {!instancesLoading && (!instances || instances.length === 0) && (
+                <p className="text-sm text-muted-foreground">No bot instances found for this user.</p>
+              )}
+              {instances?.map((inst: any) => (
+                <div key={inst.id} className="bg-card/50 border border-border/60 rounded-xl p-4 shadow-sm flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-foreground truncate max-w-[200px]">
+                        {inst.instanceName}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                        ID: {inst.id}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className={`text-[10px] font-mono uppercase px-2 py-0.5 ${inst.status === 'RUNNING' ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10' : 'text-slate-400 border-slate-500/20 bg-slate-500/10'}`}>
+                      {inst.status}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-muted/30 rounded p-2">
+                      <p className="text-[9px] text-muted-foreground uppercase font-mono tracking-widest">Slots</p>
+                      <p className="text-xs font-medium mt-1">{inst.activeSlots} / {inst.maxSlots}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-2">
+                      <p className="text-[9px] text-muted-foreground uppercase font-mono tracking-widest">Unrealised P&L</p>
+                      <p className={`text-xs font-medium mt-1 ${(inst.unrealisedPnlUsdt || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        ${(inst.unrealisedPnlUsdt || 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end pt-1">
+                    <Button 
+                      size="sm" 
+                      variant="destructive" 
+                      className="h-7 text-[10px] font-mono font-bold"
+                      onClick={() => setModal({
+                        action: "delete-instance",
+                        label: "Delete Instance",
+                        danger: true,
+                        targetInstanceId: inst.id
+                      })}
+                    >
+                      Delete Instance
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {activeTab === "sessions" && (
             <div className="space-y-2">
               {sessions?.sessions?.length === 0 && <p className="text-sm text-muted-foreground">No active sessions.</p>}
@@ -241,11 +310,15 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
 
       {modal && (
         <ConfirmModal
-          title={`${modal.label} User`}
-          description={`This will ${modal.label.toLowerCase()} the account. All active sessions may be revoked.`}
-          requireReason
+          title={modal.action === "delete-instance" ? "Delete Bot Instance" : `${modal.label} User`}
+          description={
+            modal.action === "delete-instance"
+              ? "This will permanently delete the bot instance, sweep all assets from Bybit, and destroy the Bybit sub-account. This action cannot be undone."
+              : `This will ${modal.label.toLowerCase()} the account. All active sessions may be revoked.`
+          }
+          requireReason={modal.action !== "delete-instance"}
           requireConfirmText={modal.confirmText}
-          confirmLabel={modal.label}
+          confirmLabel={modal.action === "delete-instance" ? "Yes, Delete Instance" : modal.label}
           danger={modal.danger}
           onCancel={() => setModal(null)}
           onConfirm={async (reason) => {
@@ -253,6 +326,7 @@ export function UserDrawer({ userId, onClose }: UserDrawerProps) {
               action: modal.action,
               reason,
               confirmEmail: modal.confirmText ? user?.email : undefined,
+              targetInstanceId: modal.targetInstanceId
             });
           }}
         />

@@ -1,12 +1,12 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminBotsApi } from "../Services/adminBotsApi";
-import type { BotSummary } from "../Interfaces/bot";
+
 import { BotStatus } from "../Enums/BotStatus.enum";
 import { Personality } from "../Enums/Personality.enum";
 import { Card, CardContent, CardHeader, CardTitle } from "../Components/Atoms/card";
 import { Badge } from "../Components/Atoms/badge";
-import { Bot, Cpu, AlertTriangle, RefreshCw, Activity, Square, Pause, Play, Edit, Megaphone } from "lucide-react";
+import { Bot, Cpu, AlertTriangle, RefreshCw, Activity, Square, Pause, Play, Edit, Megaphone, Trash2, Search } from "lucide-react";
 import { Button } from "../Components/Atoms/button";
 import { ConfirmModal } from "../Components/Organisms/ConfirmModal";
 import { cn } from "../Helpers/utils";
@@ -19,11 +19,17 @@ const STATUS_COLORS: Record<BotStatus, string> = {
 };
 
 export function AdminBots() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [personalityFilter, setPersonalityFilter] = useState("ALL");
+
   const queryClient = useQueryClient();
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
-    type: 'force-stop' | 'force-pause' | 'force-resume' | 'broadcast-pause' | 'edit-personality';
+    type: 'force-stop' | 'force-pause' | 'force-resume' | 'broadcast-pause' | 'edit-personality' | 'delete-instance';
     userId?: string;
+    instanceId?: string;
+    subAccountId?: string;
     email?: string;
     title: string;
     description: string;
@@ -48,6 +54,14 @@ export function AdminBots() {
       queryClient.invalidateQueries({ queryKey: ["admin-bots"] });
     },
     onError: (err: any) => alert(err?.data?.message?.[0] || err.message || "Failed to stop bot")
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: ({ userId, instanceId }: { userId: string, instanceId: string }) => adminBotsApi.deleteInstance(userId, instanceId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-bots"] });
+    },
+    onError: (err: any) => alert(err?.data?.message?.[0] || err.message || "Failed to delete bot instance")
   });
 
   const pauseMutation = useMutation({
@@ -96,6 +110,8 @@ export function AdminBots() {
         await resumeMutation.mutateAsync(confirmModal.userId);
       } else if (confirmModal.type === 'edit-personality' && confirmModal.userId && confirmModal.selectedPersonality) {
         await personalityMutation.mutateAsync({ userId: confirmModal.userId, p: confirmModal.selectedPersonality });
+      } else if (confirmModal.type === 'delete-instance' && confirmModal.userId && confirmModal.instanceId) {
+        await deleteMutation.mutateAsync({ userId: confirmModal.userId, instanceId: confirmModal.instanceId });
       } else if (confirmModal.type === 'broadcast-pause') {
         await broadcastPauseMutation.mutateAsync();
       }
@@ -104,7 +120,7 @@ export function AdminBots() {
     }
   };
 
-  const openModal = (type: any, userId?: string, email?: string, currentPersonality?: string) => {
+  const openModal = (type: any, userId?: string, email?: string, currentPersonality?: string, instanceId?: string, subAccountId?: string) => {
     let title = '';
     let description = '';
     if (type === 'force-stop') {
@@ -122,12 +138,17 @@ export function AdminBots() {
     } else if (type === 'edit-personality') {
       title = 'Edit Personality';
       description = `Change personality for ${email || userId}`;
+    } else if (type === 'delete-instance') {
+      title = 'Delete Bot Instance';
+      description = `This will permanently delete the instance, sweep assets from Bybit, and destroy the Bybit sub-account. Continue?`;
     }
 
     setConfirmModal({ 
       isOpen: true, 
       type, 
       userId, 
+      instanceId,
+      subAccountId,
       email, 
       title, 
       description, 
@@ -208,10 +229,45 @@ export function AdminBots() {
 
       {/* Bot Table */}
       <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
-        <CardHeader className="pb-3 border-b border-border/20">
-          <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase flex items-center gap-2 font-bold">
+        <CardHeader className="pb-3 border-b border-border/20 flex flex-col md:flex-row md:items-center justify-between gap-4 space-y-0">
+          <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase flex items-center gap-2 font-bold shrink-0">
             <Cpu className="w-4 h-4 text-primary" /> USER BOT CORE MONITOR
           </CardTitle>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input 
+                type="text" 
+                placeholder="Search email, UID, ID..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 pr-3 py-1.5 bg-muted/20 border border-border/50 rounded-md text-xs font-mono focus:outline-none focus:ring-1 focus:border-primary w-full sm:w-56 text-foreground placeholder:text-muted-foreground/60 transition-colors"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-2.5 py-1.5 bg-muted/20 border border-border/50 rounded-md text-xs font-mono focus:outline-none focus:ring-1 focus:border-primary text-foreground appearance-none cursor-pointer transition-colors"
+            >
+              <option value="ALL">All Status</option>
+              <option value="running">Running</option>
+              <option value="stalled">Stalled</option>
+              <option value="paused">Paused</option>
+              <option value="stopped">Stopped</option>
+            </select>
+            <select
+              value={personalityFilter}
+              onChange={(e) => setPersonalityFilter(e.target.value)}
+              className="px-2.5 py-1.5 bg-muted/20 border border-border/50 rounded-md text-xs font-mono focus:outline-none focus:ring-1 focus:border-primary text-foreground appearance-none cursor-pointer transition-colors uppercase"
+            >
+              <option value="ALL">All Personalities</option>
+              <option value="CONSERVATIVE">Conservative</option>
+              <option value="MODERATE">Moderate</option>
+              <option value="BALANCED">Balanced</option>
+              <option value="AGGRESSIVE">Aggressive</option>
+              <option value="DEGEN">Degen</option>
+            </select>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -220,7 +276,7 @@ export function AdminBots() {
                 <tr className="border-b border-border/30 text-muted-foreground bg-muted/15 text-[9px] uppercase tracking-wider">
                   <th className="py-3 px-4">OPERATOR</th>
                   <th className="py-3 px-4">STATUS</th>
-                  <th className="py-3 px-4">REGIME</th>
+                  <th className="py-3 px-4">UID</th>
                   <th className="py-3 px-4">PERSONALITY</th>
                   <th className="py-3 px-4">SLOTS</th>
                   <th className="py-3 px-4">UNREAL. P&L</th>
@@ -234,21 +290,56 @@ export function AdminBots() {
                 ) : (!bots || bots.length === 0) ? (
                   <tr><td colSpan={8} className="py-10 text-center text-muted-foreground italic font-mono">No active bot threads running.</td></tr>
                 ) : (
-                  bots.map((bot: BotSummary, i: number) => {
-                    return (
-                      <tr key={bot.userId ?? i} className="hover:bg-muted/15 transition-colors">
-                        <td className="py-3.5 px-4 font-sans font-bold text-foreground truncate max-w-[155px]">
-                          {bot.email ?? bot.userId ?? "—"}
+                  (() => {
+                    const filteredBots = bots.filter((bot: any) => {
+                      if (statusFilter !== "ALL" && bot.status !== statusFilter) return false;
+                      if (personalityFilter !== "ALL" && (bot.personality || "BALANCED").toUpperCase() !== personalityFilter) return false;
+                      if (searchQuery.trim() !== "") {
+                        const q = searchQuery.toLowerCase();
+                        const matchesEmail = (bot.email || bot.userId || "").toLowerCase().includes(q);
+                        const matchesUid = (bot.subAccountId || "").toLowerCase().includes(q);
+                        const matchesId = (bot.instanceId || "").toLowerCase().includes(q);
+                        if (!matchesEmail && !matchesUid && !matchesId) return false;
+                      }
+                      return true;
+                    });
+
+                    if (filteredBots.length === 0) {
+                      return <tr><td colSpan={8} className="py-10 text-center text-muted-foreground italic font-mono">No instances match the current filters.</td></tr>;
+                    }
+
+                    return Object.entries(
+                      filteredBots.reduce((acc: Record<string, any[]>, bot: any) => {
+                        const key = bot.email || bot.userId || "Unknown";
+                        if (!acc[key]) acc[key] = [];
+                        acc[key].push(bot);
+                        return acc;
+                      }, {})
+                    ).map(([email, userBots]: [string, any]) => (
+                      <React.Fragment key={email}>
+                      <tr className="bg-muted/30 border-t border-border/40">
+                        <td colSpan={8} className="py-2.5 px-4 font-sans font-extrabold text-foreground text-xs">
+                          {email}
+                          <Badge variant="outline" className="ml-3 text-[9px] bg-primary/10 text-primary border-primary/20">
+                            {userBots.length} Instance{userBots.length > 1 ? 's' : ''}
+                          </Badge>
                         </td>
+                      </tr>
+                      {userBots.map((bot: any) => (
+                        <tr key={bot.instanceId ?? bot.userId} className="hover:bg-muted/15 transition-colors group">
+                          <td className="py-3.5 px-4 pl-8">
+                            <span className="flex items-center text-[10px] text-muted-foreground font-mono font-medium tracking-wide">
+                              <span className="text-border mr-2 opacity-50 group-hover:text-primary transition-colors">↳</span>
+                              ID: {bot.instanceId ?? "N/A"}
+                            </span>
+                          </td>
                         <td className="py-3.5 px-4">
-                          <Badge variant="outline" className={cn("text-[9px] font-bold uppercase border px-2 py-0.5", STATUS_COLORS[bot.status] ?? "")}>
+                          <Badge variant="outline" className={cn("text-[9px] font-bold uppercase border px-2 py-0.5", STATUS_COLORS[bot.status as BotStatus] ?? "")}>
                             {bot.status ?? "—"}
                           </Badge>
                         </td>
-                        <td className="py-3.5 px-4">
-                          <Badge variant="outline" className={cn("text-[9px] font-bold uppercase border px-2 py-0.5", bot.regime === "SCOUTING" ? "text-sky-400 border-sky-500/20 bg-sky-500/5" : "text-emerald-400 border-emerald-500/20 bg-emerald-500/5")}>
-                            {bot.regime === "SCOUTING" ? "Scouting" : bot.regime === "FARMING" ? "Farming" : "Unknown"}
-                          </Badge>
+                        <td className="py-3.5 px-4 font-mono text-[10px] tracking-wide text-foreground font-bold">
+                          {bot.subAccountId || "—"}
                         </td>
                         <td className="py-3.5 px-4 text-slate-300 font-bold uppercase text-[10px]">{bot.personality ?? "—"}</td>
                         <td className="py-3.5 px-4 text-slate-300 font-bold">{bot.activeSlots} / {bot.maxSlots}</td>
@@ -284,11 +375,18 @@ export function AdminBots() {
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-md" onClick={() => openModal('force-stop', bot.userId, bot.email)} title="Force Stop">
                               <Square className="w-3.5 h-3.5 fill-current" />
                             </Button>
+                            {bot.instanceId && (
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-md ml-1" onClick={() => openModal('delete-instance', bot.userId, bot.email, undefined, bot.instanceId, bot.subAccountId)} title="Delete Instance">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
-                    );
-                  })
+                    ))}
+                    </React.Fragment>
+                  ));
+                })()
                 )}
               </tbody>
             </table>
@@ -302,9 +400,15 @@ export function AdminBots() {
           description={confirmModal.description}
           onConfirm={handleAction}
           onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
-          confirmLabel="Confirm Action"
-          requireConfirmText={confirmModal.type === 'broadcast-pause' ? "PAUSE ALL" : undefined}
-          danger={confirmModal.type === 'force-stop' || confirmModal.type === 'broadcast-pause'}
+          confirmLabel={confirmModal.type === 'delete-instance' ? "Delete Instance" : "Confirm Action"}
+          requireConfirmText={
+            confirmModal.type === 'broadcast-pause' 
+              ? "PAUSE ALL" 
+              : confirmModal.type === 'delete-instance' 
+                ? String(confirmModal.subAccountId || confirmModal.instanceId)
+                : undefined
+          }
+          danger={confirmModal.type === 'force-stop' || confirmModal.type === 'broadcast-pause' || confirmModal.type === 'delete-instance'}
         >
           {confirmModal.type === 'edit-personality' && (
             <div className="mt-4 space-y-2 text-left font-mono text-xs">
