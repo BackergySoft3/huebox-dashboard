@@ -399,8 +399,8 @@ export function InstanceCard({ instance }: InstanceCardProps) {
         </CardFooter>
       )}
 
-      {/* ─── Delete (stopped instances only) ─────────────────────────── */}
-      {instance.status === "stopped" && (
+      {/* ─── Delete (stopped / stalled instances) ───────────────────── */}
+      {(instance.status === "stopped" || instance.status === "stalled") && (
         <CardFooter className="flex flex-col gap-2 pt-0">
           {actionError && (
             <p className="w-full text-[10px] text-rose-400 flex items-center gap-1 font-mono">
