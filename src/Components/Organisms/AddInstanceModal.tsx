@@ -18,6 +18,7 @@ interface AddInstanceModalProps {
   onClose: () => void;
   availableBalance: number;
   masterUid?: string;
+  onLaunched: (instanceId: string, personality: InstancePersonality, allocatedAmount: number) => void;
 }
 
 // Backend @IsEnum enforces lowercase values
@@ -55,6 +56,7 @@ export function AddInstanceModal({
   onClose,
   availableBalance,
   masterUid,
+  onLaunched,
 }: AddInstanceModalProps) {
   const { startInstance, instances } = useInstancesStore();
   const [personality, setPersonality] = useState<InstancePersonality>("balanced");
@@ -100,7 +102,8 @@ export function AddInstanceModal({
     }
     setLoading(true);
     try {
-      await startInstance({ personality, allocatedAmount: allocation });
+      const instanceId = await startInstance({ personality, allocatedAmount: allocation });
+      onLaunched(instanceId, personality, allocation);
       onClose();
     } catch (err: any) {
       const apiMessage = err?.response?.data?.error?.message || err?.response?.data?.message;

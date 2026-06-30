@@ -13,7 +13,7 @@ interface InstancesState {
   // Actions
   setInstances: (instances: BotInstance[]) => void;
   fetchInstances: () => Promise<void>;
-  startInstance: (payload: StartInstancePayload) => Promise<void>;
+  startInstance: (payload: StartInstancePayload) => Promise<string>;
   pauseInstance: (instanceId: string) => Promise<void>;
   resumeInstance: (instanceId: string) => Promise<void>;
   stopInstance: (instanceId: string) => Promise<string>;
@@ -56,9 +56,10 @@ export const useInstancesStore = create<InstancesState>((set, get) => ({
   },
 
   startInstance: async (payload) => {
-    await api.post("/api/bot/instances/start", payload);
+    const res = await api.post<{ instanceId: string }>("/api/bot/instances/start", payload);
     // Refetch the full list so every field (walletBalanceUsdt, heartbeatAlive, etc.) is populated
     await get().fetchInstances();
+    return res.data.instanceId;
   },
 
   pauseInstance: async (instanceId) => {
