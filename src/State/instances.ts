@@ -17,6 +17,7 @@ interface InstancesState {
   pauseInstance: (instanceId: string) => Promise<void>;
   resumeInstance: (instanceId: string) => Promise<void>;
   stopInstance: (instanceId: string) => Promise<string>;
+  deleteInstance: (instanceId: string) => Promise<void>;
 
   // Optimistic update helper
   _optimisticUpdate: (instanceId: string, status: InstanceStatus) => BotInstance[];
@@ -94,5 +95,10 @@ export const useInstancesStore = create<InstancesState>((set, get) => ({
       await get().fetchInstances();
       throw err;
     }
+  },
+
+  deleteInstance: async (instanceId) => {
+    await api.delete(`/api/bot/instances/${instanceId}`);
+    await get().fetchInstances();
   },
 }));
