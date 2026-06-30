@@ -72,7 +72,8 @@ const WIZARD_STEPS = [
 export function BotControl() {
   const { data: status } = useBotStatus();
   const user = useAuthStore((s) => s.user);
-  const isKycVerified = user?.kycStatus === "VERIFIED";
+  const refreshUser = useAuthStore((s) => s.refreshUser);
+  const isKycVerified = user?.kycStatus?.toLowerCase() === "verified";
 
   // ── Multi-instance state & polling ─────────────────────────────────────────
   const { instances, isLoading: instancesLoading, error: instancesError, fetchInstances } = useInstancesStore();
@@ -80,6 +81,9 @@ export function BotControl() {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    // Refresh kycStatus from the server on mount so changes made by an admin
+    // (e.g. KYC approval) are visible without requiring a full re-login.
+    refreshUser();
     fetchInstances();
     pollingRef.current = setInterval(() => fetchInstances(), 10_000);
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
