@@ -15,7 +15,9 @@ import {
   Plus,
   Bot,
   HeartPulse,
+  ShieldAlert,
 } from "lucide-react";
+import { useAuthStore } from "../State/auth";
 import { ConfirmModal } from "../Components/Organisms/ConfirmModal";
 import { Badge } from "../Components/Atoms/badge";
 import { cn } from "../Helpers/utils";
@@ -69,6 +71,8 @@ const WIZARD_STEPS = [
 
 export function BotControl() {
   const { data: status } = useBotStatus();
+  const user = useAuthStore((s) => s.user);
+  const isKycVerified = user?.kycStatus === "VERIFIED";
 
   // ── Multi-instance state & polling ─────────────────────────────────────────
   const { instances, isLoading: instancesLoading, error: instancesError, fetchInstances } = useInstancesStore();
@@ -122,7 +126,12 @@ export function BotControl() {
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            {isCapReached && (
+            {!isKycVerified && (
+              <span className="text-xs text-amber-400 font-mono" title="KYC verification required to create instances">
+                KYC verification required
+              </span>
+            )}
+            {isKycVerified && isCapReached && (
               <span className="text-xs text-amber-400 font-mono" title="Maximum of 5 active instances reached">
                 Maximum of 5 active instances reached
               </span>
@@ -130,8 +139,8 @@ export function BotControl() {
             <Button
               id="add-instance-btn"
               onClick={() => setShowAddModal(true)}
-              disabled={isCapReached}
-              title={isCapReached ? "Maximum of 5 active instances reached" : "Launch a new bot instance"}
+              disabled={!isKycVerified || isCapReached}
+              title={!isKycVerified ? "Complete KYC verification to create bot instances" : isCapReached ? "Maximum of 5 active instances reached" : "Launch a new bot instance"}
               className="font-mono text-xs h-9 px-4 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md"
             >
               <Plus className="w-4 h-4" /> Add Instance
@@ -148,6 +157,14 @@ export function BotControl() {
         ) : instancesError ? (
           <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-mono">
             {instancesError}
+          </div>
+        ) : !isKycVerified ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-amber-500/30 rounded-2xl bg-amber-500/5">
+            <ShieldAlert className="w-10 h-10 text-amber-400/60 mb-3" />
+            <p className="text-foreground text-sm font-sans font-semibold">KYC Verification Required</p>
+            <p className="text-muted-foreground text-xs font-mono mt-1.5 max-w-[280px] leading-relaxed">
+              Your identity must be verified before you can create bot instances. Complete KYC in your account settings to unlock trading.
+            </p>
           </div>
         ) : instances.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-border/60 rounded-2xl bg-card/10">
