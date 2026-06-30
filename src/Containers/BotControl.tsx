@@ -23,7 +23,9 @@ import { Badge } from "../Components/Atoms/badge";
 import { cn } from "../Helpers/utils";
 import { useInstancesStore } from "../State/instances";
 import { InstanceCard } from "../Components/Organisms/InstanceCard";
+import { LaunchingCard } from "../Components/Organisms/LaunchingCard";
 import { AddInstanceModal } from "../Components/Organisms/AddInstanceModal";
+import type { InstancePersonality } from "../Interfaces/instances";
 
 const MAX_ACTIVE_INSTANCES = 5;
 
@@ -79,6 +81,34 @@ export function BotControl() {
   const { instances, isLoading: instancesLoading, error: instancesError, fetchInstances } = useInstancesStore();
   const [showAddModal, setShowAddModal] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── Launch animation state (45-second initialisation card) ────────────────
+  interface LaunchInfo {
+    instanceId: string;
+    personality: InstancePersonality;
+    allocatedAmount: number;
+    endTime: number;
+  }
+  const [launching, setLaunching] = useState<LaunchInfo | null>(null);
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!launching) return;
+    const interval = setInterval(() => {
+      const remaining = Math.ceil((launching.endTime - Date.now()) / 1000);
+      if (remaining <= 0) {
+        setLaunching(null);
+      } else {
+        setTick((t) => t + 1);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [launching]);
+
+  const secondsRemaining = launching
+    ? Math.max(0, Math.ceil((launching.endTime - Date.now()) / 1000))
+    : 0;
+  const isLaunching = launching !== null && secondsRemaining > 0;
 
   useEffect(() => {
     // Refresh kycStatus from the server on mount so changes made by an admin
@@ -152,7 +182,7 @@ export function BotControl() {
           </div>
         </div>
 
-        {instancesLoading && instances.length === 0 ? (
+        {instancesLoading && instances.length === 0 && !isLaunching ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="h-48 rounded-xl border border-border/40 bg-card/25 animate-pulse" />
@@ -170,16 +200,27 @@ export function BotControl() {
               Your identity must be verified before you can create bot instances. Complete KYC in your account settings to unlock trading.
             </p>
           </div>
-        ) : instances.length === 0 ? (
+        ) : instances.length === 0 && !isLaunching ? (
           <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-border/60 rounded-2xl bg-card/10">
             <Bot className="w-10 h-10 text-muted-foreground/30 mb-2" />
             <p className="text-muted-foreground text-sm font-sans font-medium">No active bots. Start your first instance to begin trading.</p>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {instances.map((inst) => (
-              <InstanceCard key={inst.instanceId} instance={inst} />
-            ))}
+            {/* Show launching skeleton card in place of the real card for 45 s */}
+            {isLaunching && (
+              <LaunchingCard
+                personality={launching!.personality}
+                allocatedAmount={launching!.allocatedAmount}
+                secondsRemaining={secondsRemaining}
+              />
+            )}
+            {/* Exclude the newly launched instance from the regular list while loading */}
+            {instances
+              .filter((i) => !isLaunching || i.instanceId !== launching!.instanceId)
+              .map((inst) => (
+                <InstanceCard key={inst.instanceId} instance={inst} />
+              ))}
           </div>
         )}
       </div>
@@ -189,6 +230,14 @@ export function BotControl() {
         onClose={() => setShowAddModal(false)}
         availableBalance={availableBalance}
         masterUid={status?.bybitAccount?.uid}
+        onLaunched={(instanceId, personality, allocatedAmount) => {
+          setLaunching({
+            instanceId,
+            personality,
+            allocatedAmount,
+            endTime: Date.now() + 45_000,
+          });
+        }}
       />
 
       {/* ─── SINGLE INSTANCE RETRO COMPATIBILITY BLOCK (HIDDEN) ─── */}
