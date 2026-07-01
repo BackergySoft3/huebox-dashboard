@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { usePerformance } from "../Hooks/usePerformance";
 import { useAuthStore } from "../State/auth";
@@ -26,11 +26,15 @@ import { ConfirmModal } from "../Components/Organisms/ConfirmModal";
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
+    const val = Number(payload[0].value);
+    const color = val >= 0 ? "text-emerald-400" : "text-rose-400";
+    const sign = val >= 0 ? "+" : "";
+
     return (
       <div className="bg-popover border border-border/80 p-3 rounded-lg shadow-xl font-sans text-popover-foreground">
-        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">P&L Value</p>
-        <p className={`text-sm font-mono font-bold mt-0.5 ${payload[0].value >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-          {payload[0].value >= 0 ? "+" : ""}${Number(payload[0].value).toFixed(2)}
+        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">P&L</p>
+        <p className={`text-sm font-mono font-bold mt-0.5 ${color}`}>
+          {sign}${val.toFixed(2)}
         </p>
       </div>
     );
@@ -68,18 +72,18 @@ export function Overview() {
   const botRunningStatus = instances.some((i) => i.status === "running")
     ? "running"
     : instances.some((i) => i.status === "paused")
-    ? "paused"
-    : instances.some((i) => i.status === "stalled")
-    ? "stalled"
-    : instances.length > 0
-    ? "stopped"
-    : "stalled";
+      ? "paused"
+      : instances.some((i) => i.status === "stalled")
+        ? "stalled"
+        : instances.length > 0
+          ? "stopped"
+          : "stalled";
   const isRunning = botRunningStatus === "running";
 
   // Dummy variables for retro-compatibility compilation (hidden/unused blocks)
   const confirmState = { isOpen: false, action: null as string | null };
-  const setConfirmState = (_val?: any) => {};
-  const actionMutation = { isPending: false, mutateAsync: async (_action: string) => {} };
+  const setConfirmState = (_val?: any) => { };
+  const actionMutation = { isPending: false, mutateAsync: async (_action: string) => { } };
   const isError = false;
   const queryStatus = "success";
   const error = null;
@@ -101,11 +105,69 @@ export function Overview() {
     : 0;
   // ──────────────────────────────────────────────────────────────────────────
 
-  const chartData = history
-    ? [...history]
-      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-      .slice(-24)
-    : [];
+  const chartData = useMemo(() => {
+    if (!history || !instances) return [];
+    
+    const activeInstances = instances.filter(i => i.status !== "stopped" && i.createdAt);
+    if (activeInstances.length === 0) return [];
+
+    let earliestStart = Infinity;
+    activeInstances.forEach(inst => {
+      const d = new Date(inst.createdAt!);
+      d.setMinutes(0, 0, 0);
+      d.setHours(d.getHours() + 1);
+      const startHour = d.getTime();
+      if (startHour < earliestStart) earliestStart = startHour;
+    });
+
+    const currentHour = new Date();
+    currentHour.setMinutes(0, 0, 0);
+    const endHour = currentHour.getTime();
+
+    if (earliestStart > endHour) return [];
+
+    const sortedHistory = [...history].sort(
+      (a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    const generatedData = [];
+    let cumulativePnl = 0;
+    let historyIndex = 0;
+
+    for (let t = earliestStart; t <= endHour; t += 3600000) {
+      while (historyIndex < sortedHistory.length) {
+        const tradeTime = new Date(sortedHistory[historyIndex].timestamp).getTime();
+        if (tradeTime <= t) {
+          cumulativePnl += (sortedHistory[historyIndex].pnl || 0);
+          historyIndex++;
+        } else {
+          break;
+        }
+      }
+
+      generatedData.push({
+        timestamp: new Date(t).toISOString(),
+        pnl: cumulativePnl,
+      });
+    }
+
+    // Add current unrealized P&L to the latest hour to reflect live valuation
+    if (generatedData.length > 0) {
+      const currentUnrealizedPnl = activeInstances.reduce((acc, inst) => acc + (inst.unrealizedPnl || 0), 0);
+      generatedData[generatedData.length - 1].pnl += currentUnrealizedPnl;
+    }
+
+    return generatedData;
+  }, [history, instances]);
+
+  const { minPnl, maxPnl } = useMemo(() => {
+    if (chartData.length === 0) return { minPnl: 0, maxPnl: 0 };
+    const pnls = chartData.map(d => d.pnl);
+    return {
+      minPnl: Math.min(...pnls),
+      maxPnl: Math.max(...pnls),
+    };
+  }, [chartData]);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -214,7 +276,7 @@ export function Overview() {
                   {totalPnL >= 0 ? "+" : ""}${Math.abs(totalPnL).toFixed(2)}
                 </div>
                 <p className="text-xs text-muted-foreground font-sans mt-2">
-                  Combined unrealized P&L of all instances
+                  Combined unrealized P&L
                 </p>
               </div>
             </Card>
@@ -303,7 +365,11 @@ export function Overview() {
                         tickLine={false}
                         axisLine={false}
                         dx={-5}
-                        tickFormatter={(val) => `$${val}`}
+                        domain={[minPnl - (maxPnl - minPnl) * 0.1 - 0.02, maxPnl + (maxPnl - minPnl) * 0.1 + 0.02]}
+                        tickFormatter={(val) => {
+                          const num = Number(val);
+                          return `${num >= 0 ? "+" : ""}$${num.toFixed(2)}`;
+                        }}
                       />
                       <Tooltip content={<CustomTooltip />} cursor={{ stroke: "hsl(var(--primary)/0.2)", strokeWidth: 1 }} />
                       <Area
@@ -431,8 +497,8 @@ export function Overview() {
                                 bot.status === "running"
                                   ? "text-emerald-400 border-emerald-400/20 bg-emerald-500/10"
                                   : bot.status === "paused"
-                                  ? "text-amber-400 border-amber-400/20 bg-amber-500/10"
-                                  : "text-muted-foreground border-border/40 bg-muted/20"
+                                    ? "text-amber-400 border-amber-400/20 bg-amber-500/10"
+                                    : "text-muted-foreground border-border/40 bg-muted/20"
                               )}
                             >
                               {bot.status}
