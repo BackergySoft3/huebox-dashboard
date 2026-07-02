@@ -19,7 +19,6 @@ import {
   ChevronRight,
   Settings2,
   Wallet,
-  Info,
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "../Helpers/utils";

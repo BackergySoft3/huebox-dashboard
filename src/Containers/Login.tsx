@@ -528,21 +528,28 @@ export function Login() {
                   <form onSubmit={handleSendOtp} className="space-y-4">
                     <div className="space-y-1.5">
                       <label htmlFor="login-email" className="text-xs font-semibold text-muted-foreground">
-                        Email address
+                        Email address <span className="text-destructive" aria-hidden="true">*</span>
                       </label>
                       <Input
                         id="login-email"
                         type="email"
                         placeholder="name@example.com"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
+                        onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
                         autoComplete="email"
-                        className="bg-background/50 text-foreground"
+                        autoFocus
+                        aria-describedby={emailError ? "login-email-error" : undefined}
+                        aria-invalid={!!emailError}
+                        className={cn("bg-background/50 text-foreground", emailError && "border-destructive focus-visible:ring-destructive")}
                       />
+                      {emailError && (
+                        <p id="login-email-error" className="text-xs text-destructive mt-1">
+                          {emailError}
+                        </p>
+                      )}
                     </div>
                     <Button type="submit" className="w-full font-semibold cursor-pointer" disabled={loading}>
-                      {loading ? "Sending…" : "Send One-Time Code"}
+                      {loading ? "Sending…" : "Send One-Time Passcode"}
                     </Button>
                   </form>
                 )}
@@ -575,17 +582,29 @@ export function Login() {
                         One-time passcode
                       </label>
                       <Input
+                        ref={otpInputRef}
                         id="login-otp"
                         type="text"
-                        placeholder="000000"
+                        placeholder="_ _ _ _ _ _"
                         value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        required
+                        onChange={(e) => { setOtp(e.target.value); setOtpError(""); }}
                         autoComplete="one-time-code"
                         inputMode="numeric"
-                        className="bg-background/50 text-center tracking-widest text-lg font-mono text-foreground"
+                        aria-describedby={otpError ? "login-otp-error" : resendSuccess ? "login-otp-resent" : undefined}
+                        aria-invalid={!!otpError}
+                        className={cn("bg-background/50 text-center tracking-widest text-lg font-mono text-foreground", otpError && "border-destructive focus-visible:ring-destructive")}
                         maxLength={6}
                       />
+                      {otpError && (
+                        <p id="login-otp-error" className="text-xs text-destructive mt-1">
+                          {otpError}
+                        </p>
+                      )}
+                      {resendSuccess && !otpError && (
+                        <p id="login-otp-resent" className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                          A new code has been sent. Please enter the latest OTP.
+                        </p>
+                      )}
                     </div>
 
                     <Button type="submit" className="w-full font-semibold cursor-pointer" disabled={loading}>
