@@ -19,6 +19,7 @@ import {
   TrendingDown,
   AlertTriangle,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import type { BotInstance } from "../../Interfaces/instances";
 import { useInstancesStore } from "../../State/instances";
@@ -81,10 +82,11 @@ interface InstanceCardProps {
 }
 
 export function InstanceCard({ instance }: InstanceCardProps) {
-  const { pauseInstance, resumeInstance, stopInstance } = useInstancesStore();
+  const { pauseInstance, resumeInstance, stopInstance, deleteInstance } = useInstancesStore();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmingStop, setConfirmingStop] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [stopSuccessMsg, setStopSuccessMsg] = useState<string | null>(null);
 
   const personality =
@@ -394,6 +396,72 @@ export function InstanceCard({ instance }: InstanceCardProps) {
           <div className="w-full p-2 border border-emerald-500/25 bg-emerald-500/10 text-emerald-400 rounded-lg text-[10px] font-mono font-bold text-center">
             {stopSuccessMsg}
           </div>
+        </CardFooter>
+      )}
+
+      {/* ─── Delete (stopped / stalled instances) ───────────────────── */}
+      {(instance.status === "stopped" || instance.status === "stalled") && (
+        <CardFooter className="flex flex-col gap-2 pt-0">
+          {actionError && (
+            <p className="w-full text-[10px] text-rose-400 flex items-center gap-1 font-mono">
+              <AlertTriangle className="w-3 h-3 shrink-0" /> {actionError}
+            </p>
+          )}
+          {confirmingDelete ? (
+            <div className="w-full flex flex-col gap-2 p-2 border border-rose-500/25 bg-rose-500/5 rounded-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
+              <span className="text-[10px] font-mono text-rose-400 font-bold text-center">
+                Permanently delete this instance?
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 h-7 text-[10px] font-mono font-bold bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
+                  disabled={actionLoading === "delete"}
+                  onClick={async () => {
+                    setConfirmingDelete(false);
+                    setActionLoading("delete");
+                    setActionError(null);
+                    try {
+                      await deleteInstance(instance.instanceId);
+                    } catch (err: any) {
+                      setActionError(err?.response?.data?.message || "Failed to delete instance.");
+                    } finally {
+                      setActionLoading(null);
+                    }
+                  }}
+                  id={`confirm-delete-btn-${instance.instanceId}`}
+                >
+                  {actionLoading === "delete" ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    "Confirm Delete"
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 h-7 text-[10px] font-mono font-bold text-muted-foreground border-border/40 hover:bg-muted/10"
+                  disabled={actionLoading === "delete"}
+                  onClick={() => setConfirmingDelete(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full h-8 text-[11px] font-mono font-bold gap-1.5 text-rose-400 border-rose-500/20 hover:bg-rose-500/10"
+              disabled={!!actionLoading}
+              onClick={() => setConfirmingDelete(true)}
+              id={`delete-btn-${instance.instanceId}`}
+            >
+              <Trash2 className="w-3 h-3" />
+              Delete Instance
+            </Button>
+          )}
         </CardFooter>
       )}
     </Card>

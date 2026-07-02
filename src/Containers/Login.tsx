@@ -90,6 +90,10 @@ export function Login() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [resendSuccess, setResendSuccess] = useState(false);
+  const otpInputRef = useRef<HTMLInputElement>(null);
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [otpVerified, setOtpVerified] = useState(false);
@@ -106,7 +110,8 @@ export function Login() {
 
   const doSendOtp = async () => {
     setLoading(true);
-    setError("");
+    setEmailError("");
+    setOtpError("");
     setDevOtp(null);
     try {
       await api.post("/api/auth/otp/send", { email });
@@ -123,7 +128,7 @@ export function Login() {
         }
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to send OTP");
+      setOtpError(err.response?.data?.message || "Failed to send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -131,19 +136,34 @@ export function Login() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim()) {
+      setEmailError("Email address is required.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
+    setEmailError("");
     await doSendOtp();
     setStep("otp");
   };
 
   const handleResendOtp = async () => {
     if (resendCooldown > 0 || loading) return;
+    setOtp("");
+    setOtpError("");
+    setResendSuccess(false);
     await doSendOtp();
+    setResendSuccess(true);
+    setTimeout(() => setResendSuccess(false), 5000);
+    otpInputRef.current?.focus();
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setOtpError("");
     try {
       const res = await api.post("/api/auth/otp/verify", { email, otp });
       const accessToken = res.data.access_token || res.data.accessToken || res.data.token;
@@ -174,7 +194,7 @@ export function Login() {
         setError("Invalid response from server");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to verify OTP");
+      setOtpError(err.response?.data?.message || "Invalid or expired code. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -182,6 +202,8 @@ export function Login() {
 
   const handleKycSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // H-02: Phone format validation
     const cleanPhone = kycForm.phone.replace(/[\s\-()]/g, "");
     if (!/^\+[1-9]\d{4,14}$/.test(cleanPhone)) {
       setError("Invalid phone number format. Must start with '+' and include your country code (e.g., +1 555 000 0000).");

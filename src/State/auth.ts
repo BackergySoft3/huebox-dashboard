@@ -8,6 +8,7 @@ import {
   clearAllAuthCookies,
   AUTH_COOKIE_KEYS,
 } from "../Helpers/cookieAuth";
+import { api } from "../Services/http.service";
 
 export { UserRole };
 export type { AuthUser, AuthState };
@@ -59,4 +60,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   isSuperAdmin: () => get().user?.role === UserRole.SuperAdmin,
+
+  refreshUser: async () => {
+    try {
+      const res = await api.get<AuthUser>("/api/auth/me");
+      const fresh = res.data;
+      const current = get();
+      const merged: AuthUser = { ...current.user, ...fresh };
+      setAuthCookie(AUTH_COOKIE_KEYS.USER, JSON.stringify(merged));
+      set({ user: merged });
+    } catch {
+      // silently ignore — stale data is better than crashing
+    }
+  },
 }));

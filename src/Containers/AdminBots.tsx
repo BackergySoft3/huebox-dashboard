@@ -316,78 +316,80 @@ export function AdminBots() {
                         acc[key].push(bot);
                         return acc;
                       }, {})
-                    ).map(([email, userBots]: [string, any]) => (
-                      <React.Fragment key={email}>
-                      <tr className="bg-muted/30 border-t border-border/40">
-                        <td colSpan={8} className="py-2.5 px-4 font-sans font-extrabold text-foreground text-xs">
-                          {email}
-                          <Badge variant="outline" className="ml-3 text-[9px] bg-primary/10 text-primary border-primary/20">
-                            {userBots.length} Instance{userBots.length > 1 ? 's' : ''}
-                          </Badge>
-                        </td>
-                      </tr>
-                      {userBots.map((bot: any) => (
-                        <tr key={bot.instanceId ?? bot.userId} className="hover:bg-muted/15 transition-colors group">
-                          <td className="py-3.5 px-4 pl-8">
-                            <span className="flex items-center text-[10px] text-muted-foreground font-mono font-medium tracking-wide">
-                              <span className="text-border mr-2 opacity-50 group-hover:text-primary transition-colors">↳</span>
-                              ID: {bot.instanceId ?? "N/A"}
+                    ).map(([email, userBots]: [string, any]) => {
+                      const actualInstances = userBots.filter((bot: any) => bot.instanceId);
+                      return (
+                        <React.Fragment key={email}>
+                        <tr className="bg-muted/30 border-t border-border/40">
+                          <td colSpan={8} className="py-2.5 px-4 font-sans font-extrabold text-foreground text-xs">
+                            {email}
+                            <Badge variant="outline" className="ml-3 text-[9px] bg-primary/10 text-primary border-primary/20">
+                              {actualInstances.length} Instance{actualInstances.length !== 1 ? 's' : ''}
+                            </Badge>
+                          </td>
+                        </tr>
+                        {actualInstances.map((bot: any) => (
+                          <tr key={bot.instanceId ?? bot.userId} className="hover:bg-muted/15 transition-colors group">
+                            <td className="py-3.5 px-4 pl-8">
+                              <span className="flex items-center text-[10px] text-muted-foreground font-mono font-medium tracking-wide">
+                                <span className="text-border mr-2 opacity-50 group-hover:text-primary transition-colors">↳</span>
+                                ID: {bot.instanceId ?? "N/A"}
+                              </span>
+                            </td>
+                          <td className="py-3.5 px-4">
+                            <Badge variant="outline" className={cn("text-[9px] font-bold uppercase border px-2 py-0.5", STATUS_COLORS[bot.status as keyof typeof STATUS_COLORS] ?? "")}>
+                              {bot.status === 'starting' && <Loader2 className="w-2.5 h-2.5 mr-1.5 inline animate-spin" />}
+                              {bot.status ?? "—"}
+                            </Badge>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-[10px] tracking-wide text-foreground font-bold">
+                            {bot.subAccountId || "—"}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-300 font-bold uppercase text-[10px]">{bot.personality ?? "—"}</td>
+                          <td className="py-3.5 px-4 text-slate-300 font-bold">{bot.activeSlots} / {bot.maxSlots}</td>
+                          <td className={cn("py-3.5 px-4 font-sans font-bold text-[13px]", bot.unrealisedPnlUsdt >= 0 ? "text-emerald-400" : "text-rose-455")}>
+                            {bot.unrealisedPnlUsdt >= 0 ? "+" : ""}{bot.unrealisedPnlUsdt.toFixed(2)} <span className="text-[9px] font-mono text-muted-foreground font-normal">USDT</span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className={cn(
+                              "font-bold text-[10px] px-1.5 py-0.5 rounded border inline-block",
+                              bot.heartbeatAgeSeconds > 300 
+                                ? "text-rose-455 border-rose-500/20 bg-rose-500/5 animate-pulse" 
+                                : "text-muted-foreground border-border/30 bg-muted/5"
+                            )}>
+                              {bot.heartbeatAgeSeconds < 60 
+                                ? `${bot.heartbeatAgeSeconds}s ago` 
+                                : `${Math.floor(bot.heartbeatAgeSeconds / 60)}m ago`}
                             </span>
                           </td>
-                        <td className="py-3.5 px-4">
-                          <Badge variant="outline" className={cn("text-[9px] font-bold uppercase border px-2 py-0.5", STATUS_COLORS[bot.status as keyof typeof STATUS_COLORS] ?? "")}>
-                            {bot.status === 'starting' && <Loader2 className="w-2.5 h-2.5 mr-1.5 inline animate-spin" />}
-                            {bot.status ?? "—"}
-                          </Badge>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono text-[10px] tracking-wide text-foreground font-bold">
-                          {bot.subAccountId || "—"}
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-300 font-bold uppercase text-[10px]">{bot.personality ?? "—"}</td>
-                        <td className="py-3.5 px-4 text-slate-300 font-bold">{bot.activeSlots} / {bot.maxSlots}</td>
-                        <td className={cn("py-3.5 px-4 font-sans font-bold text-[13px]", bot.unrealisedPnlUsdt >= 0 ? "text-emerald-400" : "text-rose-455")}>
-                          {bot.unrealisedPnlUsdt >= 0 ? "+" : ""}{bot.unrealisedPnlUsdt.toFixed(2)} <span className="text-[9px] font-mono text-muted-foreground font-normal">USDT</span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className={cn(
-                            "font-bold text-[10px] px-1.5 py-0.5 rounded border inline-block",
-                            bot.heartbeatAgeSeconds > 300 
-                              ? "text-rose-455 border-rose-500/20 bg-rose-500/5 animate-pulse" 
-                              : "text-muted-foreground border-border/30 bg-muted/5"
-                          )}>
-                            {bot.heartbeatAgeSeconds < 60 
-                              ? `${bot.heartbeatAgeSeconds}s ago` 
-                              : `${Math.floor(bot.heartbeatAgeSeconds / 60)}m ago`}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-sky-400 hover:bg-sky-500/10 rounded-md" onClick={() => openModal('edit-personality', bot.userId, bot.email, bot.personality)} title="Edit Personality">
-                              <Edit className="w-3.5 h-3.5" />
-                            </Button>
-                            {bot.status === 'paused' ? (
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-400 hover:bg-emerald-500/10 rounded-md" onClick={() => openModal('force-resume', bot.userId, bot.email)} title="Resume">
-                                <Play className="w-3.5 h-3.5" />
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-sky-400 hover:bg-sky-500/10 rounded-md" onClick={() => openModal('edit-personality', bot.userId, bot.email, bot.personality)} title="Edit Personality">
+                                <Edit className="w-3.5 h-3.5" />
                               </Button>
-                            ) : (
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-400 hover:bg-amber-500/10 rounded-md" onClick={() => openModal('force-pause', bot.userId, bot.email)} title="Pause">
-                                <Pause className="w-3.5 h-3.5" />
+                              {bot.status === 'paused' ? (
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-400 hover:bg-emerald-500/10 rounded-md" onClick={() => openModal('force-resume', bot.userId, bot.email)} title="Resume">
+                                  <Play className="w-3.5 h-3.5" />
+                                </Button>
+                              ) : (
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-400 hover:bg-amber-500/10 rounded-md" onClick={() => openModal('force-pause', bot.userId, bot.email)} title="Pause">
+                                  <Pause className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-md" onClick={() => openModal('force-stop', bot.userId, bot.email)} title="Force Stop">
+                                <Square className="w-3.5 h-3.5 fill-current" />
                               </Button>
-                            )}
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-md" onClick={() => openModal('force-stop', bot.userId, bot.email)} title="Force Stop">
-                              <Square className="w-3.5 h-3.5 fill-current" />
-                            </Button>
-                            {bot.instanceId && (
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-md ml-1" onClick={() => openModal('delete-instance', bot.userId, bot.email, undefined, bot.instanceId, bot.subAccountId)} title="Delete Instance">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    </React.Fragment>
-                  ));
+                              {bot.instanceId && (
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-md ml-1" onClick={() => openModal('delete-instance', bot.userId, bot.email, undefined, bot.instanceId, bot.subAccountId)} title="Delete Instance">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      </React.Fragment>
+                    );});
                 })()
                 )}
               </tbody>

@@ -185,6 +185,9 @@ export function MyBot() {
         onClose={() => setShowAddModal(false)}
         availableBalance={availableBalance}
         masterUid={status?.bybitAccount?.uid}
+        onLaunched={() => {
+          fetchInstances();
+        }}
       />
 
       {/* Top Section: Portfolio Health, Market Analysis, AI Insights */}

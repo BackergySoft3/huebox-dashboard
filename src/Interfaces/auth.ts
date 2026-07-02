@@ -34,4 +34,5 @@ export interface AuthState {
   logout: () => void;
   isAdmin: () => boolean;
   isSuperAdmin: () => boolean;
+  refreshUser: () => Promise<void>;
 }
