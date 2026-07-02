@@ -202,7 +202,7 @@ export function InstanceCard({ instance }: InstanceCardProps) {
       <CardContent className="space-y-2.5 font-mono text-xs flex-1">
         {/* Sub-account */}
         <div className="flex items-center justify-between border-b border-border/15 pb-2">
-          <span className="text-muted-foreground">Sub-Account</span>
+          <span className="text-muted-foreground">Account ID</span>
           <span className="font-bold text-foreground/80 text-[11px]" title={subAccountId}>
             {truncatedSubAccount}
           </span>

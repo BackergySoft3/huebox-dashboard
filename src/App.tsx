@@ -24,6 +24,10 @@ import { AdminTransferCoin } from "./Containers/AdminTransferCoin";
 import { AdminConfig } from "./Containers/AdminConfig";
 import { System } from "./Containers/System";
 import { ThemeProvider } from "./Components/ThemeProvider";
+import { PublicLayout } from "./Layouts/PublicLayout/PublicLayout";
+import { Academy } from "./Containers/Academy";
+import { Terms } from "./Containers/Terms";
+import { Glossary } from "./Containers/Glossary";
 import "./index.css";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -65,8 +69,16 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
 
+            {/* Public Layout Pages */}
+            <Route element={<PublicLayout />}>
+              <Route path="/academy" element={<Academy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/glossary" element={<Glossary />} />
+            </Route>
+
             <Route
               path="/"
+
               element={
                 <ProtectedRoute>
                   <Layout />

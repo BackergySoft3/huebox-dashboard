@@ -21,6 +21,10 @@ import { AdminFinance } from "../Containers/AdminFinance";
 import { AdminTransferCoin } from "../Containers/AdminTransferCoin";
 import { AdminConfig } from "../Containers/AdminConfig";
 import { System } from "../Containers/System";
+import { PublicLayout } from "../Layouts/PublicLayout/PublicLayout";
+import { Academy } from "../Containers/Academy";
+import { Terms } from "../Containers/Terms";
+import { Glossary } from "../Containers/Glossary";
 
 function AdminIndexRoute() {
   const isAdmin = useAuthStore((state) => state.isAdmin)();
@@ -32,6 +36,13 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path={ROUTES.LOGIN} element={<Login />} />
+
+      {/* Public Pages */}
+      <Route element={<PublicLayout />}>
+        <Route path={ROUTES.ACADEMY} element={<Academy />} />
+        <Route path={ROUTES.TERMS} element={<Terms />} />
+        <Route path={ROUTES.GLOSSARY} element={<Glossary />} />
+      </Route>
 
       <Route
         path={ROUTES.HOME}
@@ -63,3 +74,4 @@ export function AppRoutes() {
     </Routes>
   );
 }
+
