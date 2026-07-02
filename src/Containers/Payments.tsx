@@ -249,7 +249,7 @@ export function Payments() {
       return;
     }
     if (!sendUid) {
-      setSendErrorMsg("Recipient Bybit UID is required.");
+      setSendErrorMsg("Recipient Account ID is required.");
       return;
     }
     
@@ -578,7 +578,7 @@ export function Payments() {
               <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl flex items-start gap-3 mt-4">
                 <ShieldCheck className="w-4.5 h-4.5 text-primary shrink-0 mt-0.5" />
                 <div className="text-[10px] text-muted-foreground/90 leading-relaxed font-mono">
-                  Your payments are processed securely. Deposited funds are swept directly into your Bybit sub-account ledger under encryption shields.
+                  Your payments are processed securely. Deposited funds are credited directly to your trading account balance under encryption shields.
                 </div>
               </div>
             </CardContent>
@@ -595,7 +595,7 @@ export function Payments() {
                 WITHDRAW ON-CHAIN (USDT)
               </CardTitle>
               <CardDescription className="text-[10px] font-mono text-muted-foreground/60">
-                Withdraw USDT from your sub-account balance to any external on-chain destination.
+                Withdraw USDT from your trading account balance to any external on-chain destination.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -702,7 +702,7 @@ export function Payments() {
                   INTERNAL HUEBOX SEND
                 </CardTitle>
                 <CardDescription className="text-[10px] font-mono text-muted-foreground/60">
-                  Instantly transfer funds to another Bybit UID registered on HueBox.
+                  Instantly transfer funds to another Account ID registered on HueBox.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -722,10 +722,10 @@ export function Payments() {
 
                 <form onSubmit={handleSendSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono font-bold text-muted-foreground/70 uppercase block">Recipient Bybit UID</label>
+                    <label className="text-[10px] font-mono font-bold text-muted-foreground/70 uppercase block">Recipient Account ID</label>
                     <Input
                       type="text"
-                      placeholder="Enter recipient Bybit UID"
+                      placeholder="Enter recipient Account ID"
                       value={sendUid}
                       onChange={(e) => setSendUid(e.target.value)}
                       required
@@ -794,7 +794,7 @@ export function Payments() {
                   </div>
                   <div className="space-y-1">
                     <h4 className="text-[10px] font-mono font-bold text-muted-foreground/75 uppercase tracking-wide">
-                      Your System Sub-account UID
+                      Your HueBox Account ID
                     </h4>
                     {subAccountUid ? (
                       <div className="flex items-center justify-center gap-2 mt-2">
@@ -968,7 +968,7 @@ export function Payments() {
             <div className="space-y-1 pt-1.5 text-[9px] text-emerald-400 font-bold uppercase tracking-wider">
               <div className="flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>Sub-account Sweep Signature Checked</span>
+                <span>Transfer Signature Checked</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />

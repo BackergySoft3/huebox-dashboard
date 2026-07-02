@@ -187,7 +187,7 @@ export function Trading() {
     return (
       <div className="h-[70vh] flex flex-col items-center justify-center font-mono text-xs text-muted-foreground gap-3">
         <RefreshCw className="w-8 h-8 animate-spin text-primary" />
-        <span>Loading Bybit Live Session Data...</span>
+        <span>Loading Live Session Data...</span>
       </div>
     );
   }
@@ -198,12 +198,12 @@ export function Trading() {
         <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/30 mb-6 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
           <AlertTriangle className="w-8 h-8 text-rose-500" />
         </div>
-        <h2 className="text-2xl font-bold font-sans tracking-tight text-foreground">No Bybit Account Linked</h2>
+        <h2 className="text-2xl font-bold font-sans tracking-tight text-foreground">No Trading Account Configured</h2>
         <p className="text-muted-foreground text-sm font-medium mt-3 leading-relaxed">
-          It looks like your sub-account has not been provisioned or is missing the proper API credentials.
+          It looks like your trading account has not been provisioned or is missing the proper credentials.
         </p>
         <p className="text-muted-foreground text-xs font-mono mt-4 bg-muted/40 p-4 rounded-xl border border-border/40">
-          Please check the **System Settings** page to provision/verify your Bybit Sub-Account settings or contact admin support.
+          Please check the **System Settings** page to verify your trading account setup or contact admin support.
         </p>
         <Button className="mt-8 gap-2 font-mono text-xs font-bold" variant="outline" onClick={() => window.location.reload()}>
           <RefreshCw className="w-4 h-4" /> Retry Connection
@@ -523,7 +523,7 @@ export function Trading() {
                   {positions.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-14 text-muted-foreground font-mono text-xs gap-3">
                       <HelpCircle className="w-5 h-5 text-muted-foreground/30" />
-                      <span>No active positions on Bybit ledger.</span>
+                      <span>No active positions on the ledger.</span>
                     </div>
                   ) : (
                     <table className="w-full text-left font-mono text-xs border-collapse">
@@ -597,7 +597,7 @@ export function Trading() {
                   {orders.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-14 text-muted-foreground font-mono text-xs gap-3">
                       <HelpCircle className="w-5 h-5 text-muted-foreground/30" />
-                      <span>No active orders on Bybit.</span>
+                      <span>No active orders.</span>
                     </div>
                   ) : (
                     <table className="w-full text-left font-mono text-xs border-collapse">
