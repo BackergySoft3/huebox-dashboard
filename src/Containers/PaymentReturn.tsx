@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { walletApi } from "../Services/paymentApi";
 import type { Transaction } from "../Interfaces/wallet";
@@ -99,7 +99,7 @@ export function PaymentReturn() {
                 has been successfully credited.
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto font-mono">
-                Funds are credited to the master account and automatically swept directly to your Bybit sub-account balance.
+                Funds are credited to your account balance and are immediately available to allocate to your bots.
               </p>
             </div>
             <Button
@@ -200,7 +200,7 @@ export function PaymentReturn() {
             MOONPAY DEPOSIT VERIFICATION
           </CardTitle>
           <CardDescription className="text-[10px] font-mono text-slate-500">
-            Securing transfer to your Bybit Sub-Account
+            Securing transfer to your trading account
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6">{renderContent()}</CardContent>
