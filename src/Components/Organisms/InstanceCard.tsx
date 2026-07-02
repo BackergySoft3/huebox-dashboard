@@ -342,6 +342,7 @@ export function InstanceCard({ instance }: InstanceCardProps) {
                   disabled={!!actionLoading}
                   onClick={() => handleAction("pause", pauseInstance)}
                   id={`pause-btn-${instance.instanceId}`}
+                  title="Pause this bot — grid orders remain open on the exchange but no new orders will be placed"
                 >
                   {actionLoading === "pause" ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -360,6 +361,7 @@ export function InstanceCard({ instance }: InstanceCardProps) {
                   disabled={!!actionLoading}
                   onClick={() => handleAction("resume", resumeInstance)}
                   id={`resume-btn-${instance.instanceId}`}
+                  title="Resume this bot — reactivates the trading engine and resumes placing grid orders"
                 >
                   {actionLoading === "resume" ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -377,6 +379,7 @@ export function InstanceCard({ instance }: InstanceCardProps) {
                 disabled={!!actionLoading}
                 onClick={() => setConfirmingStop(true)}
                 id={`stop-btn-${instance.instanceId}`}
+                title="Stop this bot — cancels all open grid orders and returns funds to your sub-account wallet"
               >
                 {actionLoading === "stop" ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -457,6 +460,7 @@ export function InstanceCard({ instance }: InstanceCardProps) {
               disabled={!!actionLoading}
               onClick={() => setConfirmingDelete(true)}
               id={`delete-btn-${instance.instanceId}`}
+              title="Permanently remove this stopped instance from your dashboard — this cannot be undone"
             >
               <Trash2 className="w-3 h-3" />
               Delete Instance

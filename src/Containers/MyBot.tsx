@@ -585,6 +585,7 @@ export function MyBot() {
           <div>
             <Link
               to="/control"
+              title="Advanced controls — stop the bot, edit strategy, manage allocations, and more"
               className="text-xs font-mono font-bold text-primary hover:text-primary/80 flex items-center gap-1 group transition-colors"
             >
               Full Control
