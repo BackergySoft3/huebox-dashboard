@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../State/auth";
 import { api } from "../Services/http.service";
 import { authApi } from "../Services/authApi";
@@ -34,6 +34,10 @@ export function Login() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [resendSuccess, setResendSuccess] = useState(false);
+  const otpInputRef = useRef<HTMLInputElement>(null);
   const [devOtp, setDevOtp] = useState<string | null>(null);
   // H-01: OTP resend cooldown
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -54,7 +58,8 @@ export function Login() {
 
   const doSendOtp = async () => {
     setLoading(true);
-    setError("");
+    setEmailError("");
+    setOtpError("");
     setDevOtp(null);
     try {
       await api.post("/api/auth/otp/send", { email });
@@ -71,7 +76,7 @@ export function Login() {
         }
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to send OTP");
+      setOtpError(err.response?.data?.message || "Failed to send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -79,6 +84,15 @@ export function Login() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim()) {
+      setEmailError("Email address is required.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
+    setEmailError("");
     await doSendOtp();
     setStep("otp");
   };
@@ -86,13 +100,19 @@ export function Login() {
   // H-01: Resend OTP handler
   const handleResendOtp = async () => {
     if (resendCooldown > 0 || loading) return;
+    setOtp("");
+    setOtpError("");
+    setResendSuccess(false);
     await doSendOtp();
+    setResendSuccess(true);
+    setTimeout(() => setResendSuccess(false), 5000);
+    otpInputRef.current?.focus();
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setOtpError("");
     try {
       const res = await api.post("/api/auth/otp/verify", { email, otp });
       const accessToken = res.data.access_token || res.data.accessToken || res.data.token;
@@ -124,7 +144,7 @@ export function Login() {
         setError("Invalid response from server");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to verify OTP");
+      setOtpError(err.response?.data?.message || "Invalid or expired code. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -132,7 +152,7 @@ export function Login() {
 
   const handleKycSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // H-02: Phone format validation
     const cleanPhone = kycForm.phone.replace(/[\s\-()]/g, "");
     if (!/^\+[1-9]\d{4,14}$/.test(cleanPhone)) {
@@ -189,14 +209,14 @@ export function Login() {
                       isCompleted
                         ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-400"
                         : isCurrent
-                        ? "bg-primary/15 border-primary text-primary shadow-[0_0_8px_rgba(0,122,255,0.3)]"
-                        : "bg-muted/30 border-border/50 text-muted-foreground/50"
+                          ? "bg-primary/15 border-primary text-primary shadow-[0_0_8px_rgba(0,122,255,0.3)]"
+                          : "bg-muted/30 border-border text-muted-foreground"
                     )}>
                       {isCompleted ? <Check className="w-3.5 h-3.5" /> : idx + 1}
                     </div>
                     <span className={cn(
                       "text-[10px] font-sans font-semibold whitespace-nowrap",
-                      isCurrent ? "text-primary" : isCompleted ? "text-emerald-400" : "text-muted-foreground/40"
+                      isCurrent ? "text-primary" : isCompleted ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
                     )}>
                       {s.short}
                     </span>
@@ -216,18 +236,12 @@ export function Login() {
             {step === "email"
               ? "Enter your email to receive a one-time passcode"
               : step === "otp"
-              ? `Enter the 6-digit code sent to ${email}`
-              : "Complete your profile to activate your account"}
+                ? `Enter the 6-digit code sent to ${email}`
+                : "Complete your profile to activate your account"}
           </CardDescription>
         </CardHeader>
 
         <CardContent>
-          {error && (
-            <div className="mb-4 p-3 bg-destructive/10 text-destructive text-sm rounded-md border border-destructive/20">
-              {error}
-            </div>
-          )}
-
           {/* M-05: OTP verified success flash */}
           {otpVerified && (
             <div className="mb-4 p-3 bg-emerald-500/10 text-emerald-400 text-sm rounded-md border border-emerald-500/20 flex items-center gap-2">
@@ -241,21 +255,28 @@ export function Login() {
               <div className="space-y-1.5">
                 {/* H-02: Proper label */}
                 <label htmlFor="login-email" className="text-xs font-semibold text-muted-foreground">
-                  Email address
+                  Email address <span className="text-destructive" aria-hidden="true">*</span>
                 </label>
                 <Input
                   id="login-email"
                   type="email"
                   placeholder="name@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+                  onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
                   autoComplete="email"
-                  className="bg-background/50 text-foreground"
+                  autoFocus
+                  aria-describedby={emailError ? "login-email-error" : undefined}
+                  aria-invalid={!!emailError}
+                  className={cn("bg-background/50 text-foreground", emailError && "border-destructive focus-visible:ring-destructive")}
                 />
+                {emailError && (
+                  <p id="login-email-error" className="text-xs text-destructive mt-1">
+                    {emailError}
+                  </p>
+                )}
               </div>
               <Button type="submit" className="w-full font-semibold" disabled={loading}>
-                {loading ? "Sending…" : "Send One-Time Code"}
+                {loading ? "Sending…" : "Send One-Time Passcode"}
               </Button>
             </form>
           )}
@@ -289,17 +310,29 @@ export function Login() {
                   One-time passcode
                 </label>
                 <Input
+                  ref={otpInputRef}
                   id="login-otp"
                   type="text"
-                  placeholder="000000"
+                  placeholder="_ _ _ _ _ _"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  required
+                  onChange={(e) => { setOtp(e.target.value); setOtpError(""); }}
                   autoComplete="one-time-code"
                   inputMode="numeric"
-                  className="bg-background/50 text-center tracking-widest text-lg font-mono text-foreground"
+                  aria-describedby={otpError ? "login-otp-error" : resendSuccess ? "login-otp-resent" : undefined}
+                  aria-invalid={!!otpError}
+                  className={cn("bg-background/50 text-center tracking-widest text-lg font-mono text-foreground", otpError && "border-destructive focus-visible:ring-destructive")}
                   maxLength={6}
                 />
+                {otpError && (
+                  <p id="login-otp-error" className="text-xs text-destructive mt-1">
+                    {otpError}
+                  </p>
+                )}
+                {resendSuccess && !otpError && (
+                  <p id="login-otp-resent" className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                    A new code has been sent. Please enter the latest OTP.
+                  </p>
+                )}
               </div>
 
               <Button type="submit" className="w-full font-semibold" disabled={loading}>
@@ -436,6 +469,9 @@ export function Login() {
               <Button type="submit" className="w-full font-semibold mt-2" disabled={loading}>
                 {loading ? "Submitting…" : "Complete Setup"}
               </Button>
+              {error && (
+                <p className="text-xs text-destructive mt-2 text-center">{error}</p>
+              )}
             </form>
           )}
         </CardContent>
