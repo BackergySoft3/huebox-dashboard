@@ -73,6 +73,7 @@ export function Payments() {
     depositInfo,
     history: fundingHistory,
     isBalanceLoading: balanceLoading,
+    isDepositInfoLoading: depositInfoLoading,
     isHistoryLoading: historyLoading,
     isWithdrawing,
     error: fundingError,
@@ -566,84 +567,157 @@ export function Payments() {
           </Card>
         </div>
       )}
-
       {/* Tab 2: Add Funds */}
       {!showFullHistory && activeTab === PaymentsTab.AddFunds && (
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto space-y-6">
           <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
             <CardHeader>
               <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase font-bold">
-                ADD FUNDS VIA MOONPAY
+                Option 1: On-Chain USDT Deposit
               </CardTitle>
               <CardDescription className="text-[10px] font-mono text-muted-foreground/60">
-                Quick fiat on-ramp to buy crypto and fund your investment account.
+                Deposit USDT directly from any external wallet (Bybit, Binance, MetaMask, etc.)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {addFundsSuccess && (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 rounded-xl flex items-start gap-2 shadow-sm">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>
-                    MoonPay checkout initialized. Balance sweeps will trigger once transaction confirms.
-                  </span>
+              {copied && (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 rounded-xl flex items-center gap-2 shadow-sm font-mono">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Copied to clipboard!</span>
                 </div>
               )}
 
-              {addFundsErrorMsg && (
-                <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-xs text-rose-400 rounded-xl flex items-center gap-2 shadow-sm">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{addFundsErrorMsg}</span>
+              {depositInfoLoading ? (
+                <div className="flex flex-col items-center justify-center py-10 text-muted-foreground font-mono">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />
+                  <span>Loading deposit address...</span>
+                </div>
+              ) : (
+                <div className="space-y-4 font-mono text-xs">
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] text-muted-foreground/80 uppercase font-bold">
+                      USDT Master Deposit Address
+                    </span>
+                    <div className="flex gap-2 items-center">
+                      <span className="bg-muted/40 px-3 py-2 rounded-lg border border-border/20 break-all select-all font-bold text-[11px] flex-1 text-foreground">
+                        {depositInfo?.masterDepositAddress || "Loading..."}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 px-3 cursor-pointer shrink-0 border-border/30 hover:bg-muted/40 text-foreground"
+                        onClick={() => {
+                          if (depositInfo?.masterDepositAddress) {
+                            navigator.clipboard.writeText(depositInfo.masterDepositAddress);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }
+                        }}
+                      >
+                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] text-muted-foreground/80 uppercase font-bold">
+                      Your Personal Memo/Tag (Required)
+                    </span>
+                    <div className="flex gap-2 items-center">
+                      <span className="bg-primary/5 px-3 py-2 rounded-lg border border-primary/20 font-extrabold text-sm text-primary tracking-widest flex-1 text-center select-all">
+                        {depositInfo?.memo || "Loading..."}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 px-3 cursor-pointer shrink-0 border-border/30 hover:bg-muted/40 text-foreground"
+                        onClick={() => {
+                          if (depositInfo?.memo) {
+                            navigator.clipboard.writeText(depositInfo.memo);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }
+                        }}
+                      >
+                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span className="text-[10px] leading-relaxed">
+                      {depositInfo?.warning ||
+                        "CRITICAL: Always include your personal memo/tag when sending. Deposits without a memo cannot be matched to your account automatically and will require manual resolution."}
+                    </span>
+                  </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
 
-              <form onSubmit={handleAddFundsSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-bold text-muted-foreground/70 uppercase">Deposit Amount (Fiat)</label>
-                  <Input
-                    type="number"
-                    min="10"
-                    step="0.01"
-                    placeholder="50.00"
-                    value={addFundsAmount}
-                    onChange={(e) => setAddFundsAmount(e.target.value)}
-                    required
-                    className="font-mono text-sm bg-muted/30 border-border/30 h-9.5 focus:ring-primary focus:border-primary text-foreground"
-                  />
-                  <p className="text-[9px] text-muted-foreground/60 font-mono">
-                    Minimum deposit amount is $10.00.
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-bold text-muted-foreground/70 uppercase">Fiat Currency</label>
-                  <select
-                    value={addFundsFiat}
-                    onChange={(e) => setAddFundsFiat(e.target.value)}
-                    className="w-full h-9.5 rounded-lg border border-border/30 bg-muted/30 px-3 py-2 text-xs font-mono shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+          <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
+            <CardHeader>
+              <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase font-bold">
+                Option 2: Buy USDT With Fiat
+              </CardTitle>
+              <CardDescription className="text-[10px] font-mono text-muted-foreground/60">
+                Quick fiat on-ramp providers to buy crypto and fund your investment account.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 bg-muted/20 border border-border/30 rounded-xl flex flex-col justify-between space-y-3">
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">MoonPay</h4>
+                    <p className="text-[10px] text-muted-foreground/80 font-mono mt-1">
+                      Support for Credit/Debit cards, Apple Pay, Google Pay, and SEPA bank transfers.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    disabled={!depositInfo?.memo}
+                    onClick={() => {
+                      if (depositInfo) {
+                        window.open(
+                          `https://buy.moonpay.com?apiKey=pk_live_placeholder&currencyCode=usdt&walletAddress=${depositInfo.masterDepositAddress}&walletAddressTag=${depositInfo.memo}`,
+                          "_blank"
+                        );
+                      }
+                    }}
+                    className="w-full font-mono text-xs font-bold py-2 border-primary/20 hover:border-primary/50 hover:bg-primary/5 cursor-pointer text-foreground"
                   >
-                    <option value="USD">USD - US Dollar</option>
-                    <option value="EUR">EUR - Euro</option>
-                    <option value="GBP">GBP - British Pound</option>
-                  </select>
+                    Buy with MoonPay
+                  </Button>
                 </div>
 
-                <Button
-                  type="submit"
-                  disabled={createOrderMutation.isPending}
-                  className="w-full font-mono text-xs font-bold py-2.5 mt-2 h-10 cursor-pointer"
-                >
-                  {createOrderMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> Launching MoonPay Checkout...
-                    </>
-                  ) : (
-                    "Deposit with MoonPay"
-                  )}
-                </Button>
-              </form>
+                <div className="p-4 bg-muted/20 border border-border/30 rounded-xl flex flex-col justify-between space-y-3">
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">Transak</h4>
+                    <p className="text-[10px] text-muted-foreground/80 font-mono mt-1">
+                      Support for Bank transfers, Credit/Debit cards, Apple Pay, and local payment methods.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    disabled={!depositInfo?.memo}
+                    onClick={() => {
+                      if (depositInfo) {
+                        window.open(
+                          `https://global.transak.com?apiKey=pk_live_placeholder&cryptoCurrency=USDT&walletAddress=${depositInfo.masterDepositAddress}&uhd=${depositInfo.memo}`,
+                          "_blank"
+                        );
+                      }
+                    }}
+                    className="w-full font-mono text-xs font-bold py-2 border-primary/20 hover:border-primary/50 hover:bg-primary/5 cursor-pointer text-foreground"
+                  >
+                    Buy with Transak
+                  </Button>
+                </div>
+              </div>
 
               {/* Security info note */}
-              <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl flex items-start gap-3 mt-4">
+              <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl flex items-start gap-3 mt-2">
                 <ShieldCheck className="w-4.5 h-4.5 text-primary shrink-0 mt-0.5" />
                 <div className="text-[10px] text-muted-foreground/90 leading-relaxed font-mono">
                   Your payments are processed securely. Deposited funds are credited directly to your trading account balance under encryption shields.
