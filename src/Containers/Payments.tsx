@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useFundingStore } from "../State/funding";
 import {
-  useWalletBalance,
-  useTransactionHistory,
   useCreateOrder,
   useWithdraw,
   useSend,
@@ -68,9 +67,53 @@ export function Payments() {
   // Clipboard Feedback State
   const [copied, setCopied] = useState(false);
 
-  // API Hooks
-  const { balance, coin, isLoading: balanceLoading, refetch: refetchBalance } = useWalletBalance();
-  const { items: historyItems, total: historyTotal, pages: historyPages, isLoading: historyLoading, refetch: refetchHistory } = useTransactionHistory(historyPage, 10);
+  // API Hooks (Zustand automated funding source of truth)
+  const {
+    balance: fundingBalance,
+    depositInfo,
+    history: fundingHistory,
+    isBalanceLoading: balanceLoading,
+    isHistoryLoading: historyLoading,
+    isWithdrawing,
+    error: fundingError,
+    fetchBalance,
+    fetchDepositInfo,
+    fetchHistory,
+    initiateWithdrawal,
+  } = useFundingStore();
+
+  const balance = fundingBalance?.availableBalance ?? 0;
+  const pendingBalance = fundingBalance?.pendingBalance ?? 0;
+  const coin = "USDT";
+
+  const rawHistoryItems = fundingHistory?.items ?? [];
+  const historyItems = rawHistoryItems.map((tx: any) => {
+    let type = tx.type;
+    if (type === "deposit_onramp" || type === "deposit_onchain") {
+      type = TransactionType.Deposit;
+    } else if (type === "withdrawal") {
+      type = TransactionType.Withdrawal;
+    } else if (type === "allocation_to_instance") {
+      type = TransactionType.Send;
+    } else if (type === "deallocation_from_instance") {
+      type = TransactionType.Receive;
+    }
+
+    return {
+      _id: tx._id,
+      createdAt: tx.createdAt,
+      type,
+      amountUsdt: tx.amount,
+      coin: tx.currency || "USDT",
+      status: tx.status === "confirmed" ? "completed" : tx.status,
+      txId: tx.externalRef,
+      bybitTransferId: tx.bybitTransferId,
+    };
+  });
+
+  const historyTotal = fundingHistory?.total ?? 0;
+  const historyPages = fundingHistory?.pages ?? 1;
+
   const botStatusQuery = useBotStatus();
   const subAccountUid = botStatusQuery.data?.bybitAccount?.uid;
 
@@ -78,8 +121,18 @@ export function Payments() {
   const withdrawMutation = useWithdraw();
   const sendMutation = useSend();
 
+  useEffect(() => {
+    fetchBalance();
+    fetchDepositInfo();
+    fetchHistory(historyPage, 10);
+  }, [historyPage]);
+
   const handleRefresh = async () => {
-    await Promise.all([refetchBalance(), refetchHistory()]);
+    await Promise.all([
+      fetchBalance(),
+      fetchDepositInfo(),
+      fetchHistory(historyPage, 10),
+    ]);
   };
 
   // Transaction Helpers
@@ -223,16 +276,24 @@ export function Payments() {
   };
 
   const executeWithdraw = async () => {
-    const data = await withdrawMutation.mutateAsync({
-      amount: parseFloat(withdrawAmount),
-      address: withdrawAddress,
-      network: withdrawNetwork,
-      coin,
-    });
-    setWithdrawSuccessId(data.withdrawalId || data.transferId || "Successfully Initiated");
-    setWithdrawAmount("");
-    setWithdrawAddress("");
-    setWithdrawConfirmOpen(false);
+    try {
+      const data = await initiateWithdrawal(
+        parseFloat(withdrawAmount),
+        withdrawAddress,
+        withdrawNetwork,
+        coin
+      );
+      setWithdrawSuccessId(data.withdrawalId || "Successfully Initiated");
+      setWithdrawAmount("");
+      setWithdrawAddress("");
+      setWithdrawConfirmOpen(false);
+      // Refresh balance and history
+      fetchBalance();
+      fetchHistory(historyPage, 10);
+    } catch (err: any) {
+      setWithdrawErrorMsg(err.message || "Withdrawal failed.");
+      setWithdrawConfirmOpen(false);
+    }
   };
 
   const handleSendSubmit = (e: React.FormEvent) => {
@@ -332,9 +393,16 @@ export function Payments() {
                 {balanceLoading ? (
                   <div className="h-10 w-48 bg-muted/20 animate-pulse rounded border border-border/20 mt-1" />
                 ) : (
-                  <div className="text-4xl font-extrabold font-sans tracking-tight text-foreground mt-1">
-                    ${Number(balance ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-                    <span className="text-sm font-semibold text-primary font-mono ml-1">{coin}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-1">
+                    <div className="text-4xl font-extrabold font-sans tracking-tight text-foreground">
+                      ${Number(balance ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                      <span className="text-sm font-semibold text-primary font-mono ml-1">{coin}</span>
+                    </div>
+                    {pendingBalance > 0 && (
+                      <div className="text-xs font-mono text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 animate-pulse">
+                        PENDING DEPOSIT: ${pendingBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                      </div>
+                    )}
                   </div>
                 )}
                 <p className="text-[10px] text-muted-foreground/60 mt-3 font-mono">

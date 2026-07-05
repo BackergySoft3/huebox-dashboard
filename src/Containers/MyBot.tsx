@@ -7,11 +7,13 @@ import { useBotStore } from "../State/bot";
 import { usePerformance } from "../Hooks/usePerformance";
 import { useInstancesStore } from "../State/instances";
 import { AddInstanceModal } from "../Components/Organisms/AddInstanceModal";
+import { FundingModal } from "../Components/Organisms/FundingModal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../Components/Atoms/card";
 import { Badge } from "../Components/Atoms/badge";
+import { Button } from "../Components/Atoms/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { format } from "date-fns";
-import { Trophy, TrendingUp, Target, Wallet2, Brain, GitMerge, Bot, Calendar, ChevronRight } from "lucide-react";
+import { Trophy, TrendingUp, Target, Wallet2, Brain, GitMerge, Bot, Calendar, ChevronRight, ArrowDownLeft } from "lucide-react";
 import { cn } from "../Helpers/utils";
 
 const CustomTooltip = ({ active, payload }: any) => {
@@ -123,6 +125,7 @@ export function MyBot() {
   // ── Multi-instance state & polling ─────────────────────────────────────────
   const { instances, fetchInstances } = useInstancesStore();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showFundingModal, setShowFundingModal] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -177,6 +180,15 @@ export function MyBot() {
               CYCLE {cycleCounter}
             </Badge>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFundingModal(true)}
+            className="font-mono text-xs font-bold shadow-sm flex items-center gap-1.5"
+          >
+            <ArrowDownLeft className="w-3.5 h-3.5" />
+            Fund Account
+          </Button>
         </div>
       </div>
 
@@ -666,6 +678,16 @@ export function MyBot() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modals */}
+      <AddInstanceModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+      />
+      <FundingModal
+        isOpen={showFundingModal}
+        onClose={() => setShowFundingModal(false)}
+      />
     </div>
   );
 }
