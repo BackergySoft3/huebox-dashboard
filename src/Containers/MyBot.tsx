@@ -1,20 +1,72 @@
-// FIX 7 — Remove Legacy Pause/Resume in MyBot.tsx
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
-import { useBotStatus } from "../Hooks/useBotStatus";
-import { useBotStore } from "../State/bot";
+import { useState } from "react";
+import { usePortfolioSummary } from "../Hooks/usePortfolioSummary";
 import { usePerformance } from "../Hooks/usePerformance";
 import { useInstancesStore } from "../State/instances";
 import { AddInstanceModal } from "../Components/Organisms/AddInstanceModal";
+import { GoalProgressCard } from "../Components/Organisms/GoalProgressCard";
 import { FundingModal } from "../Components/Organisms/FundingModal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../Components/Atoms/card";
 import { Badge } from "../Components/Atoms/badge";
 import { Button } from "../Components/Atoms/button";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ReChartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { format } from "date-fns";
-import { Trophy, TrendingUp, Target, Wallet2, Brain, GitMerge, Bot, Calendar, ChevronRight, ArrowDownLeft } from "lucide-react";
+import {
+  Trophy,
+  TrendingUp,
+  Target,
+  Wallet2,
+  Bot,
+  Calendar,
+  ArrowDownLeft,
+  Loader2,
+  Play,
+  Pause,
+  Square,
+  AlertTriangle,
+  HelpCircle,
+  TrendingDown,
+  Plus
+} from "lucide-react";
 import { cn } from "../Helpers/utils";
+
+// Glossary for tooltips
+const GLOSSARY = {
+  roi: "Return on Investment: how much profit you've made relative to the amount you put in, as a percentage.",
+  unrealizedPnl: "Profit or loss on trades still open — this number changes as prices move.",
+  totalPnl: "Total realized profit/loss from completed trades plus current unrealized profit/loss.",
+  activeGrids: "Active buy and sell grids deployed by the bot's grid-trading system.",
+  drawdown: "The peak-to-trough decline during a specific record period, showing historical capital risk.",
+  leverage: "Multiplier that increases your trading power (e.g. 5x leverage means a $100 margin opens a $500 position). Adds risk.",
+  stalled: "Your bot stopped checking in. This can happen if it crashed or lost connection. Try restarting it.",
+  personalities: {
+    moderate: "Moderate: smaller trades, focuses on protecting your capital with safe multipliers.",
+    balanced: "Balanced: standard balanced risk-reward profile across diversified coins.",
+    aggressive: "Aggressive: high-frequency grids for maximum return potential. Higher risk."
+  }
+};
+
+interface InfoTooltipProps {
+  text: string;
+}
+
+function InfoTooltip({ text }: InfoTooltipProps) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <span className="relative inline-block ml-1 align-middle group cursor-help">
+      <HelpCircle
+        className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-foreground transition-colors"
+        onMouseEnter={() => setVisible(true)}
+        onMouseLeave={() => setVisible(false)}
+        onClick={() => setVisible(!visible)}
+      />
+      {visible && (
+        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2.5 bg-popover text-popover-foreground border border-border text-[10px] rounded-lg shadow-xl backdrop-blur-md leading-relaxed z-50 font-normal normal-case select-none">
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
@@ -44,46 +96,35 @@ const CustomFeeTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-// M-07: Skeleton card for loading states
-function MetricCardSkeleton() {
-  return (
-    <Card className="bg-card border border-border/40 p-5 rounded-xl flex flex-col justify-between">
-      <div className="flex items-center justify-between">
-        <div className="h-3 w-20 bg-muted/60 animate-pulse rounded" />
-        <div className="h-4 w-4 bg-muted/40 animate-pulse rounded" />
-      </div>
-      <div className="mt-4 space-y-2">
-        <div className="h-8 w-28 bg-muted/60 animate-pulse rounded" />
-        <div className="h-2.5 w-32 bg-muted/40 animate-pulse rounded" />
-      </div>
-    </Card>
-  );
-}
-
 export function MyBot() {
-  const { data: status, isLoading: statusLoading } = useBotStatus();
+  const { data: summary, isLoading, refetch: refetchSummary } = usePortfolioSummary();
   const { history, fees, isLoading: perfLoading } = usePerformance();
-  const cycleCounter = useBotStore((state) => state.cycleCounter);
+  const { pauseInstance, resumeInstance, stopInstance } = useInstancesStore();
 
-  const cycleStats = status?.cycleStats || {
-    scanned: 154,
-    hot: 12,
-    fundingChecked: true
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showFundingModal, setShowFundingModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+
+  const isFullLoading = isLoading || perfLoading;
+
+  const handleAction = async (instanceId: string, actionType: "pause" | "resume" | "stop") => {
+    const key = `${instanceId}-${actionType}`;
+    setActionLoading(prev => ({ ...prev, [key]: true }));
+    try {
+      if (actionType === "pause") {
+        await pauseInstance(instanceId);
+      } else if (actionType === "resume") {
+        await resumeInstance(instanceId);
+      } else if (actionType === "stop") {
+        await stopInstance(instanceId);
+      }
+      await refetchSummary();
+    } catch (err) {
+      console.error(`Failed execution of ${actionType} on instance ${instanceId}`, err);
+    } finally {
+      setActionLoading(prev => ({ ...prev, [key]: false }));
+    }
   };
-
-  const llmRec = status?.llmRecommendation || {
-    action: "HOLD",
-    confidence: 0.89,
-    reasoning: "BTC volume profile suggests consolidation before breakout."
-  };
-
-  const sortedHistory = history
-    ? [...history].sort((a: any, b: any) => {
-      const timeA = a?.timestamp ? new Date(a.timestamp).getTime() : 0;
-      const timeB = b?.timestamp ? new Date(b.timestamp).getTime() : 0;
-      return (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
-    })
-    : [];
 
   const formatPerfDate = (dateStr?: string, pattern = "MMM dd, HH:mm") => {
     if (!dateStr) return "N/A";
@@ -96,593 +137,553 @@ export function MyBot() {
     }
   };
 
+  const sortedHistory = history
+    ? [...history].sort((a: any, b: any) => {
+        const timeA = a?.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const timeB = b?.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
+      })
+    : [];
+
   const trades = [...sortedHistory].reverse();
-  const displayFees = fees && fees.length > 0
-    ? fees
-    : sortedHistory.slice(-20).map((h: any) => ({ ...h, fee: Math.abs((Number(h.pnl) || 0) * 0.05) }));
 
-  const isLoading = statusLoading || perfLoading;
+  // If there are no instances at all, we show a clean onboarding screen
+  const instances = summary?.instances ?? [];
+  const aggregate = summary?.aggregate;
+  const delta24h = summary?.delta24h;
 
+  const hasInstances = instances.length > 0;
 
-  // NOTE: /api/bot/status is the LEGACY single-instance endpoint. In multi-instance mode,
-  // Redis keys are namespaced as bot:state:userId:instanceId — the base key (no instanceId)
-  // no longer exists so this endpoint always returns "stalled". Do NOT use status.status
-  // for the aggregate running state — derive it from /api/bot/instances instead.
-  const grids: any[] = status?.grids ?? [];
+  // Derive traffic light statuses
+  const anyStalled = instances.some(i => i.status === "stalled");
+  const activeInstanceCount = instances.filter(i => i.status !== "stopped").length;
 
-  useEffect(() => {
-    if (window.location.hash === "#active-bots") {
-      const el = document.getElementById("active-bots");
-      if (el) {
-        const timer = setTimeout(() => {
-          el.scrollIntoView({ behavior: "smooth" });
-        }, 100);
-        return () => clearTimeout(timer);
-      }
+  const getStatusLight = (type: "heartbeat" | "performance" | "deployment") => {
+    if (type === "heartbeat") {
+      if (instances.length === 0) return { color: "bg-muted", label: "No Deployed Bots" };
+      if (anyStalled) return { color: "bg-rose-500", label: "Warning: Bot Stalled" };
+      return { color: "bg-emerald-500", label: "All Bots Active" };
     }
-  }, []);
+    if (type === "performance") {
+      const livePnl = aggregate?.totalUnrealizedPnl ?? 0;
+      if (livePnl > 0) return { color: "bg-emerald-500", label: "Profit Positive" };
+      if (livePnl < 0) return { color: "bg-rose-500", label: "Drawdown Range" };
+      return { color: "bg-amber-400", label: "Break-even" };
+    }
+    if (type === "deployment") {
+      if (activeInstanceCount > 0) return { color: "bg-emerald-500", label: `${activeInstanceCount} Active` };
+      return { color: "bg-amber-400", label: "No Active Deploys" };
+    }
+    return { color: "bg-muted", label: "Unknown" };
+  };
 
-  // ── Multi-instance state & polling ─────────────────────────────────────────
-  const { instances, fetchInstances } = useInstancesStore();
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showFundingModal, setShowFundingModal] = useState(false);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const heartbeatLight = getStatusLight("heartbeat");
+  const performanceLight = getStatusLight("performance");
+  const deploymentLight = getStatusLight("deployment");
 
-  useEffect(() => {
-    fetchInstances();
-    pollingRef.current = setInterval(() => fetchInstances(), 10_000);
-    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-
-  // Derive aggregate status from instances — the source of truth in multi-instance mode
-  const botRunningStatus: string = instances.some((i) => i.status === "running")
-    ? "running"
-    : instances.some((i) => i.status === "paused")
-      ? "paused"
-      : instances.some((i) => i.status === "stalled")
-        ? "stalled"
-        : instances.length > 0
-          ? "stopped"
-          : "stalled";
-  const isRunning = botRunningStatus === "running";
-
-  // Sum sub-account balances across running instances; fall back to legacy status
-  const availableBalance: number =
-    instances.reduce((acc, i) => acc + (i.walletBalanceUsdt ?? 0), 0) ||
-    status?.bybitAccount?.balance ||
-    0;
-  // ────────────────────────────────────────────────────────────────────────
-
-  // Determine Bot Status Label and Color
-  const botState = botRunningStatus.toUpperCase();
-  const botStateColor =
-    botState === "RUNNING"
-      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-      : botState === "PAUSED"
-        ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-        : "bg-rose-500/10 text-rose-400 border-rose-500/20";
+  // Format Status String for General Audience
+  const getStatusHumanText = (status: string) => {
+    switch (status) {
+      case "starting":
+        return "Initializing Bot...";
+      case "running":
+        return "Actively Trading";
+      case "paused":
+        return "Paused (Not placing new trades)";
+      case "stopped":
+        return "Stopped (Funds swept back)";
+      case "stalled":
+        return "Not responding — we're checking on it";
+      default:
+        return "Unknown Status";
+    }
+  };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in text-sans">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight font-sans text-foreground">Portfolio</h1>
           <p className="text-muted-foreground mt-1 font-mono text-[11px] uppercase tracking-wider">
-            Review live performance parameters, metrics, and closed trade details.
+            Review aggregated parameters, live metrics, and strategy outputs.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {cycleCounter > 0 && (
-            <Badge variant="outline" className="text-xs font-mono py-1 px-3 border-primary/20 bg-primary/5 text-primary font-bold uppercase">
-              CYCLE {cycleCounter}
-            </Badge>
-          )}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowFundingModal(true)}
-            className="font-mono text-xs font-bold shadow-sm flex items-center gap-1.5"
+            className="font-mono text-xs font-bold shadow-sm flex items-center gap-1.5 cursor-pointer"
           >
             <ArrowDownLeft className="w-3.5 h-3.5" />
-            Fund Account
+            Deposit Funds
           </Button>
+          {hasInstances && instances.length < 5 && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setShowAddModal(true)}
+              className="font-mono text-xs font-bold shadow-sm flex items-center gap-1.5 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Launch Bot
+            </Button>
+          )}
         </div>
       </div>
 
-      <AddInstanceModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        availableBalance={availableBalance}
-        masterUid={status?.bybitAccount?.uid}
-        onLaunched={() => {
-          fetchInstances();
-        }}
-      />
-
-      {/* Top Section: Portfolio Health, Market Analysis, AI Insights */}
-      <div className="grid gap-6 md:grid-cols-3">
-        {isLoading ? (
-          <>
-            <MetricCardSkeleton />
-            <MetricCardSkeleton />
-            <MetricCardSkeleton />
-          </>
-        ) : (
-          <>
-            {/* Portfolio Health Card */}
-            {(() => {
-              const liveRoi = status?.summary?.liveRoiPct ?? status?.live_roi ?? 0;
-              const winRateOverall = status?.summary?.winRateOverallPct ?? 0;
-              const healthScore = Math.min(100, Math.round(
-                (status?.status === "running" ? 40 : status?.status === "paused" ? 20 : 0) +
-                (liveRoi > 0 ? 30 : 0) +
-                ((status?.bybitAccount?.balance ?? 0) > 100 ? 20 : 0) +
-                (winRateOverall > 50 ? 10 : 0)
-              ));
-              const scoreColor = healthScore >= 70 ? "text-emerald-400" : healthScore >= 40 ? "text-amber-400" : "text-rose-400";
-              return (
-                <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md flex flex-col justify-between">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-widest text-foreground uppercase font-extrabold">
-                      <Bot className="w-4 h-4 text-primary" />
-                      PORTFOLIO HEALTH
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 font-mono text-xs text-slate-300 flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-baseline gap-1">
-                        <span className={`text-4xl font-extrabold font-mono tracking-tight ${scoreColor}`}>{healthScore}</span>
-                        <span className="text-muted-foreground/60">/100</span>
-                      </div>
-                      <div className="w-full bg-muted/40 h-1.5 rounded-full overflow-hidden mt-3 border border-border/20">
-                        <div
-                          className={`h-full rounded-full transition-all duration-700 ${healthScore >= 70 ? "bg-emerald-400" : healthScore >= 40 ? "bg-amber-400" : "bg-rose-400"}`}
-                          style={{ width: `${healthScore}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div className="pt-2 space-y-1.5 border-t border-border/15">
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground font-medium">Session Status</span>
-                        <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px] uppercase font-bold", botStateColor)}>
-                          {botState}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground font-medium">Live ROI</span>
-                        <span className={`font-bold text-xs ${liveRoi >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                          {liveRoi >= 0 ? "+" : ""}{Number(liveRoi).toFixed(2)}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground font-medium">Win Rate</span>
-                        <span className="font-bold text-xs text-foreground">{Number(winRateOverall).toFixed(0)}%</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })()}
-
-            {/* Market Analysis Card */}
-            <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md flex flex-col justify-between">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-widest text-foreground uppercase font-extrabold">
-                  <GitMerge className="w-4 h-4 text-primary" />
-                  MARKET ANALYSIS
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 font-mono text-xs text-slate-300 flex-1 flex flex-col justify-between">
-                <div className="flex justify-between items-center border-b border-border/15 pb-2">
-                  <span className="text-muted-foreground">Scanned Symbols</span>
-                  <span className="font-bold text-foreground font-sans text-sm">{cycleStats?.scanned || 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Active Spikes</span>
-                  <Badge variant="outline" className="text-amber-400 border-amber-500/20 bg-amber-500/5 px-2 py-0.5 text-[10px] uppercase font-bold font-mono tracking-wider">
-                    {cycleStats?.hot || 0} HOT SIGNAL
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* AI Insights Card */}
-            <Card className="bg-gradient-to-br from-card to-card/65 border-primary/20 shadow-sm backdrop-blur-sm flex flex-col justify-between">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-widest text-foreground uppercase font-extrabold">
-                  <Brain className="w-4 h-4 text-primary animate-pulse" />
-                  AI INSIGHTS
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 font-mono text-xs text-slate-300 flex-1 flex flex-col justify-between">
-                <p className="text-xs text-muted-foreground/90 leading-relaxed">
-                  {status?.summary?.winRateOverallPct
-                    ? `Overall win rate at ${Number(status.summary.winRateOverallPct).toFixed(0)}% across ${status.summary.totalPositionsCreated ?? 0} trades. Today: ${Number(status?.summary?.winRateTodayPct ?? 0).toFixed(0)}%.`
-                    : "Performance vectors will initialize after the first closed grid loop."}
-                </p>
-                <div className="border-t border-border/15 pt-2.5 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Dynamic Bias</span>
-                    <Badge variant={llmRec.action === "LONG" ? "default" : llmRec.action === "SHORT" ? "destructive" : "secondary"} className="h-5 text-[10px] uppercase font-bold tracking-wider px-2">
-                      {llmRec.action}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Confidence</span>
-                    <span className="font-bold text-xs text-foreground">{Math.round((llmRec.confidence ?? 0) * 100)}%</span>
-                  </div>
-                  <div className="bg-muted/40 p-2.5 rounded-lg border border-border/30 text-muted-foreground italic text-[10px] leading-relaxed">
-                    &ldquo;{llmRec.reasoning}&rdquo;
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
-      </div>
-
-      {/* Middle Section: Live Summary KPIs from status.summary */}
-      {isLoading ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="bg-card border border-border/40 p-5 rounded-xl flex flex-col justify-between animate-pulse">
-              <div className="h-3 w-16 bg-muted/60 rounded" />
-              <div className="mt-4 h-6 w-20 bg-muted/40 rounded" />
-            </Card>
-          ))}
+      {isFullLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <span className="ml-2 font-mono text-sm text-muted-foreground">Loading portfolio details...</span>
         </div>
+      ) : !hasInstances ? (
+        /* Zero Instances Onboarding State */
+        <Card className="bg-card/40 border-border/60 backdrop-blur-sm max-w-2xl mx-auto py-10 px-8 text-center space-y-6 rounded-2xl shadow-xl">
+          <div className="w-16 h-16 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center mx-auto">
+            <Bot className="w-8 h-8 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold tracking-tight text-foreground">Deploy Your First Strategy</h2>
+            <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+              HueBox bots automatically trade on your behalf using your deposited USDT.
+              Choose a personality style (Moderate, Balanced, or Aggressive) and let the engine handle the execution.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button
+              onClick={() => setShowAddModal(true)}
+              className="w-full sm:w-auto font-mono text-xs font-bold px-6 h-10 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Launch Bot Instance
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowFundingModal(true)}
+              className="w-full sm:w-auto font-mono text-xs font-bold px-6 h-10 cursor-pointer"
+            >
+              Deposit USDT first
+            </Button>
+          </div>
+        </Card>
       ) : (
         <>
-          {/* Row 1: 4 primary KPIs */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 font-mono text-xs">
-            {/* Unrealized PnL */}
+          {/* 24h performance banner */}
+          {delta24h && delta24h.hasHistory && delta24h.profit !== null && (
+            <div className={cn(
+              "p-4 border rounded-xl flex items-center justify-between font-mono text-xs shadow-sm backdrop-blur-sm",
+              delta24h.profit >= 0
+                ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
+                : "bg-rose-500/5 border-rose-500/20 text-rose-400"
+            )}>
+              <div className="flex items-center gap-2">
+                {delta24h.profit >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                <span>
+                  Your portfolio is <strong>{delta24h.profit >= 0 ? "up" : "down"} ${Math.abs(delta24h.profit).toFixed(2)}</strong> today ({delta24h.profitPercent !== null ? (delta24h.profitPercent >= 0 ? "+" : "") + delta24h.profitPercent.toFixed(2) : "0"}%)
+                </span>
+              </div>
+              <span className="text-[10px] text-muted-foreground uppercase">24H PERFORMANCE DELTA</span>
+            </div>
+          )}
+
+          {/* Stalled Warn Banner */}
+          {anyStalled && (
+            <div className="p-4 bg-amber-500/5 border border-amber-500/25 rounded-xl text-amber-400 font-mono text-xs flex items-start gap-3 shadow-sm">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-[13px]">System Warning: Connection issue detected</strong>
+                <p className="text-[11px] text-muted-foreground/90 mt-0.5 leading-relaxed">
+                  One of your bot instances has stopped responding (stalled heartbeat). We are checking the server connection.
+                  Try resuming/restarting the bot below. If the warning persists, please contact support.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Aggregate metrics block */}
+          <div className="grid gap-6 md:grid-cols-4 font-mono text-xs">
+            {/* Total Allocated Capital */}
             <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">UNREALIZED PNL</CardTitle>
+                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">
+                  DEPLOYED CAPITAL
+                  <InfoTooltip text="Total USDT currently allocated to all running or paused bot instances combined." />
+                </CardTitle>
                 <Wallet2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold font-sans tracking-tight ${(status?.summary?.unrealizedPnlUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                  }`}>
-                  {(status?.summary?.unrealizedPnlUsdt ?? 0) >= 0 ? "+" : ""}${Number(status?.summary?.unrealizedPnlUsdt ?? 0).toFixed(2)}
+                <div className="text-2xl font-bold font-sans tracking-tight text-foreground">
+                  ${aggregate?.totalDeployedCapital.toFixed(2) ?? "0.00"}
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1">Live open positions</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Sum across active instances</p>
               </CardContent>
             </Card>
 
-            {/* Total PnL */}
+            {/* Total Wallet Balance */}
             <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">TOTAL PNL</CardTitle>
-                <TrendingUp className="h-4 w-4 text-emerald-400" />
+                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">
+                  WALLETS BALANCE
+                  <InfoTooltip text="Total USDT balance in all your connected Bybit accounts and sub-accounts combined." />
+                </CardTitle>
+                <Wallet2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold font-sans tracking-tight ${(status?.summary?.totalPnlUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                  }`}>
-                  {(status?.summary?.totalPnlUsdt ?? 0) >= 0 ? "+" : ""}${Number(status?.summary?.totalPnlUsdt ?? 0).toFixed(2)}
+                <div className="text-2xl font-bold font-sans tracking-tight text-foreground">
+                  ${aggregate?.totalWalletBalance.toFixed(2) ?? "0.00"}
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1">Realized + Unrealized</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Includes unrealized P&L</p>
               </CardContent>
             </Card>
 
-            {/* Live ROI */}
+            {/* Total Unrealized PnL */}
             <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">LIVE ROI</CardTitle>
+                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">
+                  UNREALIZED PNL
+                  <InfoTooltip text={GLOSSARY.unrealizedPnl} />
+                </CardTitle>
+                <TrendingUp className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className={cn(
+                  "text-2xl font-bold font-sans tracking-tight",
+                  (aggregate?.totalUnrealizedPnl ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                )}>
+                  {(aggregate?.totalUnrealizedPnl ?? 0) >= 0 ? "+" : ""}${aggregate?.totalUnrealizedPnl.toFixed(2) ?? "0.00"}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">From all live positions</p>
+              </CardContent>
+            </Card>
+
+            {/* Weighted ROI */}
+            <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">
+                  WEIGHTED ROI
+                  <InfoTooltip text={GLOSSARY.roi} />
+                </CardTitle>
                 <Target className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold font-sans tracking-tight ${(status?.summary?.liveRoiPct ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                  }`}>
-                  {(status?.summary?.liveRoiPct ?? 0) >= 0 ? "+" : ""}{Number(status?.summary?.liveRoiPct ?? 0).toFixed(2)}%
+                <div className={cn(
+                  "text-2xl font-bold font-sans tracking-tight",
+                  (aggregate?.weightedRoi ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                )}>
+                  {(aggregate?.weightedRoi ?? 0) >= 0 ? "+" : ""}{aggregate?.weightedRoi.toFixed(2) ?? "0.00"}%
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1">On allocated capital</p>
-              </CardContent>
-            </Card>
-
-            {/* Today's Profit */}
-            <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">TODAY'S PROFIT</CardTitle>
-                <Trophy className="h-4 w-4 text-amber-400" />
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold font-sans tracking-tight ${(status?.summary?.profitTodayUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                  }`}>
-                  {(status?.summary?.profitTodayUsdt ?? 0) >= 0 ? "+" : ""}${Number(status?.summary?.profitTodayUsdt ?? 0).toFixed(2)}
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-1">24h: +${Number(status?.summary?.profit24hUsdt ?? 0).toFixed(2)}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Weighted by allocated capital</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Row 2: secondary stats strip */}
-          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6 font-mono text-xs">
-            {[
-              { label: "WIN RATE (TODAY)", value: `${Number(status?.summary?.winRateTodayPct ?? 0).toFixed(0)}%`, color: "text-emerald-400" },
-              { label: "WIN RATE (ALL TIME)", value: `${Number(status?.summary?.winRateOverallPct ?? 0).toFixed(0)}%`, color: "text-emerald-400" },
-              { label: "OPEN ORDERS", value: String(status?.summary?.openOrdersCount ?? 0), color: "text-foreground" },
-              { label: "ACTIVE POSITIONS", value: String(status?.summary?.activePositionsCount ?? 0), color: "text-cyan-400" },
-              { label: "TOTAL TRADES", value: String(status?.summary?.totalPositionsCreated ?? 0), color: "text-foreground" },
-              { label: "ALLOCATED", value: `$${Number(status?.summary?.allocatedAmountUsdt ?? status?.allocatedAmountUsdt ?? 0).toFixed(0)}`, color: "text-foreground" },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="bg-card/20 border border-border/30 rounded-lg px-3 py-2.5 flex flex-col gap-1">
-                <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">{label}</span>
-                <span className={`text-base font-bold font-sans ${color}`}>{value}</span>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Historical charts */}
-      {isLoading ? (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="bg-card/30 border-border/40 p-5 rounded-xl min-h-[350px] animate-pulse flex flex-col justify-between">
-            <div className="h-4 w-32 bg-muted/60 rounded" />
-            <div className="h-[260px] bg-muted/20 rounded mt-4" />
-          </Card>
-          <Card className="bg-card/30 border-border/40 p-5 rounded-xl min-h-[350px] animate-pulse flex flex-col justify-between">
-            <div className="h-4 w-32 bg-muted/60 rounded" />
-            <div className="h-[260px] bg-muted/20 rounded mt-4" />
-          </Card>
-        </div>
-      ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* PnL Chart */}
-          <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
-            <CardHeader>
-              <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-primary" /> PROFIT HISTORY
+          {/* Traffic Light Status Dashboard */}
+          <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-sm font-mono text-xs">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                SYSTEM HEALTH INDICATORS
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="h-[300px] w-full font-mono text-xs">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={sortedHistory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.25)" vertical={false} />
-                    <XAxis dataKey="timestamp" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => formatPerfDate(val, "MM/dd")} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--primary)/0.2)', strokeWidth: 1 }} />
-                    <Line type="stepAfter" dataKey="pnl" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
+            <CardContent className="grid md:grid-cols-3 gap-4">
+              <div className="flex items-center gap-3 bg-muted/15 border border-border/30 rounded-lg p-3">
+                <span className={cn("w-3 h-3 rounded-full shrink-0 animate-pulse", heartbeatLight.color)} />
+                <div>
+                  <span className="text-[10px] text-muted-foreground block uppercase font-bold">Bot Heartbeats</span>
+                  <span className="text-foreground text-xs font-sans font-bold">{heartbeatLight.label}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 bg-muted/15 border border-border/30 rounded-lg p-3">
+                <span className={cn("w-3 h-3 rounded-full shrink-0", performanceLight.color)} />
+                <div>
+                  <span className="text-[10px] text-muted-foreground block uppercase font-bold">Drawdown Status</span>
+                  <span className="text-foreground text-xs font-sans font-bold">{performanceLight.label}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 bg-muted/15 border border-border/30 rounded-lg p-3">
+                <span className={cn("w-3 h-3 rounded-full shrink-0", deploymentLight.color)} />
+                <div>
+                  <span className="text-[10px] text-muted-foreground block uppercase font-bold">Active Deployments</span>
+                  <span className="text-foreground text-xs font-sans font-bold">{deploymentLight.label}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Fees Chart */}
-          <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
-            <CardHeader>
-              <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-primary" /> PLATFORM COMMISSION FEES
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] w-full font-mono text-xs">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={displayFees} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.25)" vertical={false} />
-                    <XAxis dataKey="timestamp" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => formatPerfDate(val, "MM/dd")} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
-                    <Tooltip content={<CustomFeeTooltip />} cursor={{ fill: 'hsl(var(--primary)/0.05)' }} />
-                    <Bar dataKey="fee" fill="hsl(var(--primary)/0.4)" stroke="hsl(var(--primary))" strokeWidth={1} radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* ACTIVE POSITIONS Card — C-01: Connect to real grid positions */}
-      <div id="active-bots" className="rounded-[12px] border border-border bg-card p-5 shadow-md">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <Bot className="w-4 h-4 text-cyan-400" />
-              <h2 className="text-foreground text-xs font-bold tracking-[1px] uppercase font-sans">
-                ACTIVE POSITIONS
+          {/* Instance list breakdown */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold tracking-wider font-sans text-foreground uppercase flex items-center gap-2">
+                <Bot className="w-4 h-4 text-primary" /> Deployed Instances ({instances.length} of 5)
               </h2>
             </div>
-            <p className="text-muted-foreground text-xs mt-1 font-sans">
-              Live deployed market maker grids.
-            </p>
-          </div>
-          {grids.length > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-emerald-400 text-xs font-bold font-sans">
-                {grids.length} ACTIVE
-              </span>
-            </div>
-          )}
-        </div>
 
-        {isLoading ? (
-          /* M-07: Table loading rows */
-          <div className="divide-y divide-border/10">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 px-4 py-3.5">
-                <div className="h-4 w-20 bg-muted/40 animate-pulse rounded" />
-                <div className="h-4 w-12 bg-muted/30 animate-pulse rounded" />
-                <div className="h-4 w-16 bg-muted/30 animate-pulse rounded ml-auto" />
-              </div>
-            ))}
-          </div>
-        ) : grids.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-center animate-fade-in">
-            <Bot className="w-12 h-12 text-muted-foreground/30 mb-2" />
-            <p className="text-muted-foreground text-sm font-sans font-medium">No active positions</p>
-            <p className="text-muted-foreground/60 text-xs font-mono mt-1 max-w-[200px] leading-relaxed">
-              {isRunning ? "Waiting for the engine to open positions." : "Start a strategy to deploy market makers."}
-            </p>
-            {!isRunning && (
-              <Link to="/control" className="text-primary hover:text-primary/80 text-xs font-semibold mt-3 transition-colors flex items-center gap-1">
-                Go to Investment Strategies
-                <ChevronRight className="w-3 h-3" />
-              </Link>
-            )}
-          </div>
-        ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse font-mono min-w-[500px]" role="grid">
-              <thead>
-                <tr className="border-b border-border text-muted-foreground text-xs tracking-[1px] uppercase bg-muted/5">
-                  <th scope="col" className="py-2.5 px-3 font-semibold">MARKET</th>
-                  <th scope="col" className="py-2.5 px-3 font-semibold">SIDE</th>
-                  <th scope="col" className="py-2.5 px-3 font-semibold">LEV</th>
-                  <th scope="col" className="py-2.5 px-3 font-semibold">ENTRY PRICE</th>
-                  <th scope="col" className="py-2.5 px-3 font-semibold text-right">COLLATERAL</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/10">
-                {grids.map((grid: any, idx: number) => (
-                  <tr
-                    key={idx}
-                    className="hover:bg-muted/10 transition-colors animate-fade-in"
-                    style={{ animationDelay: `${idx * 80}ms`, animationFillMode: "both" }}
-                  >
-                    <td className="py-3 px-3 font-bold font-sans text-foreground">
-                      <span className="text-xs">{grid.symbol}</span>
-                    </td>
-                    <td className="py-3 px-3">
-                      <Badge
-                        className={cn(
-                          "font-mono text-xs px-2 py-0.5 border font-semibold",
-                          grid.direction === "LONG"
-                            ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10"
-                            : "text-rose-400 border-rose-400/20 bg-rose-500/10"
+            <div className="grid gap-6 md:grid-cols-2">
+              {instances.map((inst) => {
+                const isRunning = inst.status === "running";
+                const isPaused = inst.status === "paused";
+                const isStopped = inst.status === "stopped";
+                const isStalled = inst.status === "stalled";
+
+                const isPauseLoading = actionLoading[`${inst.instanceId}-pause`];
+                const isResumeLoading = actionLoading[`${inst.instanceId}-resume`];
+                const isStopLoading = actionLoading[`${inst.instanceId}-stop`];
+
+                return (
+                  <Card key={inst.instanceId} className={cn(
+                    "bg-card/25 border backdrop-blur-sm shadow-md flex flex-col justify-between transition-all duration-200",
+                    isStalled ? "border-rose-500/40 bg-rose-500/[0.02]" : "border-border/40"
+                  )}>
+                    <CardHeader className="pb-3 flex flex-row items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-sm text-foreground capitalize">
+                            Bot — {inst.personality}
+                          </h3>
+                          <Badge variant="outline" className={cn(
+                            "px-2 py-0.5 text-[9px] uppercase font-bold border",
+                            isRunning
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                              : isPaused
+                              ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                              : isStalled
+                              ? "bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse"
+                              : "bg-muted/30 text-muted-foreground border-border/30"
+                          )}>
+                            {getStatusHumanText(inst.status)}
+                          </Badge>
+                        </div>
+                        <p className="text-[10px] font-mono text-muted-foreground mt-1">ID: {inst.instanceId} • SubUid: {inst.subAccountId}</p>
+                      </div>
+                      <span className="text-[10px] font-mono text-muted-foreground/60 leading-none">
+                        Last Active: {inst.lastCycleAt ? formatPerfDate(inst.lastCycleAt) : "N/A"}
+                      </span>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
+                      {/* Metric lines */}
+                      <div className="grid grid-cols-2 gap-4 font-mono text-xs border-y border-border/15 py-3">
+                        <div>
+                          <span className="text-[10px] text-muted-foreground uppercase block">Allocated Capital</span>
+                          <span className="text-foreground font-bold font-sans text-sm">${inst.allocatedAmount.toFixed(2)}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-muted-foreground uppercase block">Wallet Balance</span>
+                          <span className="text-foreground font-bold font-sans text-sm">${inst.walletBalanceUsdt.toFixed(2)}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-muted-foreground uppercase block">Unrealized P&L</span>
+                          <span className={cn("font-bold font-sans text-sm", inst.unrealizedPnl >= 0 ? "text-emerald-400" : "text-rose-400")}>
+                            {inst.unrealizedPnl >= 0 ? "+" : ""}${inst.unrealizedPnl.toFixed(2)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-muted-foreground uppercase block">Return (ROI)</span>
+                          <span className={cn("font-bold font-sans text-sm", inst.roi >= 0 ? "text-emerald-400" : "text-rose-400")}>
+                            {inst.roi >= 0 ? "+" : ""}{inst.roi.toFixed(2)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Info & explanations block */}
+                      <div className="space-y-2 text-[10px] leading-relaxed text-muted-foreground/80 font-mono">
+                        <div className="flex items-center justify-between">
+                          <span>Active Trading Grids:</span>
+                          <span className="text-foreground font-bold">{inst.activeGrids} deployed</span>
+                        </div>
+                        <p className="bg-muted/20 border border-border/10 p-2.5 rounded-lg italic">
+                          {GLOSSARY.personalities[inst.personality]}
+                        </p>
+                      </div>
+
+                      {/* Goal Progress */}
+                      <div className="border-t border-border/15 pt-3">
+                        <GoalProgressCard instanceId={inst.instanceId} />
+                      </div>
+
+                      {/* Operations buttons */}
+                      <div className="pt-2 flex gap-2">
+                        {isPaused && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={isResumeLoading}
+                            onClick={() => handleAction(inst.instanceId, "resume")}
+                            className="flex-1 font-mono text-[10px] font-bold h-8.5 cursor-pointer hover:bg-muted/40 gap-1.5"
+                          >
+                            {isResumeLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3 text-emerald-400" />}
+                            Resume
+                          </Button>
                         )}
-                      >
-                        {grid.direction}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-3 text-muted-foreground font-mono text-xs">
-                      {grid.leverage}x
-                    </td>
-                    <td className="py-3 px-3 font-mono text-xs text-foreground">
-                      ${grid.entryPrice?.toFixed(4) ?? "—"}
-                    </td>
-                    <td className="py-3 px-3 font-mono text-xs text-foreground font-bold text-right">
-                      ${grid.margin?.toFixed(2) ?? "0.00"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        {isRunning && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={isPauseLoading}
+                            onClick={() => handleAction(inst.instanceId, "pause")}
+                            className="flex-1 font-mono text-[10px] font-bold h-8.5 cursor-pointer hover:bg-muted/40 gap-1.5"
+                          >
+                            {isPauseLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Pause className="w-3 h-3 text-amber-400" />}
+                            Pause
+                          </Button>
+                        )}
+                        {!isStopped && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={isStopLoading}
+                            onClick={() => handleAction(inst.instanceId, "stop")}
+                            className="flex-1 font-mono text-[10px] font-bold h-8.5 cursor-pointer hover:bg-rose-500/10 hover:text-rose-400 gap-1.5"
+                          >
+                            {isStopLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Square className="w-3 h-3 text-rose-400" />}
+                            Stop Bot
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
-        )}
 
-        {/* Strategy-level controls in card footer */}
-        <div className="p-3.5 mt-4 border-t border-border/15 flex items-center justify-between bg-card/25 rounded-b-xl gap-2">
-          <div className="flex items-center gap-2">
-            <Badge
-              className={cn(
-                "font-mono text-xs px-2 py-0.5 border font-semibold uppercase",
-                isRunning
-                  ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10"
-                  : botRunningStatus === "paused"
-                    ? "text-amber-400 border-amber-500/20 bg-amber-500/10"
-                    : "text-rose-400 border-rose-500/20 bg-rose-500/10"
-              )}
-            >
-              {botRunningStatus}
-            </Badge>
-            <span className="text-muted-foreground text-xs font-mono">Strategy status</span>
-          </div>
-          <div>
-            <Link
-              to="/control"
-              title="Advanced controls — stop the bot, edit strategy, manage allocations, and more"
-              className="text-xs font-mono font-bold text-primary hover:text-primary/80 flex items-center gap-1 group transition-colors"
-            >
-              Full Control
-              <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </div>
-        </div>
-      </div>
+          {/* Historical charts */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* PnL Chart */}
+            <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
+              <CardHeader>
+                <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-primary" /> PROFIT HISTORY
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {sortedHistory.length === 0 ? (
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground/60 italic font-mono text-xs">
+                    Your profit history will update here after your bots close their first grid trade.
+                  </div>
+                ) : (
+                  <div className="h-[300px] w-full font-mono text-xs">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={sortedHistory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.25)" vertical={false} />
+                        <XAxis dataKey="timestamp" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => formatPerfDate(val, "MM/dd")} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
+                        <ReChartsTooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--primary)/0.2)', strokeWidth: 1 }} />
+                        <Line type="stepAfter" dataKey="pnl" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-      {/* Trade History Table */}
-      <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
-        <CardHeader className="pb-3 flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-widest text-muted-foreground uppercase font-bold">
-              <Trophy className="w-4 h-4 text-primary" /> TRADE HISTORY
-            </CardTitle>
-            <CardDescription className="text-xs font-mono text-muted-foreground/60">Recent position exits and order loop closures.</CardDescription>
+            {/* Fees Chart */}
+            <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
+              <CardHeader>
+                <CardTitle className="text-xs font-mono tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-primary" /> PLATFORM COMMISSION FEES
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {fees.length === 0 ? (
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground/60 italic font-mono text-xs text-center px-6">
+                    Commission fee records are not available.
+                    <br />Fees will be graphed here as you close profitable positions.
+                  </div>
+                ) : (
+                  <div className="h-[300px] w-full font-mono text-xs">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={fees} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.25)" vertical={false} />
+                        <XAxis dataKey="timestamp" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => formatPerfDate(val, "MM/dd")} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
+                        <ReChartsTooltip content={<CustomFeeTooltip />} cursor={{ fill: 'hsl(var(--primary)/0.05)' }} />
+                        <Bar dataKey="fee" fill="hsl(var(--primary)/0.4)" stroke="hsl(var(--primary))" strokeWidth={1} radius={[3, 3, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-          <Badge variant="outline" className="text-xs font-mono border-border/30">MAX 10 RECORDINGS</Badge>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="divide-y divide-border/10">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="flex items-center gap-4 px-4 py-3.5">
-                  <div className="h-4 w-24 bg-muted/40 animate-pulse rounded" />
-                  <div className="h-4 w-16 bg-muted/30 animate-pulse rounded" />
-                  <div className="h-4 w-12 bg-muted/30 animate-pulse rounded" />
-                  <div className="h-4 w-12 bg-muted/40 animate-pulse rounded ml-auto" />
+
+          {/* Trade History Table */}
+          <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 font-mono text-xs tracking-widest text-muted-foreground uppercase font-bold">
+                  <Trophy className="w-4 h-4 text-primary" /> TRADE HISTORY
+                </CardTitle>
+                <CardDescription className="text-xs font-mono text-muted-foreground/60">
+                  Recent closed position loops from your deployed trading engines.
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="text-xs font-mono border-border/30">MAX 10 RECORDS</Badge>
+            </CardHeader>
+            <CardContent>
+              {trades.length === 0 ? (
+                <div className="py-10 text-center text-muted-foreground italic font-mono text-xs">
+                  No trades logged in this session history.
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="overflow-x-auto border border-border/30 rounded-xl bg-muted/10">
-              <table className="w-full text-xs text-left border-collapse font-mono">
-                <thead>
-                  <tr className="border-b border-border/30 text-muted-foreground bg-muted/15 text-xs">
-                    <th className="py-3 px-4 font-semibold">CLOSED DATE</th>
-                    <th className="py-3 px-4 font-semibold">PAIR</th>
-                    <th className="py-3 px-4 font-semibold">DIRECTION</th>
-                    <th className="py-3 px-4 font-semibold text-right">NET RETURN (USDT)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/15">
-                  {trades.slice(0, 10).map((trade: any, idx: number) => (
-                    <tr key={idx} className="hover:bg-muted/15 transition-colors">
-                      <td className="py-3 px-4 text-muted-foreground">{formatPerfDate(trade.timestamp, "MMM dd, HH:mm")}</td>
-                      <td className="py-3 px-4 font-bold font-sans text-foreground">{trade.symbol || "BTCUSDT"}</td>
-                      <td className="py-3 px-4">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "font-mono text-xs px-2 py-0.5 border font-semibold",
-                            trade.pnl >= 0
-                              ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10"
-                              : "text-rose-400 border-rose-400/20 bg-rose-500/10"
-                          )}
-                        >
-                          {trade.direction || (trade.pnl >= 0 ? "LONG" : "SHORT")}
-                        </Badge>
-                      </td>
-                      <td className={cn(
-                        "py-3 px-4 text-right font-bold font-sans",
-                        trade.pnl >= 0 ? "text-emerald-400" : "text-rose-400"
-                      )}>
-                        {trade.pnl >= 0 ? "+" : ""}${Number(trade.pnl ?? 0).toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                  {trades.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-10 text-center text-muted-foreground italic font-mono">No trades logged in this session history.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              ) : (
+                <div className="overflow-x-auto border border-border/30 rounded-xl bg-muted/10">
+                  <table className="w-full text-xs text-left border-collapse font-mono">
+                    <thead>
+                      <tr className="border-b border-border/30 text-muted-foreground bg-muted/15 text-xs">
+                        <th className="py-3 px-4 font-semibold">CLOSED DATE</th>
+                        <th className="py-3 px-4 font-semibold">PAIR</th>
+                        <th className="py-3 px-4 font-semibold">BOT INSTANCE</th>
+                        <th className="py-3 px-4 font-semibold">DIRECTION</th>
+                        <th className="py-3 px-4 font-semibold text-right">NET RETURN (USDT)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/15">
+                      {trades.slice(0, 10).map((trade: any, idx: number) => {
+                        const botInstanceObj = instances.find(i => i.instanceId === trade.instanceId);
+                        const botName = botInstanceObj ? `${botInstanceObj.personality.toUpperCase()} (${trade.instanceId.slice(0, 6)})` : (trade.instanceId ? `Instance ${trade.instanceId.slice(0, 6)}` : "—");
+
+                        return (
+                          <tr key={idx} className="hover:bg-muted/15 transition-colors">
+                            <td className="py-3 px-4 text-muted-foreground">{formatPerfDate(trade.timestamp, "MMM dd, HH:mm")}</td>
+                            <td className="py-3 px-4 font-bold font-sans text-foreground">{trade.symbol || "—"}</td>
+                            <td className="py-3 px-4 font-semibold text-muted-foreground">{botName}</td>
+                            <td className="py-3 px-4">
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "font-mono text-xs px-2 py-0.5 border font-semibold",
+                                  trade.side === "long" || trade.pnlUsdt >= 0
+                                    ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10"
+                                    : "text-rose-400 border-rose-400/20 bg-rose-500/10"
+                                )}
+                              >
+                                {trade.side ? trade.side.toUpperCase() : (trade.pnlUsdt >= 0 ? "LONG" : "SHORT")}
+                              </Badge>
+                            </td>
+                            <td className={cn(
+                              "py-3 px-4 text-right font-bold font-sans",
+                              trade.pnlUsdt >= 0 ? "text-emerald-400" : "text-rose-400"
+                            )}>
+                              {trade.pnlUsdt >= 0 ? "+" : ""}${Number(trade.pnlUsdt ?? 0).toFixed(2)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {/* Modals */}
       <AddInstanceModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
+        availableBalance={aggregate?.totalWalletBalance ?? 0}
+        onLaunched={() => refetchSummary()}
       />
       <FundingModal
         isOpen={showFundingModal}

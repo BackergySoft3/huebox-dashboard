@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useFundingStore } from "../State/funding";
 import {
-  useCreateOrder,
   useWithdraw,
   useSend,
 } from "../Hooks/useWallet";
@@ -44,12 +43,6 @@ export function Payments() {
   const [historyPage, setHistoryPage] = useState(1);
   const [showFullHistory, setShowFullHistory] = useState(false);
 
-  // Form States for Add Funds
-  const [addFundsAmount, setAddFundsAmount] = useState("");
-  const [addFundsFiat, setAddFundsFiat] = useState("USD");
-  const [addFundsSuccess, setAddFundsSuccess] = useState(false);
-  const [addFundsErrorMsg, setAddFundsErrorMsg] = useState("");
-
   // Form States for Withdraw
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawAddress, setWithdrawAddress] = useState("");
@@ -75,8 +68,6 @@ export function Payments() {
     isBalanceLoading: balanceLoading,
     isDepositInfoLoading: depositInfoLoading,
     isHistoryLoading: historyLoading,
-    isWithdrawing,
-    error: fundingError,
     fetchBalance,
     fetchDepositInfo,
     fetchHistory,
@@ -118,7 +109,6 @@ export function Payments() {
   const botStatusQuery = useBotStatus();
   const subAccountUid = botStatusQuery.data?.bybitAccount?.uid;
 
-  const createOrderMutation = useCreateOrder();
   const withdrawMutation = useWithdraw();
   const sendMutation = useSend();
 
@@ -231,30 +221,7 @@ export function Payments() {
     return `${str.slice(0, 6)}...${str.slice(-6)}`;
   };
 
-  const handleAddFundsSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setAddFundsSuccess(false);
-    setAddFundsErrorMsg("");
-    const amountNum = parseFloat(addFundsAmount);
-    
-    if (isNaN(amountNum) || amountNum < 10) {
-      setAddFundsErrorMsg("Minimum deposit amount is $10.00 USD.");
-      return;
-    }
 
-    createOrderMutation.mutate(
-      { amountUsd: amountNum, fiat: addFundsFiat, coin: "USDT" },
-      {
-        onSuccess: () => {
-          setAddFundsSuccess(true);
-          setAddFundsAmount("");
-        },
-        onError: (err: any) => {
-          setAddFundsErrorMsg(parseApiError(err));
-        }
-      }
-    );
-  };
 
   const handleWithdrawSubmit = (e: React.FormEvent) => {
     e.preventDefault();

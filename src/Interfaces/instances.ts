@@ -23,4 +23,29 @@ export interface BotInstance {
 export interface StartInstancePayload {
   personality: InstancePersonality;
   allocatedAmount: number;
+  expectedProfitUsdt: number;
+  plannedDurationDays: number;
 }
+
+/** Returned by GET /api/bot/instances/:instanceId/goal-progress */
+export interface GoalProgress {
+  hasGoalPlan: true;
+  instanceId: string;
+  floorUsdt: number;
+  stretchTargetUsdt: number;
+  currentPlaceUsdt: number;
+  expectedPlaceUsdt: number;
+  daysRemaining: number;
+  planOverdue: boolean;
+  targetAchieved: boolean;
+  surplusUsdt: number | null;
+  planStartDate: string;
+  plannedDurationDays: number;
+}
+
+export interface NoGoalPlan {
+  hasGoalPlan: false;
+  instanceId: string;
+}
+
+export type GoalProgressResult = GoalProgress | NoGoalPlan;
