@@ -2,6 +2,7 @@ import { useState } from "react";
 import { usePortfolioSummary } from "../Hooks/usePortfolioSummary";
 import { usePerformance } from "../Hooks/usePerformance";
 import { useInstancesStore } from "../State/instances";
+import { useAuthStore } from "../State/auth";
 import { AddInstanceModal } from "../Components/Organisms/AddInstanceModal";
 import { GoalProgressCard } from "../Components/Organisms/GoalProgressCard";
 import { FundingModal } from "../Components/Organisms/FundingModal";
@@ -100,6 +101,8 @@ export function MyBot() {
   const { data: summary, isLoading, refetch: refetchSummary } = usePortfolioSummary();
   const { history, fees, isLoading: perfLoading } = usePerformance();
   const { pauseInstance, resumeInstance, stopInstance } = useInstancesStore();
+  const user = useAuthStore((state) => state.user);
+  const isKycVerified = user?.kycStatus === "verified";
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showFundingModal, setShowFundingModal] = useState(false);
@@ -139,10 +142,10 @@ export function MyBot() {
 
   const sortedHistory = history
     ? [...history].sort((a: any, b: any) => {
-        const timeA = a?.timestamp ? new Date(a.timestamp).getTime() : 0;
-        const timeB = b?.timestamp ? new Date(b.timestamp).getTime() : 0;
-        return (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
-      })
+      const timeA = a?.timestamp ? new Date(a.timestamp).getTime() : 0;
+      const timeB = b?.timestamp ? new Date(b.timestamp).getTime() : 0;
+      return (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
+    })
     : [];
 
   const trades = [...sortedHistory].reverse();
@@ -214,6 +217,7 @@ export function MyBot() {
             variant="outline"
             size="sm"
             onClick={() => setShowFundingModal(true)}
+            disabled={!isKycVerified}
             className="font-mono text-xs font-bold shadow-sm flex items-center gap-1.5 cursor-pointer"
           >
             <ArrowDownLeft className="w-3.5 h-3.5" />
@@ -224,6 +228,7 @@ export function MyBot() {
               variant="default"
               size="sm"
               onClick={() => setShowAddModal(true)}
+              disabled={!isKycVerified}
               className="font-mono text-xs font-bold shadow-sm flex items-center gap-1.5 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -251,21 +256,33 @@ export function MyBot() {
               Choose a personality style (Moderate, Balanced, or Aggressive) and let the engine handle the execution.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button
-              onClick={() => setShowAddModal(true)}
-              className="w-full sm:w-auto font-mono text-xs font-bold px-6 h-10 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              Launch Bot Instance
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowFundingModal(true)}
-              className="w-full sm:w-auto font-mono text-xs font-bold px-6 h-10 cursor-pointer"
-            >
-              Deposit USDT first
-            </Button>
-          </div>
+          {isKycVerified ? (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button
+                onClick={() => setShowAddModal(true)}
+                className="w-full sm:w-auto font-mono text-xs font-bold px-6 h-10 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Launch Bot Instance
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowFundingModal(true)}
+                className="w-full sm:w-auto font-mono text-xs font-bold px-6 h-10 cursor-pointer"
+              >
+                Deposit USDT first
+              </Button>
+            </div>
+          ) : (
+            <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-lg max-w-sm mx-auto flex items-start gap-3 text-left shadow-sm">
+              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-bold text-rose-400">KYC Verification Required</h4>
+                <p className="text-xs text-rose-400/80 mt-1 font-mono leading-relaxed">
+                  Please complete your identity verification in the profile section before depositing funds or launching bots.
+                </p>
+              </div>
+            </div>
+          )}
         </Card>
       ) : (
         <>
@@ -445,10 +462,10 @@ export function MyBot() {
                             isRunning
                               ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                               : isPaused
-                              ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                              : isStalled
-                              ? "bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse"
-                              : "bg-muted/30 text-muted-foreground border-border/30"
+                                ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                : isStalled
+                                  ? "bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse"
+                                  : "bg-muted/30 text-muted-foreground border-border/30"
                           )}>
                             {getStatusHumanText(inst.status)}
                           </Badge>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useFundingStore } from "../State/funding";
+import { useAuthStore } from "../State/auth";
 import {
   useWithdraw,
   useSend,
@@ -38,7 +39,9 @@ import { cn } from "../Helpers/utils";
 
 export function Payments() {
   const [activeTab, setActiveTab] = useState<PaymentsTab>(PaymentsTab.Overview);
-  
+  const user = useAuthStore((state) => state.user);
+  const isKycVerified = user?.kycStatus === "verified";
+
   // States for pagination
   const [historyPage, setHistoryPage] = useState(1);
   const [showFullHistory, setShowFullHistory] = useState(false);
@@ -184,7 +187,7 @@ export function Payments() {
   };
 
   const formatTxAmount = (type: string, amount?: number | string, coinSymbol?: string) => {
-    const isIncoming = ([ TransactionType.Deposit, TransactionType.Receive, TransactionType.Pnl, TransactionType.Transfer] as string[]).includes(type);
+    const isIncoming = ([TransactionType.Deposit, TransactionType.Receive, TransactionType.Pnl, TransactionType.Transfer] as string[]).includes(type);
     const sign = isIncoming ? "+" : "-";
     const color = isIncoming ? "text-emerald-400" : "text-amber-400";
     const amountVal = amount !== undefined && amount !== null ? Number(amount) : 0;
@@ -281,7 +284,7 @@ export function Payments() {
       setSendErrorMsg("Recipient Account ID is required.");
       return;
     }
-    
+
     sendMutation.mutate(
       {
         toBybitUid: sendUid,
@@ -442,6 +445,7 @@ export function Payments() {
           <div className="grid grid-cols-3 gap-4">
             <Button
               variant="outline"
+              disabled={!isKycVerified}
               onClick={() => setActiveTab(PaymentsTab.AddFunds)}
               className="bg-card/20 border-border/40 hover:border-primary/40 hover:bg-primary/5 text-xs font-mono font-bold flex flex-col items-center justify-center h-20 py-2 rounded-xl transition-all cursor-pointer shadow-sm"
             >

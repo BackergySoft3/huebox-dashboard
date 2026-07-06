@@ -317,7 +317,7 @@ export function Overview() {
                     ${Number(totalAllocated).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <p className="hidden sm:flex text-xs text-muted-foreground font-sans mt-2 items-center gap-1">
-                    Total USDT committed to active strategies
+                    Total USDT to active strategies
                   </p>
                 </div>
               </Card>

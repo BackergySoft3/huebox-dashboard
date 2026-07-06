@@ -205,8 +205,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         )}
  
         <Button
-          variant="ghost"
-          className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          variant="destructive"
+          className="w-full justify-start shadow-md bg-red-600 hover:bg-red-700 text-white"
           onClick={() => { setIsLogoutModalOpen(true); onClose?.(); }}
         >
           <LogOut className="w-4 h-4 mr-2" />

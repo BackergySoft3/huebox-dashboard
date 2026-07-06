@@ -21,8 +21,8 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
     ? new Date(heartbeat).toLocaleTimeString()
     : "Awaiting first signal...";
 
-  // H-07: Email shown as username only (L-02)
-  const emailDisplay = user?.email ? user.email.split("@")[0] : "";
+  // Show first name if available, fallback to email prefix
+  const displayName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
 
   return (
     <header className="h-14 border-b border-border bg-card/20 backdrop-blur-md flex items-center justify-between px-4 md:px-6 sticky top-0 z-40">
@@ -89,7 +89,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         )}
       </div>
 
-      {/* Right: user email (username only) — H-07: no duplicate role badge */}
+      {/* Right: user display name — H-07: no duplicate role badge */}
       <div className="flex items-center gap-3">
         {/* L-01: Theme toggle for discoverability */}
         <button
@@ -108,7 +108,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
             title="View profile"
           >
             <UserAvatar avatarUrl={user.avatarUrl} email={user.email} />
-            <span>{emailDisplay}</span>
+            <span>{displayName}</span>
           </Link>
         )}
       </div>
