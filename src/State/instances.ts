@@ -2,7 +2,7 @@
 // FIX 3 — Optimistic Update Snapshot Rollback
 import { create } from "zustand";
 import { api } from "../Services/http.service";
-import type { BotInstance, StartInstancePayload, InstanceStatus } from "../Interfaces/instances";
+import type { BotInstance, StartInstancePayload, InstanceStatus, GoalProgressResult } from "../Interfaces/instances";
 
 interface InstancesState {
   instances: BotInstance[];
@@ -18,6 +18,7 @@ interface InstancesState {
   resumeInstance: (instanceId: string) => Promise<void>;
   stopInstance: (instanceId: string) => Promise<string>;
   deleteInstance: (instanceId: string) => Promise<void>;
+  fetchGoalProgress: (instanceId: string) => Promise<GoalProgressResult>;
 
   // Optimistic update helper
   _optimisticUpdate: (instanceId: string, status: InstanceStatus) => BotInstance[];
@@ -101,5 +102,10 @@ export const useInstancesStore = create<InstancesState>((set, get) => ({
   deleteInstance: async (instanceId) => {
     await api.delete(`/api/bot/instances/${instanceId}`);
     await get().fetchInstances();
+  },
+
+  fetchGoalProgress: async (instanceId) => {
+    const res = await api.get<GoalProgressResult>(`/api/bot/instances/${instanceId}/goal-progress`);
+    return res.data;
   },
 }));
