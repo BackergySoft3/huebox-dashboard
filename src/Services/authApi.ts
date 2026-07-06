@@ -8,6 +8,7 @@ export interface PrepareAccountRequest {
   phone: string;
   currency: Currency;
   referralCode?: string;
+  avatarUrl?: string;
 }
 
 export const authApi = {

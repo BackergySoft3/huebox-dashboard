@@ -19,8 +19,11 @@ import {
   ChevronRight,
   TrendingUp,
   Sliders,
-  DollarSign
+  DollarSign,
+  Camera,
 } from "lucide-react";
+import { useFileUpload } from "../Hooks/useFileUpload";
+import { UploadFolder } from "../Enums/UploadFolder.enum";
 import ReactFlagsSelect from "react-flags-select";
 import { Currency } from "../Enums/Currency.enum";
 import { cn } from "../Helpers/utils";
@@ -97,6 +100,32 @@ export function Login() {
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [otpVerified, setOtpVerified] = useState(false);
+
+  // Avatar upload (profile step)
+  const { upload: uploadAvatar, isUploading: isUploadingAvatar, error: avatarUploadError } =
+    useFileUpload({
+      folder: UploadFolder.AVATARS,
+      allowedTypes: ["image/png", "image/jpeg", "image/webp"],
+      maxSizeBytes: 5 * 1024 * 1024,
+    });
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarPublicUrl, setAvatarPublicUrl] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const localUrl = URL.createObjectURL(file);
+    setAvatarPreview(localUrl);
+    setAvatarPublicUrl(null);
+    const result = await uploadAvatar(file);
+    if (result) {
+      setAvatarPublicUrl(result.publicUrl);
+    } else {
+      URL.revokeObjectURL(localUrl);
+      setAvatarPreview(null);
+    }
+  };
 
   const setAuth = useAuthStore((state) => state.setAuth);
   const navigate = useNavigate();
@@ -203,6 +232,11 @@ export function Login() {
   const handleKycSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!avatarPublicUrl) {
+      setError("Please upload a profile photo to continue.");
+      return;
+    }
+
     // H-02: Phone format validation
     const cleanPhone = kycForm.phone.replace(/[\s\-()]/g, "");
     if (!/^\+[1-9]\d{4,14}$/.test(cleanPhone)) {
@@ -215,14 +249,15 @@ export function Login() {
     try {
       await authApi.prepareAccount({
         ...kycForm,
-        phone: cleanPhone
+        phone: cleanPhone,
+        avatarUrl: avatarPublicUrl,
       });
       const currentUser = useAuthStore.getState().user;
       if (currentUser) {
         useAuthStore.getState().setAuth(
           useAuthStore.getState().accessToken,
           useAuthStore.getState().refreshToken,
-          { ...currentUser, firstName: kycForm.firstName, lastName: kycForm.lastName, kycStatus: "in_review" }
+          { ...currentUser, firstName: kycForm.firstName, lastName: kycForm.lastName, kycStatus: "in_review", avatarUrl: avatarPublicUrl },
         );
       }
       navigate("/");
@@ -390,63 +425,52 @@ export function Login() {
       </div>
 
       {/* 2. Hero Section with Value Prop & Login Card */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-28 md:pt-36 pb-20 md:pb-28">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      {/* min-h fills the viewport below the navbar (72px resting height) so the grid
+          stays vertically centered on every step regardless of card content height. */}
+      <section className="relative z-10 min-h-[calc(100vh-72px)] flex items-center max-w-7xl mx-auto px-6 md:px-12 py-12">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           
           {/* Left: Value proposition */}
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="lg:col-span-7 space-y-6"
+            className="lg:col-span-6 space-y-4"
           >
-            <motion.div variants={heroTextVariants} className="space-y-4">
+            <motion.div variants={heroTextVariants} className="space-y-3">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-semibold uppercase tracking-wider font-mono">
                 <Cpu className="w-3.5 h-3.5" />
                 <span>Next-Gen Grid Automation</span>
               </div>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground font-heading leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground font-heading leading-tight">
                 Automated Grid Trading <br />
                 <span className="bg-gradient-to-r from-primary to-[#42E2D5] bg-clip-text text-transparent">
                   Powered by Advanced AI
                 </span>
               </h1>
-              <p className="text-lg text-muted-foreground max-w-xl leading-relaxed font-sans">
+              <p className="text-sm text-muted-foreground max-w-xl leading-relaxed font-sans">
                 HueBox runs automated grid-trading bot software connected to secure exchange infrastructure. Optimize returns, utilize compounding, and manage risk without pool custody.
               </p>
             </motion.div>
 
-            {/* Bullet points */}
-            <motion.div variants={heroTextVariants} className="space-y-3.5 pt-2 max-w-lg">
-              <div className="flex gap-3 items-start">
-                <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 flex items-center justify-center shrink-0 mt-0.5">
-                  <Check className="w-3.5 h-3.5" />
+            {/* Bullet points — titles only for compact layout */}
+            <motion.div variants={heroTextVariants} className="space-y-2.5 max-w-lg">
+              {[
+                { icon: ShieldCheck, label: "Isolated Account Trading", desc: "Capital stays isolated — HueBox holds zero deposit custody." },
+                { icon: TrendingUp,  label: "Dynamic Volatility Management", desc: "ATR-based grid spacing survives volatile market breakouts." },
+                { icon: Sliders,     label: "Personality Profile Strategy", desc: "Moderate, Balanced, or Aggressive — matched to your risk targets." },
+                { icon: DollarSign,  label: "Non-Custodial & Secure", desc: "You retain full control of your funds at all times." },
+              ].map(({ icon: Icon, label, desc }) => (
+                <div key={label} className="flex gap-3 items-center">
+                  <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-foreground">{label}</span>
+                    <span className="hidden lg:inline text-xs text-muted-foreground"> — {desc}</span>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-foreground">Isolated Account Trading</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">Your trading capital stays completely isolated inside your dedicated trading account. HueBox holds zero deposit custody.</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 items-start">
-                <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 flex items-center justify-center shrink-0 mt-0.5">
-                  <Check className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-foreground">Dynamic Volatility Management</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">HueBox AI tracks Average True Range (ATR) metrics in real-time, spacing grid lines dynamically to survive volatile breakouts.</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 items-start">
-                <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 flex items-center justify-center shrink-0 mt-0.5">
-                  <Check className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-foreground">Personality Profile Strategy</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">Choose between Moderate, Balanced, or Aggressive trading bot behaviors to match your risk budget and return targets.</p>
-                </div>
-              </div>
+              ))}
             </motion.div>
           </motion.div>
 
@@ -456,17 +480,17 @@ export function Login() {
             variants={loginCardVariants}
             initial="hidden"
             animate="visible"
-            className="lg:col-span-5 flex justify-center"
+            className="lg:col-span-6 flex justify-center"
           >
-            <Card className="w-full max-w-md relative z-10 border-border/50 bg-card/60 backdrop-blur-xl shadow-2xl">
-              <CardHeader className="space-y-4 items-center text-center">
-                <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-2 shadow-lg shadow-primary/20">
+            <Card className="w-full max-w-lg relative z-10 border-border/50 bg-card/60 backdrop-blur-xl shadow-2xl">
+              <CardHeader className="space-y-2 items-center text-center pb-3">
+                <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
                   <Activity className="w-6 h-6" />
                 </div>
-                <CardTitle className="text-2xl font-bold tracking-tight">Access Control</CardTitle>
+                <CardTitle className="text-xl font-bold tracking-tight">Access Control</CardTitle>
 
                 {/* Step indicator */}
-                <div className="w-full flex items-center justify-between gap-2 pt-1">
+                <div className="w-full flex items-center justify-between gap-2">
                   {STEPS.map((s, idx) => {
                     const isCompleted = idx < currentStepIndex;
                     const isCurrent = idx === currentStepIndex;
@@ -637,6 +661,66 @@ export function Login() {
                   <form onSubmit={handleKycSubmit} className="space-y-3">
                     <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-xs text-muted-foreground font-sans leading-relaxed">
                       Your email has been verified. Please complete the fields below to activate your account.
+                    </div>
+
+                    {/* ── Avatar upload ── */}
+                    <div className="flex flex-col items-center gap-1.5">
+                      <label className="text-xs font-semibold text-muted-foreground self-start">
+                        Profile photo <span className="text-destructive">*</span>
+                      </label>
+                      <div className="relative">
+                        <div
+                          role="button"
+                          tabIndex={isUploadingAvatar ? -1 : 0}
+                          aria-label="Upload profile photo"
+                          onClick={() => !isUploadingAvatar && avatarInputRef.current?.click()}
+                          onKeyDown={(e) => e.key === "Enter" && !isUploadingAvatar && avatarInputRef.current?.click()}
+                          className={cn(
+                            "w-20 h-20 rounded-full border-2 border-dashed flex items-center justify-center overflow-hidden transition-colors",
+                            !isUploadingAvatar && "cursor-pointer hover:border-primary/60 hover:bg-primary/5",
+                            avatarPreview ? "border-primary" : "border-border/50 bg-background/50",
+                            isUploadingAvatar && "pointer-events-none",
+                          )}
+                        >
+                          {avatarPreview ? (
+                            <img src={avatarPreview} alt="Avatar preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="flex flex-col items-center gap-0.5 text-muted-foreground">
+                              <Camera className="w-5 h-5" />
+                              <span className="text-[9px]">Upload</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {isUploadingAvatar && (
+                          <div className="absolute inset-0 rounded-full bg-background/80 flex items-center justify-center">
+                            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        )}
+
+                        {avatarPublicUrl && !isUploadingAvatar && (
+                          <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center ring-2 ring-background">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </div>
+
+                      <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        onChange={handleAvatarChange}
+                        disabled={isUploadingAvatar}
+                      />
+
+                      {avatarUploadError ? (
+                        <p className="text-[10px] text-rose-500 font-mono">{avatarUploadError}</p>
+                      ) : (
+                        <p className="text-[10px] text-muted-foreground/60">
+                          {avatarPublicUrl ? "Click to change" : "PNG, JPG or WebP · max 5 MB"}
+                        </p>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
