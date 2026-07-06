@@ -1,6 +1,8 @@
+import { Link } from "react-router-dom";
 import { useBotStore } from "../../State/bot";
 import { useAuthStore } from "../../State/auth";
 import { StatusBadge } from "../../Components/Organisms/StatusBadge";
+import { UserAvatar } from "../../Components/Organisms/UserAvatar";
 import { Heart, RefreshCw, Shield, ShieldCheck, Menu, Sun, Moon } from "lucide-react";
 import { useThemeStore } from "../../State/theme";
 
@@ -100,12 +102,14 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         </button>
 
         {user?.email && (
-          <div
-            className="flex items-center gap-2 text-xs font-mono text-muted-foreground bg-muted/20 px-2.5 py-1 rounded-md border border-border/30"
-            title={user.email}
+          <Link
+            to="/profile"
+            className="flex items-center gap-2 text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-1 rounded-md border border-border/30 hover:border-primary/40 hover:bg-primary/5 hover:text-foreground transition-all duration-150"
+            title="View profile"
           >
+            <UserAvatar avatarUrl={user.avatarUrl} email={user.email} />
             <span>{emailDisplay}</span>
-          </div>
+          </Link>
         )}
       </div>
     </header>

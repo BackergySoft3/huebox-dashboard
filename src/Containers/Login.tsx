@@ -27,6 +27,7 @@ import { UploadFolder } from "../Enums/UploadFolder.enum";
 import ReactFlagsSelect from "react-flags-select";
 import { Currency } from "../Enums/Currency.enum";
 import { cn } from "../Helpers/utils";
+import { isoToDialCode } from "../Constants/countryDialCodes";
 import { Select } from "../Components/Atoms/select";
 import { useThemeStore } from "../State/theme";
 import { motion, type Variants, type Transition } from "framer-motion";
@@ -763,7 +764,14 @@ export function Login() {
                         </label>
                         <ReactFlagsSelect
                           selected={kycForm.country}
-                          onSelect={(code) => setKycForm({ ...kycForm, country: code })}
+                          onSelect={(code) => {
+                            const dialCode = isoToDialCode[code] || "";
+                            setKycForm({
+                              ...kycForm,
+                              country: code,
+                              phone: dialCode ? `${dialCode} ` : ""
+                            });
+                          }}
                           searchable
                           placeholder="Select Country…"
                           className="react-flags-custom w-full text-foreground"
