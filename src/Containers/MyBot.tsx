@@ -232,7 +232,7 @@ export function MyBot() {
               className="font-mono text-xs font-bold shadow-sm flex items-center gap-1.5 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="w-3.5 h-3.5" />
-              Launch Bot
+              Create Strategy
             </Button>
           )}
         </div>
@@ -262,7 +262,7 @@ export function MyBot() {
                 onClick={() => setShowAddModal(true)}
                 className="w-full sm:w-auto font-mono text-xs font-bold px-6 h-10 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                Launch Bot Instance
+                Create Strategy
               </Button>
               <Button
                 variant="outline"
