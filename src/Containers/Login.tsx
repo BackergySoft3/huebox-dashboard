@@ -335,7 +335,7 @@ export function Login() {
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans overflow-x-hidden relative transition-colors duration-300">
-      
+
       {/* 1. Sticky / Fixed Animated Navbar */}
       <motion.header
         initial={{ height: 72 }}
@@ -429,7 +429,7 @@ export function Login() {
           stays vertically centered on every step regardless of card content height. */}
       <section className="relative z-10 min-h-[calc(100vh-72px)] flex items-center max-w-7xl mx-auto px-6 md:px-12 py-12">
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          
+
           {/* Left: Value proposition */}
           <motion.div
             variants={containerVariants}
@@ -457,10 +457,10 @@ export function Login() {
             <motion.div variants={heroTextVariants} className="space-y-2.5 max-w-lg">
               {[
                 { icon: ShieldCheck, label: "Isolated Account Trading", desc: "Capital stays isolated — HueBox holds zero deposit custody." },
-                { icon: TrendingUp,  label: "Dynamic Volatility Management", desc: "ATR-based grid spacing survives volatile market breakouts." },
-                { icon: Sliders,     label: "Personality Profile Strategy", desc: "Moderate, Balanced, or Aggressive — matched to your risk targets." },
-                { icon: DollarSign,  label: "Non-Custodial & Secure", desc: "You retain full control of your funds at all times." },
-              ].map(({ icon: Icon, label, desc }) => (
+                { icon: TrendingUp, label: "Dynamic Volatility Management", desc: "ATR-based grid spacing survives volatile market breakouts." },
+                { icon: Sliders, label: "Personality Profile Strategy", desc: "Moderate, Balanced, or Aggressive — matched to your risk targets." },
+                { icon: DollarSign, label: "Non-Custodial & Secure", desc: "You retain full control of your funds at all times." },
+              ].map(({ label, desc }) => (
                 <div key={label} className="flex gap-3 items-center">
                   <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3" />
@@ -502,8 +502,8 @@ export function Login() {
                             isCompleted
                               ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-400"
                               : isCurrent
-                              ? "bg-primary/15 border-primary text-primary shadow-[0_0_8px_rgba(0,122,255,0.3)]"
-                              : "bg-muted/30 border-border/50 text-muted-foreground/50"
+                                ? "bg-primary/15 border-primary text-primary shadow-[0_0_8px_rgba(0,122,255,0.3)]"
+                                : "bg-muted/30 border-border/50 text-muted-foreground/50"
                           )}>
                             {isCompleted ? <Check className="w-3.5 h-3.5" /> : idx + 1}
                           </div>
@@ -529,8 +529,8 @@ export function Login() {
                   {step === "email"
                     ? "Enter your email to receive a one-time passcode"
                     : step === "otp"
-                    ? `Enter the 6-digit code sent to ${email}`
-                    : "Complete your profile to activate your account"}
+                      ? `Enter the 6-digit code sent to ${email}`
+                      : "Complete your profile to activate your account"}
                 </CardDescription>
               </CardHeader>
 
@@ -832,7 +832,7 @@ export function Login() {
       {/* 3. "How it Works" Section */}
       <section className="border-t border-border/20 py-20 bg-card/10 relative z-10 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-6 md:px-12 space-y-12">
-          
+
           <div className="text-center max-w-2xl mx-auto space-y-4">
             <h2 className="text-3xl font-bold tracking-tight text-foreground font-heading">
               Deploy Your Bot in 4 Simple Steps
@@ -843,7 +843,7 @@ export function Login() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            
+
             {/* Step 1 */}
             <motion.div
               initial="hidden"
@@ -855,7 +855,7 @@ export function Login() {
               <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-mono font-bold">
                 1
               </div>
-               <h3 className="text-base font-bold text-foreground font-heading">Create Account</h3>
+              <h3 className="text-base font-bold text-foreground font-heading">Create Account</h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Register with your email to set up your secure, isolated trading account profile. No external configuration is required.
               </p>
@@ -919,7 +919,7 @@ export function Login() {
       {/* 4. Feature Highlights Section (Interactive Hover Lifts) */}
       <section className="py-20 border-t border-border/20 relative z-10 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-6 md:px-12 space-y-12">
-          
+
           <div className="text-center max-w-2xl mx-auto space-y-4">
             <h2 className="text-3xl font-bold tracking-tight text-foreground font-heading">
               Engineered for Execution, Built for Safety
@@ -930,7 +930,7 @@ export function Login() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
+
             {/* Feature 1 */}
             <motion.div
               whileHover={shouldReduceMotion ? {} : { y: -6, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.25)" }}
@@ -1069,7 +1069,7 @@ export function Login() {
               Want to learn how grid bots operate before getting started? Explore our Academy.
             </p>
           </div>
-          
+
           <div className="flex gap-4">
             <Button asChild size="sm" className="font-semibold cursor-pointer">
               <Link to="/academy">
@@ -1087,7 +1087,7 @@ export function Login() {
       <footer className="border-t border-border/40 bg-card/25 transition-colors duration-300 relative z-10">
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 md:py-16">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
-            
+
             {/* Brand column */}
             <div className="md:col-span-5 space-y-4">
               <div className="flex items-center gap-2.5">
