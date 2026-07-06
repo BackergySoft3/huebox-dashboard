@@ -287,6 +287,136 @@
   .animate-pulse-ring { animation: pulse-ring 2s ease-in-out infinite; }
 }
 
+/* ─── Light Mode: Contrast, Depth & Readability Overrides ────────── */
+/*
+ * The app palette uses *-400 Tailwind colors tuned for dark terminals.
+ * In light mode those same colors fail WCAG AA on white backgrounds.
+ * These rules promote each semantic color to a darker shade in light mode
+ * while leaving dark mode untouched (specificity of :root:not(.dark) wins).
+ *
+ * Text contrast targets (on white #FFFFFF or near-white #F5F6F8):
+ *   emerald-400 → emerald-700  2.5:1 → 5.2:1  ✓ AA
+ *   rose-400    → rose-700     2.4:1 → 5.6:1  ✓ AA
+ *   amber-400   → amber-700    1.6:1 → 4.8:1  ✓ AA
+ *   cyan-400    → cyan-700     1.7:1 → 4.7:1  ✓ AA
+ *   sky-400     → sky-700      2.5:1 → 4.7:1  ✓ AA
+ */
+@layer utilities {
+
+  /* ── Text: profit / positive ─────────────────────────────────────── */
+  :root:not(.dark) .text-emerald-400 { color: hsl(162 73% 27%); }   /* #047857 */
+  :root:not(.dark) .text-emerald-300 { color: hsl(162 73% 27%); }
+
+  /* ── Text: loss / negative ───────────────────────────────────────── */
+  :root:not(.dark) .text-rose-400    { color: hsl(345 78% 40%); }   /* #BE123C */
+  :root:not(.dark) .text-rose-300    { color: hsl(345 78% 40%); }
+
+  /* ── Text: amber / warning / paused ─────────────────────────────── */
+  :root:not(.dark) .text-amber-400   { color: hsl(26 90% 37%); }    /* #B45309 */
+  :root:not(.dark) .text-amber-300   { color: hsl(26 90% 37%); }
+
+  /* ── Text: cyan accent ───────────────────────────────────────────── */
+  :root:not(.dark) .text-cyan-400    { color: hsl(192 91% 28%); }   /* #0E7490 */
+  :root:not(.dark) .text-cyan-300    { color: hsl(192 91% 28%); }
+
+  /* ── Text: sky / blue accent ─────────────────────────────────────── */
+  :root:not(.dark) .text-sky-400     { color: hsl(199 89% 32%); }   /* #0369A1 */
+  :root:not(.dark) .text-sky-300     { color: hsl(199 89% 32%); }
+
+  /* ── Badge / chip backgrounds ────────────────────────────────────── */
+  /* Dark-mode: near-black overlays. Light-mode: pastel tints instead.  */
+  :root:not(.dark) .bg-emerald-950\/40 { background-color: hsl(151 75% 93%); }
+  :root:not(.dark) .bg-emerald-500\/10 { background-color: hsl(151 75% 93%); }
+  :root:not(.dark) .bg-emerald-400\/10 { background-color: hsl(151 75% 93%); }
+  :root:not(.dark) .bg-amber-950\/40   { background-color: hsl(48 100% 92%); }
+  :root:not(.dark) .bg-amber-500\/10   { background-color: hsl(48 100% 92%); }
+  :root:not(.dark) .bg-amber-400\/10   { background-color: hsl(48 100% 92%); }
+  :root:not(.dark) .bg-rose-500\/10    { background-color: hsl(350 100% 95%); }
+  :root:not(.dark) .bg-rose-500\/15    { background-color: hsl(350 100% 95%); }
+  :root:not(.dark) .bg-sky-400\/10     { background-color: hsl(199 89% 94%); }
+
+  /* ── Badge / chip borders ────────────────────────────────────────── */
+  /* Semi-transparent dark borders are invisible on white; use solid tints. */
+  :root:not(.dark) .border-emerald-500\/30,
+  :root:not(.dark) .border-emerald-500\/20,
+  :root:not(.dark) .border-emerald-400\/20,
+  :root:not(.dark) .border-emerald-400\/30 { border-color: hsl(160 60% 55%); }
+
+  :root:not(.dark) .border-amber-500\/30,
+  :root:not(.dark) .border-amber-500\/20,
+  :root:not(.dark) .border-amber-400\/20,
+  :root:not(.dark) .border-amber-400\/30  { border-color: hsl(38 80% 55%); }
+
+  :root:not(.dark) .border-rose-500\/30,
+  :root:not(.dark) .border-rose-500\/20,
+  :root:not(.dark) .border-rose-400\/20   { border-color: hsl(345 65% 65%); }
+
+  :root:not(.dark) .border-sky-400\/30    { border-color: hsl(199 70% 55%); }
+  :root:not(.dark) .border-cyan-500\/30,
+  :root:not(.dark) .border-cyan-400\/40   { border-color: hsl(192 70% 50%); }
+
+  /* ── General border visibility ───────────────────────────────────── */
+  /* border-border/40 and border-border/20 are nearly invisible on white. */
+  :root:not(.dark) .border-border\/40 { border-color: hsl(214 25% 84%); }
+  :root:not(.dark) .border-border\/30 { border-color: hsl(214 25% 87%); }
+  :root:not(.dark) .border-border\/20 { border-color: hsl(214 25% 90%); }
+  :root:not(.dark) .border-border\/15 { border-color: hsl(214 25% 91%); }
+
+  /* ── Card & panel depth ──────────────────────────────────────────── */
+  /* Cards on a light bg need shadow to break from the page surface.    */
+  :root:not(.dark) .bg-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07), 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  /* bg-card/30 cards (Portfolio, Performance) are near-transparent; make solid */
+  :root:not(.dark) .bg-card\/30 {
+    background-color: hsl(0 0% 100%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07), 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  :root:not(.dark) .bg-card\/20 {
+    background-color: hsl(220 15% 98%);
+  }
+
+  /* Sidebar in light mode already white — add a right-edge shadow */
+  :root:not(.dark) aside[aria-label="Main navigation"] {
+    box-shadow: 1px 0 0 0 hsl(214 25% 89%), 2px 0 8px rgba(0, 0, 0, 0.04);
+  }
+
+  /* TopBar in light mode: strengthen the bottom border */
+  :root:not(.dark) header {
+    border-bottom-color: hsl(214 25% 88%);
+    background-color: hsl(0 0% 100% / 0.95);
+  }
+
+  /* ── Muted overlay backgrounds ───────────────────────────────────── */
+  :root:not(.dark) .bg-muted\/40 { background-color: hsl(214 20% 93%); }
+  :root:not(.dark) .bg-muted\/20 { background-color: hsl(214 20% 96%); }
+  :root:not(.dark) .bg-muted\/10 { background-color: hsl(214 20% 97%); }
+
+  /* ── Recharts: chart grid & axis visibility ──────────────────────── */
+  /* Grid lines use hsl(var(--border)/0.25) which is nearly invisible on white. */
+  :root:not(.dark) .recharts-cartesian-grid line {
+    stroke: rgba(0, 0, 0, 0.09) !important;
+  }
+  /* Axis tick text uses muted-foreground which is ok, but axis lines need boost */
+  :root:not(.dark) .recharts-cartesian-axis-line {
+    stroke: rgba(0, 0, 0, 0.12) !important;
+  }
+  /* Chart area: subtle off-white tint to give depth vs the card background */
+  :root:not(.dark) .recharts-wrapper {
+    background: hsl(220 20% 98%);
+    border-radius: 8px;
+  }
+
+  /* ── Destructive / error text ────────────────────────────────────── */
+  :root:not(.dark) .text-destructive { color: hsl(345 78% 40%); }
+
+  /* ── Log panel: override dark-terminal colours for light mode ──────  */
+  :root:not(.dark) .log-error   { color: hsl(0 72% 40%); }
+  :root:not(.dark) .log-warn    { color: hsl(26 90% 37%); }
+  :root:not(.dark) .log-info    { color: hsl(222 47% 25%); }
+  :root:not(.dark) .log-debug   { color: hsl(215 16% 47%); }
+}
+
 /* React Flags Select Custom Dark Mode Override */
 .react-flags-custom button {
   color: hsl(var(--foreground)) !important;

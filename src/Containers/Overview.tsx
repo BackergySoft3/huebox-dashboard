@@ -241,7 +241,7 @@ export function Overview() {
         )}
 
         {/* Metric Cards — M-07: Skeleton while loading */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-6 grid-cols-2 lg:grid-cols-4">
           {isLoading || instancesLoading ? (
             <>
               <MetricCardSkeleton />
@@ -252,90 +252,90 @@ export function Overview() {
           ) : (
             <>
               {/* Card 1: WEIGHTED ROI */}
-              <Card className="bg-card border border-border/40 p-5 rounded-xl flex flex-col justify-between hover:shadow-[0_0_15px_rgba(0,212,255,0.15)] hover:border-primary/30 transition-all duration-200 ease-in-out relative overflow-hidden">
+              <Card className="bg-card border border-border/40 p-3 sm:p-5 rounded-xl flex flex-col justify-between hover:shadow-[0_0_15px_rgba(0,212,255,0.15)] hover:border-primary/30 transition-all duration-200 ease-in-out relative overflow-hidden">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-mono tracking-widest text-foreground uppercase font-extrabold">WEIGHTED ROI</span>
-                    <span className="text-[10px] font-mono text-muted-foreground normal-case tracking-normal">Avg. Profit Rate</span>
+                    <span className="text-[9px] sm:text-xs font-mono tracking-widest text-foreground uppercase font-extrabold">WEIGHTED ROI</span>
+                    <span className="text-[9px] font-mono text-muted-foreground normal-case tracking-normal">Avg. Profit Rate</span>
                   </div>
                   {weightedROI >= 0 ? (
-                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
                   ) : (
-                    <TrendingDown className="w-4 h-4 text-rose-400" />
+                    <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" />
                   )}
                 </div>
-                <div className="mt-4">
+                <div className="mt-3 sm:mt-4">
                   <div className={cn(
-                    "text-[28px] font-bold font-heading tabular-nums leading-none tracking-tight",
+                    "text-[20px] sm:text-[28px] font-bold font-heading tabular-nums leading-none tracking-tight",
                     weightedROI >= 0 ? "text-emerald-400" : "text-rose-400"
                   )}>
                     {weightedROI >= 0 ? "+" : ""}{weightedROI.toFixed(2)}%
                   </div>
-                  <p className="text-xs text-muted-foreground font-sans mt-2 flex items-center gap-1">
+                  <p className="hidden sm:flex text-xs text-muted-foreground font-sans mt-2 items-center gap-1">
                     Avg. profit rate across all active bots
                   </p>
                 </div>
               </Card>
 
               {/* Card 2: TOTAL P&L */}
-              <Card className="bg-card border border-border/40 p-5 rounded-xl flex flex-col justify-between hover:shadow-[0_0_15px_rgba(0,212,255,0.15)] hover:border-primary/30 transition-all duration-200 ease-in-out relative overflow-hidden">
+              <Card className="bg-card border border-border/40 p-3 sm:p-5 rounded-xl flex flex-col justify-between hover:shadow-[0_0_15px_rgba(0,212,255,0.15)] hover:border-primary/30 transition-all duration-200 ease-in-out relative overflow-hidden">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-mono tracking-widest text-foreground uppercase font-extrabold">TOTAL P&L</span>
-                    <span className="text-[10px] font-mono text-muted-foreground normal-case tracking-normal">Profit / Loss</span>
+                    <span className="text-[9px] sm:text-xs font-mono tracking-widest text-foreground uppercase font-extrabold">TOTAL P&L</span>
+                    <span className="text-[9px] font-mono text-muted-foreground normal-case tracking-normal">Profit / Loss</span>
                   </div>
                   {totalPnL >= 0 ? (
-                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
                   ) : (
-                    <TrendingDown className="w-4 h-4 text-rose-400" />
+                    <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" />
                   )}
                 </div>
-                <div className="mt-4">
+                <div className="mt-3 sm:mt-4">
                   <div className={cn(
-                    "text-[28px] font-bold font-heading tabular-nums leading-none tracking-tight",
+                    "text-[20px] sm:text-[28px] font-bold font-heading tabular-nums leading-none tracking-tight",
                     totalPnL >= 0 ? "text-emerald-400" : "text-rose-400"
                   )}>
                     {totalPnL >= 0 ? "+" : ""}${Math.abs(totalPnL).toFixed(2)}
                   </div>
-                  <p className="text-xs text-muted-foreground font-sans mt-2 flex items-center gap-1">
+                  <p className="hidden sm:flex text-xs text-muted-foreground font-sans mt-2 items-center gap-1">
                     Unrealized gain or loss in USDT
                   </p>
                 </div>
               </Card>
 
               {/* Card 3: TOTAL ALLOCATED */}
-              <Card className="bg-card border border-border/40 p-5 rounded-xl flex flex-col justify-between hover:shadow-[0_0_15px_rgba(0,212,255,0.15)] hover:border-primary/30 transition-all duration-200 ease-in-out relative overflow-hidden">
+              <Card className="bg-card border border-border/40 p-3 sm:p-5 rounded-xl flex flex-col justify-between hover:shadow-[0_0_15px_rgba(0,212,255,0.15)] hover:border-primary/30 transition-all duration-200 ease-in-out relative overflow-hidden">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-mono tracking-widest text-foreground uppercase font-extrabold">TOTAL ALLOCATED</span>
-                    <span className="text-[10px] font-mono text-muted-foreground normal-case tracking-normal">Capital Deployed</span>
+                    <span className="text-[9px] sm:text-xs font-mono tracking-widest text-foreground uppercase font-extrabold">TOTAL ALLOCATED</span>
+                    <span className="text-[9px] font-mono text-muted-foreground normal-case tracking-normal">Capital Deployed</span>
                   </div>
-                  <Wallet className="w-4 h-4 text-muted-foreground" />
+                  <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
                 </div>
-                <div className="mt-4">
-                  <div className="text-[28px] font-bold font-heading text-foreground tabular-nums leading-none tracking-tight">
+                <div className="mt-3 sm:mt-4">
+                  <div className="text-[20px] sm:text-[28px] font-bold font-heading text-foreground tabular-nums leading-none tracking-tight">
                     ${Number(totalAllocated).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
-                  <p className="text-xs text-muted-foreground font-sans mt-2 flex items-center gap-1">
+                  <p className="hidden sm:flex text-xs text-muted-foreground font-sans mt-2 items-center gap-1">
                     Total USDT committed to active strategies
                   </p>
                 </div>
               </Card>
 
               {/* Card 4: ACTIVE GRIDS */}
-              <Card className="bg-card border border-border/40 p-5 rounded-xl flex flex-col justify-between hover:shadow-[0_0_15px_rgba(0,212,255,0.15)] hover:border-primary/30 transition-all duration-200 ease-in-out relative overflow-hidden">
+              <Card className="bg-card border border-border/40 p-3 sm:p-5 rounded-xl flex flex-col justify-between hover:shadow-[0_0_15px_rgba(0,212,255,0.15)] hover:border-primary/30 transition-all duration-200 ease-in-out relative overflow-hidden">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-mono tracking-widest text-foreground uppercase font-extrabold">ACTIVE GRIDS</span>
-                    <span className="text-[10px] font-mono text-muted-foreground normal-case tracking-normal">Live Orders</span>
+                    <span className="text-[9px] sm:text-xs font-mono tracking-widest text-foreground uppercase font-extrabold">ACTIVE GRIDS</span>
+                    <span className="text-[9px] font-mono text-muted-foreground normal-case tracking-normal">Live Orders</span>
                   </div>
-                  <Layers className="w-4 h-4 text-cyan-400" />
+                  <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" />
                 </div>
-                <div className="mt-4">
-                  <div className="text-[28px] font-bold font-heading text-cyan-400 tabular-nums leading-none tracking-tight">
+                <div className="mt-3 sm:mt-4">
+                  <div className="text-[20px] sm:text-[28px] font-bold font-heading text-cyan-400 tabular-nums leading-none tracking-tight">
                     {totalActiveGrids}
                   </div>
-                  <p className="text-xs text-muted-foreground font-sans mt-2 flex items-center gap-1">
+                  <p className="hidden sm:flex text-xs text-muted-foreground font-sans mt-2 items-center gap-1">
                     Live buy/sell orders on the exchange
                   </p>
                 </div>
@@ -385,6 +385,7 @@ export function Overview() {
                           tickLine={false}
                           axisLine={false}
                           dy={10}
+                          minTickGap={50}
                         />
                         <YAxis
                           stroke="hsl(var(--muted-foreground))"
@@ -497,58 +498,94 @@ export function Overview() {
                   </div>
                 ) : (
                   /* C-01: Real grid data from API */
-                  <div className="w-full overflow-x-auto">
-                    <table className="w-full text-xs text-left border-collapse font-mono min-w-[420px]" role="grid">
-                      <thead>
-                        <tr className="border-b border-border/20 text-muted-foreground text-[10px] tracking-[1px] uppercase bg-muted/5">
-                          <th scope="col" className="py-2.5 px-3 font-semibold">BOT</th>
-                          <th scope="col" className="py-2.5 px-3 font-semibold">STATUS</th>
-                          <th scope="col" className="py-2.5 px-3 font-semibold">ALLOCATED</th>
-                          <th scope="col" className="py-2.5 px-3 font-semibold">GRIDS</th>
-                          <th scope="col" className="py-2.5 px-3 font-semibold text-right">P&L</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/10">
-                        {instances.map((bot: any, idx: number) => (
-                          <tr
-                            key={bot.instanceId || idx}
-                            className="hover:bg-muted/10 transition-colors animate-fade-in"
-                            style={{ animationDelay: `${idx * 80}ms`, animationFillMode: "both" }}
-                          >
-                            <td className="py-3 px-3 font-bold font-sans text-foreground">
-                              <span className="text-xs capitalize">{bot.personality}</span>
-                            </td>
-                            <td className="py-3 px-3">
-                              <Badge
-                                className={cn(
-                                  "font-mono text-[10px] px-2 py-0.5 border font-semibold uppercase",
-                                  bot.status === "running"
-                                    ? "text-emerald-400 border-emerald-400/20 bg-emerald-500/10"
-                                    : bot.status === "paused"
-                                      ? "text-amber-400 border-amber-400/20 bg-amber-500/10"
-                                      : "text-muted-foreground border-border/40 bg-muted/20"
-                                )}
-                              >
-                                {bot.status}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-3 text-muted-foreground font-mono text-xs">
-                              ${bot.allocatedAmount?.toFixed(2) ?? "0.00"}
-                            </td>
-                            <td className="py-3 px-3 text-muted-foreground font-mono text-xs">
-                              {bot.activeGrids ?? 0}
-                            </td>
-                            <td className={cn(
-                              "py-3 px-3 font-mono text-xs font-bold text-right",
-                              (bot.unrealizedPnl || 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                            )}>
+                  <>
+                    {/* Mobile card list — shown on small screens */}
+                    <div className="md:hidden divide-y divide-border/10">
+                      {instances.map((bot: any, idx: number) => (
+                        <div
+                          key={bot.instanceId || idx}
+                          className="px-4 py-3 flex items-center justify-between gap-2 animate-fade-in"
+                          style={{ animationDelay: `${idx * 80}ms`, animationFillMode: "both" }}
+                        >
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <span className="text-xs font-bold font-sans text-foreground capitalize truncate">{bot.personality}</span>
+                            <Badge
+                              className={cn(
+                                "font-mono text-[9px] px-1.5 py-0 border font-semibold uppercase w-fit",
+                                bot.status === "running"
+                                  ? "text-emerald-400 border-emerald-400/20 bg-emerald-500/10"
+                                  : bot.status === "paused"
+                                    ? "text-amber-400 border-amber-400/20 bg-amber-500/10"
+                                    : "text-muted-foreground border-border/40 bg-muted/20"
+                              )}
+                            >
+                              {bot.status}
+                            </Badge>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0 font-mono text-[10px]">
+                            <span className={cn("font-bold", (bot.unrealizedPnl || 0) >= 0 ? "text-emerald-400" : "text-rose-400")}>
                               {(bot.unrealizedPnl || 0) >= 0 ? "+" : ""}${(bot.unrealizedPnl || 0).toFixed(2)}
-                            </td>
+                            </span>
+                            <span className="text-muted-foreground">${bot.allocatedAmount?.toFixed(0) ?? "0"} · {bot.activeGrids ?? 0} grids</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop table — hidden on small screens */}
+                    <div className="hidden md:block w-full overflow-x-auto">
+                      <table className="w-full text-xs text-left border-collapse font-mono min-w-[420px]" role="grid">
+                        <thead>
+                          <tr className="border-b border-border/20 text-muted-foreground text-[10px] tracking-[1px] uppercase bg-muted/5">
+                            <th scope="col" className="py-2.5 px-3 font-semibold">BOT</th>
+                            <th scope="col" className="py-2.5 px-3 font-semibold">STATUS</th>
+                            <th scope="col" className="py-2.5 px-3 font-semibold">ALLOCATED</th>
+                            <th scope="col" className="py-2.5 px-3 font-semibold">GRIDS</th>
+                            <th scope="col" className="py-2.5 px-3 font-semibold text-right">P&L</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-border/10">
+                          {instances.map((bot: any, idx: number) => (
+                            <tr
+                              key={bot.instanceId || idx}
+                              className="hover:bg-muted/10 transition-colors animate-fade-in"
+                              style={{ animationDelay: `${idx * 80}ms`, animationFillMode: "both" }}
+                            >
+                              <td className="py-3 px-3 font-bold font-sans text-foreground">
+                                <span className="text-xs capitalize">{bot.personality}</span>
+                              </td>
+                              <td className="py-3 px-3">
+                                <Badge
+                                  className={cn(
+                                    "font-mono text-[10px] px-2 py-0.5 border font-semibold uppercase",
+                                    bot.status === "running"
+                                      ? "text-emerald-400 border-emerald-400/20 bg-emerald-500/10"
+                                      : bot.status === "paused"
+                                        ? "text-amber-400 border-amber-400/20 bg-amber-500/10"
+                                        : "text-muted-foreground border-border/40 bg-muted/20"
+                                  )}
+                                >
+                                  {bot.status}
+                                </Badge>
+                              </td>
+                              <td className="py-3 px-3 text-muted-foreground font-mono text-xs">
+                                ${bot.allocatedAmount?.toFixed(2) ?? "0.00"}
+                              </td>
+                              <td className="py-3 px-3 text-muted-foreground font-mono text-xs">
+                                {bot.activeGrids ?? 0}
+                              </td>
+                              <td className={cn(
+                                "py-3 px-3 font-mono text-xs font-bold text-right",
+                                (bot.unrealizedPnl || 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                              )}>
+                                {(bot.unrealizedPnl || 0) >= 0 ? "+" : ""}${(bot.unrealizedPnl || 0).toFixed(2)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </CardContent>
 

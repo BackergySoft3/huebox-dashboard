@@ -314,9 +314,9 @@ export function MyBot() {
 
       {/* Middle Section: Live Summary KPIs from status.summary */}
       {isLoading ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-6 grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="bg-card border border-border/40 p-5 rounded-xl flex flex-col justify-between animate-pulse">
+            <Card key={i} className="bg-card border border-border/40 p-4 sm:p-5 rounded-xl flex flex-col justify-between animate-pulse">
               <div className="h-3 w-16 bg-muted/60 rounded" />
               <div className="mt-4 h-6 w-20 bg-muted/40 rounded" />
             </Card>
@@ -325,70 +325,66 @@ export function MyBot() {
       ) : (
         <>
           {/* Row 1: 4 primary KPIs */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 font-mono text-xs">
+          <div className="grid gap-3 sm:gap-6 grid-cols-2 lg:grid-cols-4 font-mono text-xs">
             {/* Unrealized PnL */}
             <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">UNREALIZED PNL</CardTitle>
-                <Wallet2 className="h-4 w-4 text-muted-foreground" />
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-4 sm:pt-6">
+                <CardTitle className="text-[9px] sm:text-xs font-mono tracking-wider text-muted-foreground uppercase">UNREALIZED PNL</CardTitle>
+                <Wallet2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
               </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold font-sans tracking-tight ${(status?.summary?.unrealizedPnlUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                  }`}>
+              <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6">
+                <div className={`text-lg sm:text-2xl font-bold font-sans tracking-tight ${(status?.summary?.unrealizedPnlUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                   {(status?.summary?.unrealizedPnlUsdt ?? 0) >= 0 ? "+" : ""}${Number(status?.summary?.unrealizedPnlUsdt ?? 0).toFixed(2)}
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1">Live open positions</p>
+                <p className="hidden sm:block text-[10px] text-muted-foreground mt-1">Live open positions</p>
               </CardContent>
             </Card>
 
             {/* Total PnL */}
             <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">TOTAL PNL</CardTitle>
-                <TrendingUp className="h-4 w-4 text-emerald-400" />
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-4 sm:pt-6">
+                <CardTitle className="text-[9px] sm:text-xs font-mono tracking-wider text-muted-foreground uppercase">TOTAL PNL</CardTitle>
+                <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400 shrink-0" />
               </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold font-sans tracking-tight ${(status?.summary?.totalPnlUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                  }`}>
+              <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6">
+                <div className={`text-lg sm:text-2xl font-bold font-sans tracking-tight ${(status?.summary?.totalPnlUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                   {(status?.summary?.totalPnlUsdt ?? 0) >= 0 ? "+" : ""}${Number(status?.summary?.totalPnlUsdt ?? 0).toFixed(2)}
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1">Realized + Unrealized</p>
+                <p className="hidden sm:block text-[10px] text-muted-foreground mt-1">Realized + Unrealized</p>
               </CardContent>
             </Card>
 
             {/* Live ROI */}
             <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">LIVE ROI</CardTitle>
-                <Target className="h-4 w-4 text-primary" />
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-4 sm:pt-6">
+                <CardTitle className="text-[9px] sm:text-xs font-mono tracking-wider text-muted-foreground uppercase">LIVE ROI</CardTitle>
+                <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0" />
               </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold font-sans tracking-tight ${(status?.summary?.liveRoiPct ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                  }`}>
+              <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6">
+                <div className={`text-lg sm:text-2xl font-bold font-sans tracking-tight ${(status?.summary?.liveRoiPct ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                   {(status?.summary?.liveRoiPct ?? 0) >= 0 ? "+" : ""}{Number(status?.summary?.liveRoiPct ?? 0).toFixed(2)}%
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1">On allocated capital</p>
+                <p className="hidden sm:block text-[10px] text-muted-foreground mt-1">On allocated capital</p>
               </CardContent>
             </Card>
 
             {/* Today's Profit */}
             <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground uppercase">TODAY'S PROFIT</CardTitle>
-                <Trophy className="h-4 w-4 text-amber-400" />
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-4 sm:pt-6">
+                <CardTitle className="text-[9px] sm:text-xs font-mono tracking-wider text-muted-foreground uppercase">TODAY'S PROFIT</CardTitle>
+                <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400 shrink-0" />
               </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold font-sans tracking-tight ${(status?.summary?.profitTodayUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                  }`}>
+              <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6">
+                <div className={`text-lg sm:text-2xl font-bold font-sans tracking-tight ${(status?.summary?.profitTodayUsdt ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                   {(status?.summary?.profitTodayUsdt ?? 0) >= 0 ? "+" : ""}${Number(status?.summary?.profitTodayUsdt ?? 0).toFixed(2)}
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1">24h: +${Number(status?.summary?.profit24hUsdt ?? 0).toFixed(2)}</p>
+                <p className="hidden sm:block text-[10px] text-muted-foreground mt-1">24h: +${Number(status?.summary?.profit24hUsdt ?? 0).toFixed(2)}</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Row 2: secondary stats strip */}
-          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6 font-mono text-xs">
+          <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6 font-mono text-xs">
             {[
               { label: "WIN RATE (TODAY)", value: `${Number(status?.summary?.winRateTodayPct ?? 0).toFixed(0)}%`, color: "text-emerald-400" },
               { label: "WIN RATE (ALL TIME)", value: `${Number(status?.summary?.winRateOverallPct ?? 0).toFixed(0)}%`, color: "text-emerald-400" },
@@ -432,7 +428,7 @@ export function MyBot() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={sortedHistory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.25)" vertical={false} />
-                    <XAxis dataKey="timestamp" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => formatPerfDate(val, "MM/dd")} />
+                    <XAxis dataKey="timestamp" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => formatPerfDate(val, "MM/dd")} minTickGap={40} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
                     <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--primary)/0.2)', strokeWidth: 1 }} />
                     <Line type="stepAfter" dataKey="pnl" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
@@ -454,7 +450,7 @@ export function MyBot() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={displayFees} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.25)" vertical={false} />
-                    <XAxis dataKey="timestamp" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => formatPerfDate(val, "MM/dd")} />
+                    <XAxis dataKey="timestamp" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => formatPerfDate(val, "MM/dd")} minTickGap={40} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
                     <Tooltip content={<CustomFeeTooltip />} cursor={{ fill: 'hsl(var(--primary)/0.05)' }} />
                     <Bar dataKey="fee" fill="hsl(var(--primary)/0.4)" stroke="hsl(var(--primary))" strokeWidth={1} radius={[3, 3, 0, 0]} />
