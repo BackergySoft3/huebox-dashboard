@@ -48,7 +48,7 @@ export function Performance() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 font-mono">
+      <div className="grid gap-3 sm:gap-6 grid-cols-2 lg:grid-cols-4 font-mono">
         <Card className="bg-card/30 border-border/40 backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-mono tracking-wider text-muted-foreground">WIN RATE</CardTitle>
@@ -109,7 +109,7 @@ export function Performance() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={sortedHistory} margin={{ top: 5, right: 20, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} strokeOpacity={0.2} />
-                  <XAxis dataKey="timestamp" stroke="hsl(var(--muted-foreground))" fontSize={10} tickFormatter={(val) => formatPerfDate(val, "MM/dd")} />
+                  <XAxis dataKey="timestamp" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => formatPerfDate(val, "MM/dd")} minTickGap={40} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickFormatter={(val) => `$${val}`} />
                   <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }} labelFormatter={(val) => formatPerfDate(val, "PPp")} />
                   <Line type="stepAfter" dataKey="pnl" stroke="hsl(var(--primary))" strokeWidth={1.5} dot={false} />
@@ -129,7 +129,7 @@ export function Performance() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={displayFees} margin={{ top: 5, right: 20, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} strokeOpacity={0.2} />
-                  <XAxis dataKey="timestamp" stroke="hsl(var(--muted-foreground))" fontSize={10} tickFormatter={(val) => formatPerfDate(val, "MM/dd")} />
+                  <XAxis dataKey="timestamp" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => formatPerfDate(val, "MM/dd")} minTickGap={40} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickFormatter={(val) => `$${val}`} />
                   <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }} />
                   <Bar dataKey="fee" fill="hsl(var(--accent))" radius={[2, 2, 0, 0]} />

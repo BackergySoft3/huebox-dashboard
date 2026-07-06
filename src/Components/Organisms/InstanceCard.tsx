@@ -71,9 +71,9 @@ const STATUS_CONFIG: Record<
     badgeClass: "bg-rose-500/10 text-rose-400 border-rose-500/20",
   },
   stalled: {
-    label: "Stalled",
-    dotClass: "bg-rose-400",
-    badgeClass: "bg-rose-500/10 text-rose-400 border-rose-500/20",
+    label: "Syncing",
+    dotClass: "bg-amber-400",
+    badgeClass: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   },
 };
 
@@ -176,6 +176,7 @@ export function InstanceCard({ instance }: InstanceCardProps) {
           >
             {personality.label}
           </Badge>
+
         </div>
 
         {/* Heartbeat indicator */}
@@ -202,8 +203,8 @@ export function InstanceCard({ instance }: InstanceCardProps) {
       <CardContent className="space-y-2.5 font-mono text-xs flex-1">
         {/* Sub-account */}
         <div className="flex items-center justify-between border-b border-border/15 pb-2">
-          <span className="text-muted-foreground">Account ID</span>
-          <span className="font-bold text-foreground/80 text-[11px]" title={subAccountId}>
+          <span className="text-foreground font-semibold">Account ID</span>
+          <span className="font-extrabold text-cyan-400 dark:text-cyan-300 text-[12px] tracking-wider select-all" title={subAccountId}>
             {truncatedSubAccount}
           </span>
         </div>
@@ -211,7 +212,10 @@ export function InstanceCard({ instance }: InstanceCardProps) {
         {/* Allocated amount */}
         <div className="flex items-center justify-between border-b border-border/15 pb-2">
           <span className="text-muted-foreground flex items-center gap-1">
-            <Wallet className="w-3 h-3" /> Allocated
+            <Wallet className="w-3 h-3" />
+            <span className="flex flex-col gap-0">
+              <span>Funds Assigned</span>
+            </span>
           </span>
           <span className="font-bold text-foreground">
             ${allocatedAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -222,7 +226,10 @@ export function InstanceCard({ instance }: InstanceCardProps) {
         {/* Wallet Balance */}
         <div className="flex items-center justify-between border-b border-border/15 pb-2">
           <span className="text-muted-foreground flex items-center gap-1">
-            <Wallet className="w-3 h-3" /> Wallet Balance
+            <Wallet className="w-3 h-3" />
+            <span className="flex flex-col gap-0">
+              <span>Current Wallet Balance</span>
+            </span>
           </span>
           <span className="font-bold text-foreground tabular-nums">
             ${walletBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -240,8 +247,10 @@ export function InstanceCard({ instance }: InstanceCardProps) {
                   <TrendingUp className="w-3 h-3 text-emerald-400" />
                 ) : (
                   <TrendingDown className="w-3 h-3 text-rose-400" />
-                )}{" "}
-                Live ROI
+                )}
+                <span className="flex flex-col gap-0">
+                  <span>Profit Rate</span>
+                </span>
               </span>
               <span
                 className={cn(
@@ -256,7 +265,11 @@ export function InstanceCard({ instance }: InstanceCardProps) {
 
             {/* Unrealized PnL */}
             <div className="flex items-center justify-between border-b border-border/15 pb-2">
-              <span className="text-muted-foreground">Unrealized PnL</span>
+              <span className="text-muted-foreground flex items-center gap-1">
+                <span className="flex flex-col gap-0">
+                  <span>Profit / Loss</span>
+                </span>
+              </span>
               <span
                 className={cn(
                   "font-bold tabular-nums",
@@ -271,9 +284,21 @@ export function InstanceCard({ instance }: InstanceCardProps) {
             {/* Active Grids */}
             <div className="flex items-center justify-between border-b border-border/15 pb-2">
               <span className="text-muted-foreground flex items-center gap-1">
-                <Layers className="w-3 h-3 text-cyan-400" /> Active Grids
+                <Layers className="w-3 h-3 text-cyan-400" />
+                <span className="flex flex-col gap-0">
+                  <span>Active Orders</span>
+                </span>
               </span>
-              <span className="font-bold text-cyan-400">{activeGrids}</span>
+              {isRunning && activeGrids === 0 ? (
+                <span
+                  className="font-bold text-amber-400 animate-pulse"
+                  title="The bot is running but has not placed any grid orders yet — it is still warming up and scanning the market. Orders will appear here shortly."
+                >
+                  Warming up…
+                </span>
+              ) : (
+                <span className="font-bold text-cyan-400">{activeGrids}</span>
+              )}
             </div>
           </>
         )}
@@ -283,8 +308,14 @@ export function InstanceCard({ instance }: InstanceCardProps) {
           <Badge
             className={cn(
               "w-full justify-center font-mono text-[10px] px-2 py-0.5 border font-bold uppercase tracking-wider",
-              statusCfg.badgeClass
+              statusCfg.badgeClass,
+              instance.status === "stalled" && "cursor-help"
             )}
+            title={
+              instance.status === "stalled"
+                ? "The engine is temporarily unresponsive — this usually resolves within a minute. Your funds are safe."
+                : undefined
+            }
           >
             {statusCfg.label}
           </Badge>
