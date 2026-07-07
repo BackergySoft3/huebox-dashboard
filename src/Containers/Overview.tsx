@@ -232,11 +232,18 @@ export function Overview() {
         </div>
 
         {isError && (
-          <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-mono flex items-center gap-3 shadow-sm">
-            <span className="p-1 rounded-md bg-rose-500/15 text-rose-400 font-bold shrink-0">⚠ ERROR</span>
-            <div className="flex-1">
-              Status API Error ({queryStatus}): {(error as any)?.response?.status || "network"} — {(error as any)?.response?.data?.message || (error as any)?.message || "Unknown error"}
+          <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-mono flex items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className="p-1 rounded-md bg-rose-500/15 text-rose-400 font-bold shrink-0">⚠ ERROR</span>
+              <div className="flex-1">
+                Status API Error ({queryStatus}): {(error as any)?.response?.status || "network"} — {(error as any)?.response?.data?.message || (error as any)?.message || "Unknown error"}
+              </div>
             </div>
+            <Button asChild variant="outline" size="sm" className="h-7 px-3 text-[10px] uppercase font-bold border-rose-500/30 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-colors">
+              <Link to={`/support?errorCode=${(error as any)?.response?.status || "network"}&screen=Overview`}>
+                Report Issue
+              </Link>
+            </Button>
           </div>
         )}
 
