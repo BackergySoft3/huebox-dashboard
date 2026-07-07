@@ -38,3 +38,13 @@ export const WALLET_ENDPOINTS = {
   WITHDRAW: "/api/wallet/withdraw",
   SEND:     "/api/wallet/send",
 } as const;
+
+export const S3_ENDPOINTS = {
+  UPLOAD_URL:       "/api/s3/upload-url",
+  DOWNLOAD_URL:     "/api/s3/download-url",
+  FILE:             "/api/s3/file",
+  MULTIPART_INIT:   "/api/s3/multipart/initiate",
+  MULTIPART_PART:   "/api/s3/multipart/part-url",
+  MULTIPART_FINISH: "/api/s3/multipart/complete",
+  MULTIPART_ABORT:  "/api/s3/multipart/abort",
+} as const;
