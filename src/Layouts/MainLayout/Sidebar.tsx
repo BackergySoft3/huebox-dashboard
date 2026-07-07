@@ -21,6 +21,8 @@ import {
   Sliders,
   SlidersHorizontal,
   BarChart3,
+  HelpCircle,
+  Newspaper,
 } from "lucide-react";
 import { Button } from "../../Components/Atoms/button";
 import { Badge } from "../../Components/Atoms/badge";
@@ -70,6 +72,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: "Analytics", href: "/performance", icon: TrendingUp, category: "Market Intelligence" },
     { name: "Market Insights", href: "/trading", icon: CandlestickChart, category: "Market Intelligence" },
     { name: "Activity Center", href: "/logs", icon: Terminal, category: "Market Intelligence" },
+    { name: "News & Announcements", href: "/news", icon: Newspaper, category: "Help & Support" },
+    { name: "Support Tickets", href: "/support", icon: HelpCircle, category: "Help & Support" },
   ];
 
   const clientNavigation: NavItem[] = [
@@ -79,6 +83,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: "Investment Strategies", href: "/control", icon: PlayCircle, category: "AI Automation" },
     { name: "Market Insights", href: "/trading", icon: CandlestickChart, category: "Market Intelligence" },
     { name: "Preferences", href: "/settings", icon: SlidersHorizontal, category: "System Settings" },
+    { name: "News & Announcements", href: "/news", icon: Newspaper, category: "Help & Support" },
+    { name: "Support Tickets", href: "/support", icon: HelpCircle, category: "Help & Support" },
   ];
 
   const adminNavigation: NavItem[] = [
@@ -88,6 +94,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: "Transfer Coin", href: "/admin/transfer-coin", icon: ArrowLeftRight, adminOnly: true, category: "Treasury" },
     { name: "Bot Oversight", href: "/admin/bots", icon: Bot, adminOnly: true, category: "Platform Administration" },
     { name: "System", href: "/system", icon: Settings, adminOnly: true, category: "Platform Administration" },
+    { name: "News Management", href: "/admin/news", icon: Newspaper, adminOnly: true, category: "Platform Administration" },
+    { name: "Support Queue", href: "/admin/support", icon: HelpCircle, adminOnly: true, category: "Platform Administration" },
     { name: "Platform Config", href: "/admin/config", icon: Sliders, superAdminOnly: true, category: "Platform Administration" },
   ];
 

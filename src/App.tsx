@@ -24,6 +24,10 @@ import { AdminFinance } from "./Containers/AdminFinance";
 import { AdminTransferCoin } from "./Containers/AdminTransferCoin";
 import { AdminConfig } from "./Containers/AdminConfig";
 import { System } from "./Containers/System";
+import { Support } from "./Containers/Support";
+import { AdminSupport } from "./Containers/AdminSupport";
+import { News } from "./Containers/News";
+import { AdminNews } from "./Containers/AdminNews";
 import { ThemeProvider } from "./Components/ThemeProvider";
 import { PublicLayout } from "./Layouts/PublicLayout/PublicLayout";
 import { Academy } from "./Containers/Academy";
@@ -97,6 +101,8 @@ function App() {
               <Route path="trading" element={<Trading />} />
               <Route path="logs" element={<LiveLogs />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="support" element={<Support />} />
+              <Route path="news" element={<News />} />
               <Route path="profile" element={<Profile />} />
 
               {/* Admin routes */}
@@ -125,8 +131,16 @@ function App() {
                 element={<AdminRoute><System /></AdminRoute>}
               />
               <Route
+                path="admin/support"
+                element={<AdminRoute><AdminSupport /></AdminRoute>}
+              />
+              <Route
                 path="admin/config"
                 element={<AdminRoute><AdminConfig /></AdminRoute>}
+              />
+              <Route
+                path="admin/news"
+                element={<AdminRoute><AdminNews /></AdminRoute>}
               />
             </Route>
           </Routes>

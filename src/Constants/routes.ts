@@ -20,6 +20,10 @@ export const ROUTES = {
   ACADEMY:        "/academy",
   TERMS:          "/terms",
   GLOSSARY:       "/glossary",
+  SUPPORT:        "/support",
+  ADMIN_SUPPORT:  "/admin/support",
+  NEWS:           "/news",
+  ADMIN_NEWS:     "/admin/news",
 } as const;
 
 export type AppRoute = typeof ROUTES[keyof typeof ROUTES];

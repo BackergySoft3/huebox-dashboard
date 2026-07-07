@@ -25,7 +25,12 @@ import { PublicLayout } from "../Layouts/PublicLayout/PublicLayout";
 import { Academy } from "../Containers/Academy";
 import { Terms } from "../Containers/Terms";
 import { Glossary } from "../Containers/Glossary";
+import { Support } from "../Containers/Support";
+import { AdminSupport } from "../Containers/AdminSupport";
+import { News } from "../Containers/News";
+import { AdminNews } from "../Containers/AdminNews";
 
+// Helper index route component
 function AdminIndexRoute() {
   const isAdmin = useAuthStore((state) => state.isAdmin)();
   if (isAdmin) return <Navigate to={ROUTES.USERS} replace />;
@@ -62,6 +67,8 @@ export function AppRoutes() {
         <Route path="trading" element={<Trading />} />
         <Route path="logs" element={<LiveLogs />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="support" element={<Support />} />
+        <Route path="news" element={<News />} />
 
         <Route path="users" element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
         <Route path="admin/bots" element={<ProtectedRoute adminOnly><AdminBots /></ProtectedRoute>} />
@@ -70,6 +77,8 @@ export function AppRoutes() {
         <Route path="admin/transfer-coin" element={<ProtectedRoute adminOnly><AdminTransferCoin /></ProtectedRoute>} />
         <Route path="system" element={<ProtectedRoute adminOnly><System /></ProtectedRoute>} />
         <Route path="admin/config" element={<ProtectedRoute adminOnly><AdminConfig /></ProtectedRoute>} />
+        <Route path="admin/support" element={<ProtectedRoute adminOnly><AdminSupport /></ProtectedRoute>} />
+        <Route path="admin/news" element={<ProtectedRoute adminOnly><AdminNews /></ProtectedRoute>} />
       </Route>
     </Routes>
   );
