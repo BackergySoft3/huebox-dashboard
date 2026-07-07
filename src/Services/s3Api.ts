@@ -60,6 +60,7 @@ function uploadToS3(
 
     xhr.open("PUT", uploadUrl);
     xhr.setRequestHeader("Content-Type", file.type);
+    xhr.setRequestHeader("x-amz-server-side-encryption", "AES256");
     xhr.send(file);
   });
 }

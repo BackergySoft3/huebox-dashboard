@@ -28,6 +28,7 @@ import { Button } from "../../Components/Atoms/button";
 import { Badge } from "../../Components/Atoms/badge";
 import { cn } from "../../Helpers/utils";
 import { ConfirmModal } from "../../Components/Organisms/ConfirmModal";
+import { UserAvatar } from "../../Components/Organisms/UserAvatar";
 import type { NavItem } from "../../Interfaces/components";
 
 const DEVELOPER_ACCOUNT = "client@huebox.dev.com";
@@ -190,9 +191,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       <div className="p-4 border-t border-border bg-sidebar space-y-2">
         {user && (
           <div className="flex items-center gap-2 px-1">
-            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0">
-              {user.email?.[0]?.toUpperCase() ?? "?"}
-            </div>
+            <UserAvatar avatarUrl={user.avatarUrl} email={user.email} />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-mono text-foreground truncate">{user.email}</p>
               {user.role && (
@@ -214,8 +213,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         )}
  
         <Button
-          variant="ghost"
-          className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          variant="destructive"
+          className="w-full justify-start shadow-md bg-red-600 hover:bg-red-700 text-white"
           onClick={() => { setIsLogoutModalOpen(true); onClose?.(); }}
         >
           <LogOut className="w-4 h-4 mr-2" />

@@ -444,7 +444,7 @@ export function InstanceCard({ instance }: InstanceCardProps) {
           {confirmingDelete ? (
             <div className="w-full flex flex-col gap-2 p-2 border border-rose-500/25 bg-rose-500/5 rounded-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
               <span className="text-[10px] font-mono text-rose-400 font-bold text-center">
-                Permanently delete this instance?
+                Permanently delete this strategy?
               </span>
               <div className="flex gap-2">
                 <Button
@@ -459,7 +459,7 @@ export function InstanceCard({ instance }: InstanceCardProps) {
                     try {
                       await deleteInstance(instance.instanceId);
                     } catch (err: any) {
-                      setActionError(err?.response?.data?.message || "Failed to delete instance.");
+                      setActionError(err?.response?.data?.message || "Failed to delete strategy.");
                     } finally {
                       setActionLoading(null);
                     }
@@ -491,10 +491,10 @@ export function InstanceCard({ instance }: InstanceCardProps) {
               disabled={!!actionLoading}
               onClick={() => setConfirmingDelete(true)}
               id={`delete-btn-${instance.instanceId}`}
-              title="Permanently remove this stopped instance from your dashboard — this cannot be undone"
+              title="Permanently remove this stopped strategy from your dashboard — this cannot be undone"
             >
               <Trash2 className="w-3 h-3" />
-              Delete Instance
+              Delete Strategy
             </Button>
           )}
         </CardFooter>

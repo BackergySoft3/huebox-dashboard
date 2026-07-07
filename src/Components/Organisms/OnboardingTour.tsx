@@ -50,13 +50,13 @@ const STEPS = [
     icon: TrendingUp,
     iconClass: "text-emerald-400 bg-emerald-400/10",
     title: "Portfolio P&L",
-    body: "The P&L card shows your combined unrealized profit and loss across all active bot instances, updated in real time from the exchange.",
+    body: "The P&L card shows your combined unrealized profit and loss across all active bot strategies, updated in real time from the exchange.",
   },
   {
     icon: Bot,
     iconClass: "text-cyan-400 bg-cyan-400/10",
-    title: "Active Bot Instances",
-    body: "Each bot runs an independent grid trading strategy on a dedicated sub-account. You can operate up to 5 instances simultaneously.",
+    title: "Active Strategies",
+    body: "Each bot runs an independent grid trading strategy on a dedicated sub-account. You can operate up to 5 strategies simultaneously.",
   },
   {
     icon: Layers,
@@ -73,8 +73,8 @@ const STEPS = [
   {
     icon: Rocket,
     iconClass: "text-rose-400 bg-rose-400/10",
-    title: "Launch Your First Bot",
-    body: "Head to Investment Strategies, click Add Instance, and choose the Balanced Growth strategy to start with steady, managed returns.",
+    title: "Launch Your First Strategy",
+    body: "Head to Investment Strategies, click Add Strategy, and choose the Balanced Growth strategy to start with steady, managed returns.",
   },
 ] as const;
 

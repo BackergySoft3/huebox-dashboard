@@ -12,6 +12,7 @@ import { Progress } from "./Containers/Progress";
 import { Performance } from "./Containers/Performance";
 import { MyBot } from "./Containers/MyBot";
 import { Settings } from "./Containers/Settings";
+import { Profile } from "./Containers/Profile";
 import { Payments } from "./Containers/Payments";
 import { PaymentReturn } from "./Containers/PaymentReturn";
 import { Trading } from "./Containers/Trading";
@@ -102,6 +103,7 @@ function App() {
               <Route path="settings" element={<Settings />} />
               <Route path="support" element={<Support />} />
               <Route path="news" element={<News />} />
+              <Route path="profile" element={<Profile />} />
 
               {/* Admin routes */}
               <Route

@@ -1,6 +1,8 @@
+import { Link } from "react-router-dom";
 import { useBotStore } from "../../State/bot";
 import { useAuthStore } from "../../State/auth";
 import { StatusBadge } from "../../Components/Organisms/StatusBadge";
+import { UserAvatar } from "../../Components/Organisms/UserAvatar";
 import { Heart, RefreshCw, Shield, ShieldCheck, Menu, Sun, Moon } from "lucide-react";
 import { useThemeStore } from "../../State/theme";
 
@@ -19,8 +21,8 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
     ? new Date(heartbeat).toLocaleTimeString()
     : "Awaiting first signal...";
 
-  // H-07: Email shown as username only (L-02)
-  const emailDisplay = user?.email ? user.email.split("@")[0] : "";
+  // Show first name if available, fallback to email prefix
+  const displayName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
 
   return (
     <header className="h-14 border-b border-border bg-card/20 backdrop-blur-md flex items-center justify-between px-4 md:px-6 sticky top-0 z-40">
@@ -87,7 +89,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         )}
       </div>
 
-      {/* Right: user email (username only) — H-07: no duplicate role badge */}
+      {/* Right: user display name — H-07: no duplicate role badge */}
       <div className="flex items-center gap-3">
         {/* L-01: Theme toggle for discoverability */}
         <button
@@ -100,12 +102,14 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         </button>
 
         {user?.email && (
-          <div
-            className="flex items-center gap-2 text-xs font-mono text-muted-foreground bg-muted/20 px-2.5 py-1 rounded-md border border-border/30"
-            title={user.email}
+          <Link
+            to="/profile"
+            className="flex items-center gap-2 text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-1 rounded-md border border-border/30 hover:border-primary/40 hover:bg-primary/5 hover:text-foreground transition-all duration-150"
+            title="View profile"
           >
-            <span>{emailDisplay}</span>
-          </div>
+            <UserAvatar avatarUrl={user.avatarUrl} email={user.email} />
+            <span>{displayName}</span>
+          </Link>
         )}
       </div>
     </header>

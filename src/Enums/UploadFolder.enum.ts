@@ -7,4 +7,4 @@ export const UploadFolder = {
   EXPORTS: "exports",
 } as const;
 
-export type UploadFolder = typeof UploadFolder[keyof typeof UploadFolder];
+export type UploadFolder = (typeof UploadFolder)[keyof typeof UploadFolder];

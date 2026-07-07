@@ -117,7 +117,7 @@ export function BotControl() {
     fetchInstances();
     pollingRef.current = setInterval(() => fetchInstances(), 10_000);
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const activeInstances = instances.filter((i) => i.status === "running" || i.status === "paused");
@@ -130,10 +130,10 @@ export function BotControl() {
   const isRunning = false;
   const currentStepNum = 1;
   const selectedProfile = "balanced";
-  const setSelectedProfile = (_val?: any) => {};
+  const setSelectedProfile = (_val?: any) => { };
   const confirmState = { isOpen: false, title: "", description: "", warningText: "" };
-  const handleConfirmAction = async () => {};
-  const setConfirmState = (_val?: any) => {};
+  const handleConfirmAction = async () => { };
+  const setConfirmState = (_val?: any) => { };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -177,7 +177,7 @@ export function BotControl() {
               title={!isKycVerified ? "Complete KYC verification to create bot instances" : isCapReached ? "Maximum of 5 active instances reached" : "Launch a new bot instance"}
               className="font-mono text-xs h-9 px-4 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md"
             >
-              <Plus className="w-4 h-4" /> Add Instance
+              <Plus className="w-4 h-4" /> Add Strategy
             </Button>
           </div>
         </div>
@@ -257,8 +257,8 @@ export function BotControl() {
                       isCompleted
                         ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
                         : isCurrent
-                        ? "bg-primary border-primary text-primary-foreground shadow-[0_0_8px_rgba(0,212,255,0.4)] font-extrabold"
-                        : "bg-muted/40 border-border/60 text-muted-foreground/60"
+                          ? "bg-primary border-primary text-primary-foreground shadow-[0_0_8px_rgba(0,212,255,0.4)] font-extrabold"
+                          : "bg-muted/40 border-border/60 text-muted-foreground/60"
                     )}>
                       {isCompleted ? <Check className="w-3.5 h-3.5" /> : stepNum}
                     </div>
@@ -315,8 +315,8 @@ export function BotControl() {
                         profile.locked
                           ? "opacity-50 cursor-not-allowed select-none"
                           : isSelected
-                          ? profile.glowClass + " cursor-pointer ring-2 ring-primary/30"
-                          : "border-border/40 hover:border-border/80 hover:shadow-sm cursor-pointer"
+                            ? profile.glowClass + " cursor-pointer ring-2 ring-primary/30"
+                            : "border-border/40 hover:border-border/80 hover:shadow-sm cursor-pointer"
                       )}
                     >
                       <div className="p-6 space-y-4">
