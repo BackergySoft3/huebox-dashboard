@@ -16,9 +16,8 @@ import {
   MessageSquare,
   Lock,
 } from "lucide-react";
-import axios from "axios";
-
 import { useSupportStore } from "../State/support";
+import { s3Api } from "../Services/s3Api";
 import { useSupportSocket } from "../Hooks/useSupportSocket";
 import { supportApi, type Attachment } from "../Services/supportApi";
 import { Button } from "../Components/Atoms/button";
@@ -205,21 +204,16 @@ export function Support() {
       }
 
       try {
-        const { uploadUrl, fields, objectUrl, key } = await supportApi.requestUploadUrl(
+        const { uploadUrl, key, publicUrl } = await supportApi.requestUploadUrl(
           file.type || "application/octet-stream",
-          file.name
+          file.name,
+          file.size,
         );
 
-        const formData = new FormData();
-        Object.entries(fields).forEach(([k, v]) => {
-          formData.append(k, v as string);
-        });
-        formData.append("file", file);
-
-        await axios.post(uploadUrl, formData);
+        await s3Api.uploadToS3(uploadUrl, file);
 
         newAttachments.push({
-          url: objectUrl,
+          url: publicUrl,
           key: key,
           contentType: file.type || "application/octet-stream",
           name: file.name,

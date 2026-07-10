@@ -23,8 +23,11 @@ export interface NewsListParams {
 }
 
 export const newsApi = {
-  requestUploadUrl: async (contentType: string, filename: string) => {
-    const response = await api.post("/api/admin/news/upload-url", { contentType, filename });
+  requestUploadUrl: async (contentType: string, filename: string, size: number) => {
+    const response = await api.post<{ uploadUrl: string; key: string; publicUrl: string }>(
+      "/api/admin/news/upload-url",
+      { contentType, filename, size },
+    );
     return response.data;
   },
 

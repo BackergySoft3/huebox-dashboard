@@ -28,8 +28,11 @@ export interface PostMessagePayload {
 }
 
 export const supportApi = {
-  requestUploadUrl: async (contentType: string, filename: string) => {
-    const response = await api.post("/api/support/upload-url", { contentType, filename });
+  requestUploadUrl: async (contentType: string, filename: string, size: number) => {
+    const response = await api.post<{ uploadUrl: string; key: string; publicUrl: string }>(
+      "/api/support/upload-url",
+      { contentType, filename, size },
+    );
     return response.data;
   },
 

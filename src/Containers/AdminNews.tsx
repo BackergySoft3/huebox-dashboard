@@ -19,9 +19,8 @@ import {
   AlertCircle,
   Check,
 } from "lucide-react";
-import axios from "axios";
-
 import { newsApi } from "../Services/newsApi";
+import { s3Api } from "../Services/s3Api";
 import { Card, CardContent } from "../Components/Atoms/card";
 import { Badge } from "../Components/Atoms/badge";
 import { Button } from "../Components/Atoms/button";
@@ -131,18 +130,12 @@ export function AdminNews() {
     setFormError(null);
 
     try {
-      const uploadDetails = await newsApi.requestUploadUrl(file.type, file.name);
+      const { uploadUrl, key, publicUrl } = await newsApi.requestUploadUrl(file.type, file.name, file.size);
 
-      const formData = new FormData();
-      Object.entries(uploadDetails.fields).forEach(([key, val]) => {
-        formData.append(key, val as string);
-      });
-      formData.append("file", file);
+      await s3Api.uploadToS3(uploadUrl, file);
 
-      await axios.post(uploadDetails.uploadUrl, formData);
-
-      setImageUrl(uploadDetails.objectUrl);
-      setImageKey(uploadDetails.key);
+      setImageUrl(publicUrl);
+      setImageKey(key);
     } catch {
       console.error("News image upload failed");
       setFormError("Failed to upload image. Please try again.");
