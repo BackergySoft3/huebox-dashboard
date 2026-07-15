@@ -3,7 +3,7 @@ import { io, Socket } from "socket.io-client";
 import { useBotStore } from "../../State/bot";
 import { useLogsStore } from "../../State/logs";
 
-const wsUrl = import.meta.env.VITE_WS_URL;
+const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:5000";
 
 let socket: Socket | null = null;
 

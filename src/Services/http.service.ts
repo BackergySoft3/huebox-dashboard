@@ -1,8 +1,8 @@
-﻿import axios from "axios";
+import axios from "axios";
 import { useAuthStore } from "../State/auth";
 import { getAuthCookie, AUTH_COOKIE_KEYS } from "../Helpers/cookieAuth";
 
-const baseURL = import.meta.env.VITE_API_BASE;
+const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export const api = axios.create({
   baseURL,
