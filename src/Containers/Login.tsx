@@ -157,8 +157,6 @@ export function Login() {
           // Silently ignore
         }
       }
-    } catch (err: any) {
-      setOtpError(err.response?.data?.message || "Failed to send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -175,8 +173,12 @@ export function Login() {
       return;
     }
     setEmailError("");
-    await doSendOtp();
-    setStep("otp");
+    try {
+      await doSendOtp();
+      setStep("otp");
+    } catch (err: any) {
+      setEmailError(err.response?.data?.message || "Failed to send OTP. Please try again.");
+    }
   };
 
   const handleResendOtp = async () => {
@@ -184,10 +186,14 @@ export function Login() {
     setOtp("");
     setOtpError("");
     setResendSuccess(false);
-    await doSendOtp();
-    setResendSuccess(true);
-    setTimeout(() => setResendSuccess(false), 5000);
-    otpInputRef.current?.focus();
+    try {
+      await doSendOtp();
+      setResendSuccess(true);
+      setTimeout(() => setResendSuccess(false), 5000);
+      otpInputRef.current?.focus();
+    } catch (err: any) {
+      setOtpError(err.response?.data?.message || "Failed to resend OTP. Please try again.");
+    }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
